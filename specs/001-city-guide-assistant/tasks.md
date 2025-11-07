@@ -108,15 +108,15 @@ Phase 6: Polish
 
 ### Test Creation (TDD)
 
-- [ ] T016 [US1] Create acceptance tests for passport guidance conversation flow in tests/integration/test_passport_guidance.py
+- [X] T016 [US1] Create acceptance tests for passport guidance conversation flow in tests/integration/test_passport_guidance.py
 - [ ] T017 [US1] Create unit tests for ServiceCategory model and validation in tests/unit/test_services.py
 - [ ] T018 [US1] Create integration tests for conversation context management in tests/integration/test_conversation_context.py
 
 ### Service Data Setup
 
-- [ ] T019 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/data_ingestion.py
-- [ ] T020 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/data_ingestion.py
-- [ ] T021 [P] [US1] Create sample passport document embeddings for search in scripts/data_ingestion.py
+- [X] T019 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/data_ingestion.py
+- [X] T020 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/data_ingestion.py
+- [X] T021 [P] [US1] Create sample passport document embeddings for search in scripts/data_ingestion.py
 
 ### Conversation Flow
 

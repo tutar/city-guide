@@ -2,9 +2,9 @@
 Conversation-related data models for City Guide Smart Assistant
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import uuid
 
 
@@ -14,27 +14,30 @@ class Message(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     role: str = Field(..., description="Message role: user or assistant")
     content: str = Field(..., description="Message content")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
-    @validator('role')
+    @field_validator('role')
+    @classmethod
     def validate_role(cls, v):
         valid_roles = ["user", "assistant"]
         if v not in valid_roles:
             raise ValueError(f'Role must be one of: {valid_roles}')
         return v
 
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def content_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError('Content cannot be empty')
         return v.strip()
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )
 
 
 class ConversationContext(BaseModel):
@@ -46,17 +49,19 @@ class ConversationContext(BaseModel):
     conversation_history: List[Message] = Field(default_factory=list)
     navigation_options: List[Dict[str, Any]] = Field(default_factory=list)
     user_preferences: Dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    last_activity: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_active: bool = Field(default=True, description="Whether session is still active")
 
-    @validator('user_session_id')
+    @field_validator('user_session_id')
+    @classmethod
     def session_id_must_be_valid(cls, v):
         if not v.strip():
             raise ValueError('Session ID cannot be empty')
         return v.strip()
 
-    @validator('conversation_history')
+    @field_validator('conversation_history')
+    @classmethod
     def conversation_history_validation(cls, v):
         # Ensure conversation history doesn't grow too large
         if len(v) > 100:
@@ -71,7 +76,7 @@ class ConversationContext(BaseModel):
             metadata=metadata or {}
         )
         self.conversation_history.append(message)
-        self.last_activity = datetime.utcnow()
+        self.last_activity = datetime.now(timezone.utc)
 
     def get_recent_messages(self, limit: int = 10) -> List[Message]:
         """Get recent messages from conversation history"""
@@ -82,18 +87,19 @@ class ConversationContext(BaseModel):
         if not self.is_active:
             return True
 
-        time_since_activity = datetime.utcnow() - self.last_activity
+        time_since_activity = datetime.now(timezone.utc) - self.last_activity
         return time_since_activity.total_seconds() > 1800  # 30 minutes
 
     def mark_completed(self) -> None:
         """Mark conversation as completed"""
         self.is_active = False
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )
 
 
 class ConversationState(BaseModel):
@@ -109,7 +115,8 @@ class ConversationState(BaseModel):
         }
     )
 
-    @validator('state')
+    @field_validator('state')
+    @classmethod
     def validate_state(cls, v):
         valid_states = ["created", "active", "inactive", "completed"]
         if v not in valid_states:

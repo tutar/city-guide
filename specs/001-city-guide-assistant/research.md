@@ -37,21 +37,20 @@
 - **Pinecone**: Managed service with higher cost and vendor lock-in
 - **Chroma**: Simpler but less production-ready for government applications
 
-### Embedding Model: BGE-M3 (FlagEmbedding)
+### Embedding Model: Qwen3-Embedding-0.6B
 
-**Decision**: Use BGE-M3 for document and query embeddings
+**Decision**: Use Qwen3-Embedding-0.6B for document and query embeddings
 
 **Rationale**:
-- **Proven Chinese Performance**: Top-ranked on C-MTEB (Chinese Text Embedding Benchmark)
-- **Multi-Functionality**: Single model handles dense, sparse, and multi-vector retrieval
-- **Long Document Support**: 8192 token capacity for government documents
-- **No Instruction Prefix Required**: Works directly with Chinese text
-- **Active Development**: Regular updates and community support
-- **Free Commercial Use**: MIT license eliminates licensing concerns
-
-**Key Discovery**: Qwen3-Embedding-0.6B does not exist - Qwen models are for text generation, not embedding generation
+- **Proven Chinese Performance**: 66.33 C-MTEB score with strong retrieval capabilities
+- **Memory Efficiency**: 0.6B parameters with configurable dimensions (32-1024)
+- **Long Context Support**: 32K token capacity for government documents
+- **Instruction-Aware Design**: 1-5% performance improvement with tailored instructions
+- **Chinese Language Focus**: Specifically optimized for Chinese text with 100+ language support
+- **Performance Balance**: Excellent speed-accuracy trade-off for government service applications
 
 **Alternatives considered**:
+- **BGE-M3**: Multi-functional but larger memory footprint and 8K context limit
 - **BGE-large-zh-v1.5**: Specialized Chinese-only model, smaller footprint
 - **OpenAI embeddings**: Higher cost and API dependency
 - **SentenceTransformers**: Good but less optimized for Chinese government text
@@ -77,15 +76,16 @@
 **Decision**: Implement hybrid search combining dense and sparse retrieval with RRF
 
 **Rationale**:
-- **Dense retrieval (BGE-M3)**: Handles semantic similarity and paraphrased queries
+- **Dense retrieval (Qwen3-Embedding-0.6B)**: Handles semantic similarity and paraphrased queries with instruction-aware embeddings
 - **Sparse retrieval (BM25)**: Handles exact keyword matches and specific terminology
 - **Reciprocal Rank Fusion (RRF)**: Optimal combination method for government service queries
 
 **Implementation**:
-- Vector search for semantic similarity using BGE-M3 embeddings
+- Vector search for semantic similarity using Qwen3-Embedding-0.6B embeddings
 - BM25 for keyword-based retrieval
 - Reciprocal Rank Fusion for result combination
 - Source priority weighting for official vs auxiliary sources
+- Instruction-aware embedding generation for government service queries
 
 ## Architecture Decisions
 
@@ -102,7 +102,7 @@
 **Pipeline Steps**:
 1. Data ingestion from official sources (Shenzhen government websites)
 2. Document processing and chunking
-3. BGE-M3 embedding generation
+3. Qwen3-Embedding-0.6B embedding generation
 4. Hybrid search at query time using RRF
 5. Context enhancement for Deepseek API
 6. Response generation with source attribution
@@ -120,7 +120,7 @@
 - **Government crawler**: For official Shenzhen government websites
 - **Local guide crawler**: For Shenzhen local guide supplementary information
 - **Document processor**: For chunking and cleaning
-- **BGE-M3 embedding generator**: For vector creation
+- **Qwen3-Embedding-0.6B embedding generator**: For vector creation
 - **Data validator**: For accuracy verification
 
 ### Source Priority Management
@@ -244,18 +244,24 @@
 - Woodpecker message queue (recommended over Pulsar)
 - Streaming Node + combined Data/Index Node architecture
 
-### BGE-M3 Integration Pattern
+### Qwen3-Embedding-0.6B Integration Pattern
 
 ```python
-from FlagEmbedding import FlagAutoModel
+from transformers import AutoTokenizer, AutoModel
+import torch
 
-# Load BGE-M3 model
-model = FlagAutoModel.from_finetuned('BAAI/bge-m3',
-    devices=['cuda:0'], use_fp16=True)
+# Load Qwen3-Embedding-0.6B model
+tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen3-Embedding-0.6B')
+model = AutoModel.from_pretrained('Qwen/Qwen3-Embedding-0.6B',
+    torch_dtype=torch.float16, device_map='auto')
 
-# Generate embeddings for Chinese text
-embeddings = model.encode(["政府服务查询"],
-    batch_size=32, max_length=8192)
+# Generate embeddings for Chinese text with instruction
+instruction = "为这个政府服务查询生成嵌入表示："
+encoded_input = tokenizer([instruction + "政府服务查询"],
+    padding=True, truncation=True, return_tensors='pt', max_length=8192)
+with torch.no_grad():
+    model_output = model(**encoded_input)
+    embeddings = model_output.last_hidden_state.mean(dim=1)
 ```
 
 ### Chainlit Frontend Architecture
@@ -265,13 +271,14 @@ embeddings = model.encode(["政府服务查询"],
 - FastAPI manages business logic, data processing, and external APIs
 - Better separation of concerns with API communication
 
-### RRF Implementation with BGE-M3
+### RRF Implementation with Qwen3-Embedding-0.6B
 
 **Key Advantages**:
 - Optimal fusion method for government service queries
-- Leverages BGE-M3's multi-functional capabilities
-- Chinese text optimization for Shenzhen government services
+- Leverages Qwen3-Embedding-0.6B's instruction-aware design for improved relevance
+- Chinese text optimization for Shenzhen government services with 66.33 C-MTEB score
 - Source priority integration for official document weighting
+- 32K context length support for comprehensive document understanding
 
 **Performance Expectations**:
 - Query latency: <2 seconds for complete hybrid search pipeline
@@ -285,10 +292,10 @@ embeddings = model.encode(["政府服务查询"],
 - **Mitigation**: Monitor community activity, consider forking if development stalls
 - **Backup Plan**: Migrate to Streamlit or custom frontend if needed
 
-### BGE-M3 Model Performance
-- **Risk**: Computational requirements for optimal performance
+### Qwen3-Embedding-0.6B Model Performance
+- **Risk**: Computational requirements for optimal performance with 0.6B parameters
 - **Mitigation**: GPU deployment for production, CPU fallback for development
-- **Optimization**: FP16 precision, batch processing, caching
+- **Optimization**: FP16 precision, batch processing, caching, Flash Attention 2
 
 ### Milvus Production Readiness
 - **Risk**: Complex deployment for production environments
@@ -297,12 +304,14 @@ embeddings = model.encode(["政府服务查询"],
 
 ## Conclusion
 
-The updated technical stack with Milvus, Chainlit, BGE-M3, and RRF provides a robust foundation for the City Guide Smart Assistant. This combination offers:
+The updated technical stack with Milvus, Chainlit, Qwen3-Embedding-0.6B, and RRF provides a robust foundation for the City Guide Smart Assistant. This combination offers:
 
-1. **High Accuracy**: BGE-M3 with proven Chinese text performance
-2. **Reliability**: Milvus with government-grade deployment features
-3. **User Experience**: Chainlit with conversational interface focus
-4. **Search Quality**: RRF with optimal fusion for government queries
-5. **Scalability**: Production-ready architecture for growth
+1. **High Accuracy**: Qwen3-Embedding-0.6B with 66.33 C-MTEB Chinese text performance and instruction-aware design
+2. **Memory Efficiency**: 0.6B parameters with configurable dimensions (32-1024) for optimal resource usage
+3. **Long Context Support**: 32K token capacity for comprehensive government document understanding
+4. **Reliability**: Milvus with government-grade deployment features
+5. **User Experience**: Chainlit with conversational interface focus
+6. **Search Quality**: RRF with optimal fusion for government queries
+7. **Scalability**: Production-ready architecture for growth
 
 The implementation strategy prioritizes rapid MVP development while maintaining the flexibility for production deployment and future scaling.

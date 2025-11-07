@@ -1,6 +1,6 @@
 # Quick Start: City Guide Smart Assistant
 
-**Date**: 2025-11-06
+**Date**: 2025-11-07
 **Feature**: City Guide Smart Assistant
 
 ## Overview
@@ -39,8 +39,8 @@ cp .env.example .env
 # - DATABASE_URL
 # - REDIS_URL
 # - DEEPSEEK_API_KEY
-# - QDRANT_URL
-# - QDRANT_API_KEY
+# - MILVUS_URL
+# - MILVUS_TOKEN
 # - SECRET_KEY
 
 # Database setup
@@ -180,9 +180,9 @@ REDIS_URL=redis://localhost:6379
 
 # AI & Vector Database
 DEEPSEEK_API_KEY=your_deepseek_key
-QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=your_qdrant_key
-EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+MILVUS_URL=http://localhost:19530
+MILVUS_TOKEN=your_milvus_token
+EMBEDDING_MODEL=Qwen/Qwen3-Embedding-0.6B
 
 # Security
 SECRET_KEY=your_secret_key
@@ -318,10 +318,10 @@ npm run test:a11y
    - Test with simple API call
 
 4. **Vector Database**:
-   - Verify QDRANT_URL and QDRANT_API_KEY are set
-   - Check Qdrant server is running
+   - Verify MILVUS_URL and MILVUS_TOKEN are set
+   - Check Milvus server is running
    - Test vector database connection
-   - Ensure embedding model is accessible
+   - Ensure Qwen3-Embedding-0.6B model is accessible
 
 ### Debug Mode
 

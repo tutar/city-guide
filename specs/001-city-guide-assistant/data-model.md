@@ -1,6 +1,6 @@
 # Data Model: City Guide Smart Assistant
 
-**Date**: 2025-11-06
+**Date**: 2025-11-07
 **Feature**: City Guide Smart Assistant
 
 ## Core Entities
@@ -84,8 +84,8 @@ Represents vector embeddings for government service documents to enable semantic
 - `document_title` (string): Document title
 - `document_content` (text): Processed document content
 - `chunk_index` (integer): Index for document chunks
-- `embedding_vector` (vector): Vector embedding (1536 dimensions)
-- `embedding_model` (string): Model used for embedding
+- `embedding_vector` (vector): Vector embedding (1024 dimensions for Qwen3-Embedding-0.6B)
+- `embedding_model` (string): Model used for embedding (Qwen/Qwen3-Embedding-0.6B)
 - `metadata` (JSON): Additional metadata (source priority, update date, etc.)
 - `created_at` (datetime): Embedding creation timestamp
 

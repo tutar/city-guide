@@ -1,68 +1,31 @@
 # Implementation Plan: City Guide Smart Assistant
 
-**Branch**: `001-city-guide-assistant` | **Date**: 2025-11-07 | **Spec**: `/specs/001-city-guide-assistant/spec.md`
-**Input**: Feature specification from `/specs/001-city-guide-assistant/spec.md`
+**Branch**: `001-city-guide-assistant` | **Date**: 2025-11-07 | **Spec**: `/specs/001-city-guide-assistant/research.md`
+**Input**: Feature specification from `/specs/001-city-guide-assistant/research.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-Build an AI-powered conversational assistant that provides accurate, step-by-step guidance for Shenzhen government services through natural language interaction. The system uses Deepseek API for AI reasoning and implements hybrid search (vector + keyword) with Milvus vector database for enhanced information retrieval. Features include dynamic contextual navigation, integration with official data sources, and conversation context management using Chainlit for the frontend interface.
+Build an AI-powered conversational interface for Shenzhen government services using Deepseek API for reasoning, Qwen3-Embedding-0.6B for embeddings, Milvus for vector storage, Chainlit for frontend, and RRF for hybrid search. The system will provide accurate, step-by-step guidance through natural language interaction with source attribution and context-aware navigation.
 
 ## Technical Context
 
-**Language/Version**: Python 3.11 (backend), Chainlit (frontend)
-**Primary Dependencies**: FastAPI (backend), Chainlit (frontend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), FlagEmbedding (bge-m3/Qwen3-Embedding-0.6B)
-**Storage**: PostgreSQL for structured data, Redis for session/cache, Milvus for embeddings
-**Testing**: pytest (backend), Chainlit testing utilities, Playwright (e2e)
-**Target Platform**: Web application (Chainlit interface), potential mobile app later
-**Project Type**: web - determines source structure
-**Performance Goals**: Sub-200ms response times for core interactions, 99.9% uptime, AI response <1s
-**Constraints**: <200ms p95 response time, <100MB memory per instance, offline-capable for cached data
-**Scale/Scope**: 10k users, 50+ government service categories, 100+ conversation flows, hybrid search with vector embeddings
+**Language/Version**: Python 3.11+ for backend, Node.js 18+ for frontend
+**Primary Dependencies**: FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client
+**Storage**: PostgreSQL for metadata, Milvus for vectors, Redis for caching
+**Testing**: pytest for backend, Jest for frontend, contract testing
+**Target Platform**: Linux server for backend, web browser for frontend
+**Project Type**: web application (frontend + backend)
+**Performance Goals**: <2s AI response time, <1s search latency, 100+ concurrent users
+**Constraints**: <200ms p95 for search, <100MB memory per embedding model instance, Chinese language optimization
+**Scale/Scope**: 10k government service documents, 50+ service categories, multi-language support
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-### ✅ Code Quality Standards
-- **Status**: Compliant
-- **Verification**: Plan includes comprehensive documentation, modular architecture, and defined quality gates
-- **Rationale**: Government service application requires exceptional reliability and clarity
-
-### ✅ Test-First Development
-- **Status**: Compliant
-- **Verification**: Test pyramid defined (70/20/10), TDD approach specified
-- **Rationale**: Government services require absolute reliability and accuracy
-
-### ✅ User Experience Consistency
-- **Status**: Compliant
-- **Verification**: Chainlit provides consistent UI patterns, accessibility standards, performance monitoring
-- **Rationale**: Must be accessible to all citizens regardless of technical proficiency
-
-### ✅ Performance & Scalability
-- **Status**: Compliant
-- **Verification**: Sub-200ms response times, 99.9% uptime, scalability designed-in
-- **Rationale**: Must remain available during peak usage and emergencies
-
-### ✅ Security & Data Integrity
-- **Status**: Compliant
-- **Verification**: Multi-layer validation, external API security review, data accuracy verification
-- **Rationale**: Handles sensitive citizen information requiring confidentiality
-
-**Overall Status**: ✅ PASS - All constitutional requirements met
-
-### Post-Design Constitution Re-check
-
-After completing Phase 1 design with updated technology stack:
-
-- **✅ Code Quality Standards**: Enhanced with comprehensive integration patterns for Milvus, Chainlit, and BGE-M3
-- **✅ Test-First Development**: Updated test strategy includes vector database testing and Chainlit UI testing
-- **✅ User Experience Consistency**: Chainlit provides consistent conversational interface with accessibility features
-- **✅ Performance & Scalability**: Milvus with BGE-M3 optimizes for sub-1s response times and government-scale deployment
-- **✅ Security & Data Integrity**: Self-hosted Milvus ensures data sovereignty, comprehensive validation with source priority
-
-**Final Status**: ✅ PASS - All constitutional requirements maintained with enhanced technical foundation
+[Gates determined based on constitution file]
 
 ## Project Structure
 
@@ -81,59 +44,58 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```text
-city-guide-assistant/
+backend/
 ├── src/
 │   ├── models/
 │   │   ├── conversation.py
-│   │   ├── service_category.py
-│   │   ├── navigation_context.py
-│   │   └── document_embedding.py
+│   │   ├── services.py
+│   │   └── embeddings.py
 │   ├── services/
-│   │   ├── conversation_service.py
-│   │   ├── navigation_service.py
-│   │   ├── data_validation_service.py
-│   │   ├── hybrid_search_service.py
+│   │   ├── search_service.py
 │   │   ├── embedding_service.py
-│   │   └── deepseek_client.py
-│   ├── chainlit_app/
-│   │   ├── app.py
-│   │   ├── components/
-│   │   │   ├── conversation_ui.py
-│   │   │   ├── navigation_sidebar.py
-│   │   │   └── service_display.py
-│   │   └── utils/
-│   │       ├── message_handlers.py
-│   │       └── ui_helpers.py
-│   ├── data/
-│   │   ├── crawlers/
-│   │   │   ├── government_crawler.py
-│   │   │   └── local_guide_crawler.py
-│   │   ├── processors/
-│   │   │   ├── document_processor.py
-│   │   │   └── embedding_generator.py
-│   │   └── validators/
-│   │       ├── data_validator.py
-│   │       └── source_priority.py
+│   │   ├── ai_service.py
+│   │   └── data_service.py
+│   ├── api/
+│   │   ├── conversation.py
+│   │   ├── services.py
+│   │   └── search.py
 │   └── utils/
-│       ├── milvus_client.py
-│       └── external_api.py
+│       ├── config.py
+│       ├── logging.py
+│       └── validation.py
 ├── tests/
 │   ├── unit/
-│   │   ├── test_models/
-│   │   └── test_services/
 │   ├── integration/
-│   │   ├── test_api/
-│   │   └── test_external/
-│   ├── contract/
-│   │   └── test_contracts/
-│   └── performance/
-│       └── test_hybrid_search.py
-└── requirements/
-    ├── requirements.txt
-    └── requirements-dev.txt
+│   └── contract/
+└── scripts/
+    ├── setup_database.py
+    ├── setup_vector_db.py
+    └── data_ingestion.py
+
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── ChatInterface/
+│   │   ├── ServiceNavigation/
+│   │   └── SearchResults/
+│   ├── pages/
+│   │   ├── Home/
+│   │   ├── Services/
+│   │   └── Conversation/
+│   ├── services/
+│   │   ├── api.js
+│   │   ├── conversation.js
+│   │   └── search.js
+│   └── utils/
+│       ├── constants.js
+│       └── helpers.js
+└── tests/
+    ├── unit/
+    ├── integration/
+    └── e2e/
 ```
 
-**Structure Decision**: Single project structure with Chainlit frontend integrated into the Python backend. Enhanced backend includes hybrid search capabilities with Milvus vector database integration, Deepseek API client, and data processing pipelines for government service information retrieval and embedding generation using FlagEmbedding models.
+**Structure Decision**: Web application structure selected with separate backend (FastAPI) and frontend (Chainlit) components. This provides clear separation of concerns, enables independent development and deployment, and supports the conversational AI focus with Chainlit's specialized capabilities.
 
 ## Complexity Tracking
 

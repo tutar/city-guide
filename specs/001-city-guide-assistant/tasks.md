@@ -69,38 +69,38 @@ Phase 6: Polish
 
 ### Project Initialization
 
-- [ ] T001 Create project structure per implementation plan in specs/001-city-guide-assistant/plan.md
-- [ ] T002 Set up PostgreSQL database with connection configuration in src/utils/config.py
+- [X] T001 Create project structure per implementation plan in specs/001-city-guide-assistant/plan.md
+- [X] T002 Set up PostgreSQL database with connection configuration in src/utils/config.py
 
 ## Phase 2: Foundational
 
 ### Core Data Models
 
-- [ ] T003 Create ServiceCategory model with validation rules in src/models/services.py
-- [ ] T004 Create ConversationContext model with state transitions in src/models/conversation.py
-- [ ] T005 Create NavigationOption model with action types in src/models/services.py
+- [X] T003 Create ServiceCategory model with validation rules in src/models/services.py
+- [X] T004 Create ConversationContext model with state transitions in src/models/conversation.py
+- [X] T005 Create NavigationOption model with action types in src/models/services.py
 
 ### Database Services
 
-- [ ] T006 Implement ServiceCategory database service with CRUD operations in src/services/data_service.py
-- [ ] T007 Implement ConversationContext database service with session management in src/services/data_service.py
-- [ ] T008 Implement NavigationOption database service with priority ordering in src/services/data_service.py
+- [X] T006 Implement ServiceCategory database service with CRUD operations in src/services/data_service.py
+- [X] T007 Implement ConversationContext database service with session management in src/services/data_service.py
+- [X] T008 Implement NavigationOption database service with priority ordering in src/services/data_service.py
 
 ### Vector Database Setup
 
-- [ ] T009 Set up Milvus vector database connection in src/services/embedding_service.py
-- [ ] T010 Create DocumentEmbedding collection with vector index in src/services/embedding_service.py
-- [ ] T011 Create SearchQuery collection for analytics in src/services/embedding_service.py
+- [X] T009 Set up Milvus vector database connection in src/services/embedding_service.py
+- [X] T010 Create DocumentEmbedding collection with vector index in src/services/embedding_service.py
+- [X] T011 Create SearchQuery collection for analytics in src/services/embedding_service.py
 
 ### AI Integration
 
-- [ ] T012 Set up Deepseek API client with rate limiting in src/services/ai_service.py
-- [ ] T013 Configure Qwen3-Embedding-0.6B model for Chinese text in src/services/embedding_service.py
+- [X] T012 Set up Deepseek API client with rate limiting in src/services/ai_service.py
+- [X] T013 Configure Qwen3-Embedding-0.6B model for Chinese text in src/services/embedding_service.py
 
 ### Search Infrastructure
 
-- [ ] T014 Implement hybrid search service with RRF fusion in src/services/search_service.py
-- [ ] T015 Set up BM25 keyword search for sparse retrieval in src/services/search_service.py
+- [X] T014 Implement hybrid search service with RRF fusion in src/services/search_service.py
+- [X] T015 Set up BM25 keyword search for sparse retrieval in src/services/search_service.py
 
 ## Phase 3: User Story 1 - Get Hong Kong/Macau Passport Guidance (P1)
 

@@ -1,0 +1,343 @@
+"""
+Database service layer for City Guide Smart Assistant
+"""
+
+import logging
+from typing import List, Optional, Dict, Any
+from sqlalchemy import create_engine, Column, String, Integer, Boolean, DateTime, JSON, ForeignKey, Text, desc
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+from datetime import datetime
+
+from src.utils.config import settings
+from src.models.services import ServiceCategory as ServiceCategoryModel, NavigationOption as NavigationOptionModel
+from src.models.conversation import ConversationContext as ConversationContextModel, Message
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# SQLAlchemy setup
+Base = declarative_base()
+engine = create_engine(settings.database.database_url)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+# SQLAlchemy models
+class ServiceCategory(Base):
+    __tablename__ = "service_categories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), unique=True, nullable=False)
+    description = Column(Text)
+    official_source_url = Column(String(500))
+    last_verified = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ConversationContext(Base):
+    __tablename__ = "conversation_contexts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_session_id = Column(String(255), nullable=False)
+    current_service_category_id = Column(UUID(as_uuid=True), ForeignKey('service_categories.id'))
+    conversation_history = Column(JSON)
+    navigation_options = Column(JSON)
+    user_preferences = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_activity = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+
+class NavigationOption(Base):
+    __tablename__ = "navigation_options"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    service_category_id = Column(UUID(as_uuid=True), ForeignKey('service_categories.id'), nullable=False)
+    label = Column(String(255), nullable=False)
+    action_type = Column(String(50), nullable=False)
+    target_url = Column(String(500))
+    description = Column(Text)
+    priority = Column(Integer, default=5)
+    is_active = Column(Boolean, default=True)
+
+
+class DataService:
+    """Service layer for database operations"""
+
+    def __init__(self):
+        self.db = SessionLocal()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.db.close()
+
+    # ServiceCategory operations
+
+    def create_service_category(self, service_category: ServiceCategoryModel) -> ServiceCategoryModel:
+        """Create a new service category"""
+        try:
+            db_category = ServiceCategory(
+                name=service_category.name,
+                description=service_category.description,
+                official_source_url=str(service_category.official_source_url) if service_category.official_source_url else None,
+                last_verified=service_category.last_verified,
+                is_active=service_category.is_active
+            )
+            self.db.add(db_category)
+            self.db.commit()
+            self.db.refresh(db_category)
+
+            # Convert back to Pydantic model
+            return ServiceCategoryModel(
+                id=db_category.id,
+                name=db_category.name,
+                description=db_category.description,
+                official_source_url=db_category.official_source_url,
+                last_verified=db_category.last_verified,
+                is_active=db_category.is_active,
+                created_at=db_category.created_at,
+                updated_at=db_category.updated_at
+            )
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Failed to create service category: {e}")
+            raise
+
+    def get_service_category(self, category_id: uuid.UUID) -> Optional[ServiceCategoryModel]:
+        """Get service category by ID"""
+        try:
+            db_category = self.db.query(ServiceCategory).filter(ServiceCategory.id == category_id).first()
+            if db_category:
+                return ServiceCategoryModel(
+                    id=db_category.id,
+                    name=db_category.name,
+                    description=db_category.description,
+                    official_source_url=db_category.official_source_url,
+                    last_verified=db_category.last_verified,
+                    is_active=db_category.is_active,
+                    created_at=db_category.created_at,
+                    updated_at=db_category.updated_at
+                )
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to get service category: {e}")
+            raise
+
+    def get_active_service_categories(self) -> List[ServiceCategoryModel]:
+        """Get all active service categories"""
+        try:
+            db_categories = self.db.query(ServiceCategory).filter(ServiceCategory.is_active == True).all()
+            return [
+                ServiceCategoryModel(
+                    id=category.id,
+                    name=category.name,
+                    description=category.description,
+                    official_source_url=category.official_source_url,
+                    last_verified=category.last_verified,
+                    is_active=category.is_active,
+                    created_at=category.created_at,
+                    updated_at=category.updated_at
+                )
+                for category in db_categories
+            ]
+
+        except Exception as e:
+            logger.error(f"Failed to get active service categories: {e}")
+            raise
+
+    # ConversationContext operations
+
+    def create_conversation_context(self, conversation_context: ConversationContextModel) -> ConversationContextModel:
+        """Create a new conversation context"""
+        try:
+            db_context = ConversationContext(
+                user_session_id=conversation_context.user_session_id,
+                current_service_category_id=conversation_context.current_service_category_id,
+                conversation_history=[msg.dict() for msg in conversation_context.conversation_history],
+                navigation_options=conversation_context.navigation_options,
+                user_preferences=conversation_context.user_preferences,
+                is_active=conversation_context.is_active
+            )
+            self.db.add(db_context)
+            self.db.commit()
+            self.db.refresh(db_context)
+
+            # Convert back to Pydantic model
+            return ConversationContextModel(
+                id=db_context.id,
+                user_session_id=db_context.user_session_id,
+                current_service_category_id=db_context.current_service_category_id,
+                conversation_history=[Message(**msg) for msg in db_context.conversation_history],
+                navigation_options=db_context.navigation_options,
+                user_preferences=db_context.user_preferences,
+                created_at=db_context.created_at,
+                last_activity=db_context.last_activity,
+                is_active=db_context.is_active
+            )
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Failed to create conversation context: {e}")
+            raise
+
+    def get_conversation_context(self, session_id: str) -> Optional[ConversationContextModel]:
+        """Get conversation context by session ID"""
+        try:
+            db_context = self.db.query(ConversationContext).filter(
+                ConversationContext.user_session_id == session_id,
+                ConversationContext.is_active == True
+            ).first()
+
+            if db_context:
+                return ConversationContextModel(
+                    id=db_context.id,
+                    user_session_id=db_context.user_session_id,
+                    current_service_category_id=db_context.current_service_category_id,
+                    conversation_history=[Message(**msg) for msg in db_context.conversation_history],
+                    navigation_options=db_context.navigation_options,
+                    user_preferences=db_context.user_preferences,
+                    created_at=db_context.created_at,
+                    last_activity=db_context.last_activity,
+                    is_active=db_context.is_active
+                )
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to get conversation context: {e}")
+            raise
+
+    def update_conversation_context(self, session_id: str, conversation_context: ConversationContextModel) -> ConversationContextModel:
+        """Update existing conversation context"""
+        try:
+            db_context = self.db.query(ConversationContext).filter(
+                ConversationContext.user_session_id == session_id,
+                ConversationContext.is_active == True
+            ).first()
+
+            if not db_context:
+                raise ValueError(f"Conversation context not found for session: {session_id}")
+
+            # Update fields
+            db_context.current_service_category_id = conversation_context.current_service_category_id
+            db_context.conversation_history = [msg.dict() for msg in conversation_context.conversation_history]
+            db_context.navigation_options = conversation_context.navigation_options
+            db_context.user_preferences = conversation_context.user_preferences
+            db_context.last_activity = conversation_context.last_activity
+            db_context.is_active = conversation_context.is_active
+
+            self.db.commit()
+            self.db.refresh(db_context)
+
+            # Convert back to Pydantic model
+            return ConversationContextModel(
+                id=db_context.id,
+                user_session_id=db_context.user_session_id,
+                current_service_category_id=db_context.current_service_category_id,
+                conversation_history=[Message(**msg) for msg in db_context.conversation_history],
+                navigation_options=db_context.navigation_options,
+                user_preferences=db_context.user_preferences,
+                created_at=db_context.created_at,
+                last_activity=db_context.last_activity,
+                is_active=db_context.is_active
+            )
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Failed to update conversation context: {e}")
+            raise
+
+    # NavigationOption operations
+
+    def create_navigation_option(self, navigation_option: NavigationOptionModel) -> NavigationOptionModel:
+        """Create a new navigation option"""
+        try:
+            db_option = NavigationOption(
+                service_category_id=navigation_option.service_category_id,
+                label=navigation_option.label,
+                action_type=navigation_option.action_type,
+                target_url=str(navigation_option.target_url) if navigation_option.target_url else None,
+                description=navigation_option.description,
+                priority=navigation_option.priority,
+                is_active=navigation_option.is_active
+            )
+            self.db.add(db_option)
+            self.db.commit()
+            self.db.refresh(db_option)
+
+            # Convert back to Pydantic model
+            return NavigationOptionModel(
+                id=db_option.id,
+                service_category_id=db_option.service_category_id,
+                label=db_option.label,
+                action_type=db_option.action_type,
+                target_url=db_option.target_url,
+                description=db_option.description,
+                priority=db_option.priority,
+                is_active=db_option.is_active
+            )
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Failed to create navigation option: {e}")
+            raise
+
+    def get_navigation_options_by_category(self, category_id: uuid.UUID) -> List[NavigationOptionModel]:
+        """Get navigation options for a service category"""
+        try:
+            db_options = self.db.query(NavigationOption).filter(
+                NavigationOption.service_category_id == category_id,
+                NavigationOption.is_active == True
+            ).order_by(NavigationOption.priority).all()
+
+            return [
+                NavigationOptionModel(
+                    id=option.id,
+                    service_category_id=option.service_category_id,
+                    label=option.label,
+                    action_type=option.action_type,
+                    target_url=option.target_url,
+                    description=option.description,
+                    priority=option.priority,
+                    is_active=option.is_active
+                )
+                for option in db_options
+            ]
+
+        except Exception as e:
+            logger.error(f"Failed to get navigation options: {e}")
+            raise
+
+    def get_navigation_options_by_priority(self, category_id: uuid.UUID, priority_threshold: int = 5) -> List[NavigationOptionModel]:
+        """Get high-priority navigation options for a service category"""
+        try:
+            db_options = self.db.query(NavigationOption).filter(
+                NavigationOption.service_category_id == category_id,
+                NavigationOption.is_active == True,
+                NavigationOption.priority <= priority_threshold
+            ).order_by(NavigationOption.priority).all()
+
+            return [
+                NavigationOptionModel(
+                    id=option.id,
+                    service_category_id=option.service_category_id,
+                    label=option.label,
+                    action_type=option.action_type,
+                    target_url=option.target_url,
+                    description=option.description,
+                    priority=option.priority,
+                    is_active=option.is_active
+                )
+                for option in db_options
+            ]
+
+        except Exception as e:
+            logger.error(f"Failed to get high-priority navigation options: {e}")
+            raise

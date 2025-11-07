@@ -120,28 +120,28 @@ Phase 6: Polish
 
 ### Conversation Flow
 
-- [ ] T022 [US1] Create unit tests for Deepseek API integration in tests/unit/test_ai_service.py
-- [ ] T023 [US1] Implement conversation start endpoint with service context in src/api/conversation.py
-- [ ] T024 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
-- [ ] T025 [US1] Implement conversation history management in src/services/data_service.py
+- [X] T022 [US1] Create unit tests for Deepseek API integration in tests/unit/test_ai_service.py
+- [X] T023 [US1] Implement conversation start endpoint with service context in src/api/conversation.py
+- [X] T024 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
+- [X] T025 [US1] Implement conversation history management in src/services/data_service.py
 
 ### Accessibility Testing
 
-- [ ] T026 [US1] Create accessibility tests for Chainlit interface components in tests/accessibility/test_chainlit_accessibility.py
-- [ ] T027 [US1] Implement keyboard navigation support for service navigation in src/chainlit/components/service_navigation.py
-- [ ] T028 [US1] Add screen reader compatibility for conversation interface in src/chainlit/components/chat_interface.py
+- [X] T026 [US1] Create accessibility tests for Chainlit interface components in tests/accessibility/test_chainlit_accessibility.py
+- [X] T027 [US1] Implement keyboard navigation support for service navigation in src/chainlit/components/service_navigation.py
+- [X] T028 [US1] Add screen reader compatibility for conversation interface in src/chainlit/components/chat_interface.py
 
 ### Navigation System
 
-- [ ] T029 [US1] Create dynamic navigation option generation based on conversation context in src/services/search_service.py
-- [ ] T030 [US1] Implement navigation option filtering by service category in src/services/data_service.py
-- [ ] T031 [US1] Add external URL handling for appointment systems in src/utils/validation.py
+- [X] T029 [US1] Create dynamic navigation option generation based on conversation context in src/services/search_service.py
+- [X] T030 [US1] Implement navigation option filtering by service category in src/services/data_service.py
+- [X] T031 [US1] Add external URL handling for appointment systems in src/utils/validation.py
 
 ### Integration
 
-- [ ] T032 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
-- [ ] T033 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
-- [ ] T034 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
+- [X] T032 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
+- [X] T033 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
+- [X] T034 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
 
 ## Phase 4: User Story 2 - Navigate Complex Government Services (P2)
 

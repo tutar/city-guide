@@ -38,3 +38,26 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Chainlit specific
+.chainlit/
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Milvus data
+milvus_data/
+
+# Database files
+*.db
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp

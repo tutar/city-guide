@@ -3,7 +3,7 @@
 **Feature**: City Guide Smart Assistant
 **Branch**: `001-city-guide-assistant`
 **Generated**: 2025-11-07
-**Total Tasks**: 68
+**Total Tasks**: 72
 
 ## Implementation Strategy
 
@@ -47,7 +47,8 @@ Phase 5: User Story 3 (P3)
 Phase 6: Polish
 ├── T051-T057: Success criteria measurement
 ├── T058-T060: Performance & monitoring
-└── T061-T062: Documentation & deployment
+├── T061-T062: Documentation & deployment
+└── T069-T072: Support request analytics
 ```
 
 ## Parallel Execution Examples
@@ -218,6 +219,13 @@ Phase 6: Polish
 
 - [ ] T067 Create API documentation with OpenAPI specifications in docs/api/
 - [ ] T068 Set up deployment configuration with Docker in docker-compose.yml
+
+### Support Request Analytics
+
+- [ ] T069 [SC-006] Implement support request tracking system with baseline measurement in src/services/analytics_service.py
+- [ ] T070 [SC-006] Create support request categorization and reduction metrics in src/services/analytics_service.py
+- [ ] T071 [SC-006] Add user feedback collection for support request reasons in src/chainlit/app.py
+- [ ] T072 [SC-006] Implement automated reporting for support request reduction metrics in src/services/analytics_service.py
 
 ## Implementation Notes
 

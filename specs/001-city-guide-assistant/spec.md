@@ -76,10 +76,11 @@ A user wants to explore related government services and information through intu
 
 ### Edge Cases
 
-- What happens when the system cannot find information for a specific query? (System suggests alternative queries and directs to official sources)
-- How does the system handle conflicting information from different official sources?
-- What happens when the user asks about services outside the Shenzhen geographic scope?
-- How does the system handle network connectivity issues when accessing external services?
+- **Unanswerable Queries**: When the system cannot find information for a specific query, it MUST provide 3 alternative query suggestions based on semantic similarity and direct users to relevant official sources with clickable links
+- **Conflicting Information**: When official sources provide conflicting information, the system MUST prioritize the most recent source, indicate the conflict to users, and provide access to all conflicting sources for user review
+- **Geographic Scope Violations**: When users ask about services outside Shenzhen scope, the system MUST clearly state the geographic limitation and suggest contacting the appropriate local government authority
+- **Network Connectivity Issues**: When external services are unavailable, the system MUST provide cached information with clear timestamps and retry mechanisms with user notification
+- **Ambiguous User Input**: When user queries are unclear, the system MUST ask clarifying questions using a predefined set of clarification templates
 
 ## Requirements *(mandatory)*
 
@@ -118,6 +119,10 @@ A user wants to explore related government services and information through intu
 
 - **SC-001**: Users can complete government service inquiries in under 3 minutes with accurate, actionable information
 - **SC-002**: System provides information with 99% accuracy compared to official government sources
+  - **Measurement Method**: Weekly manual sampling of 100 random queries across all service categories
+  - **Validation Process**: Cross-reference responses with official government websites and APIs
+  - **Accuracy Definition**: Information matches official sources in content, requirements, and procedures
+  - **Exclusions**: Timeliness of information (official sources may update independently)
 - **SC-003**: 90% of users successfully navigate complex government procedures on first attempt using the system
 - **SC-004**: Dynamic navigation options are clicked by 70% of users during service inquiries
 - **SC-005**: User satisfaction rating of 4.5/5.0 for clarity and usefulness of information provided

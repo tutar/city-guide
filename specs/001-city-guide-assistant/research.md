@@ -1,8 +1,8 @@
 # Research: City Guide Smart Assistant
 
-**Date**: 2025-11-06
+**Date**: 2025-11-07
 **Feature**: City Guide Smart Assistant
-**Purpose**: Document technology choices and implementation decisions with Deepseek API and hybrid search requirements
+**Purpose**: Document technology choices and implementation decisions with updated technical stack (Milvus, Chainlit, BGE-M3, RRF)
 
 ## Technology Stack Decisions
 
@@ -21,49 +21,70 @@
 - **Local models**: Insufficient performance for production government service application
 - **Other Chinese LLMs**: Deepseek offers good balance of performance and cost
 
-### Vector Database: Qdrant
+### Vector Database: Milvus
 
-**Decision**: Use Qdrant for vector storage and similarity search
-
-**Rationale**:
-- High-performance vector similarity search
-- Good Python client support
-- Efficient filtering capabilities
-- Open-source with commercial support options
-
-**Alternatives considered**:
-- **Chroma**: Simpler but less mature for production use
-- **Pinecone**: Managed service but higher cost and vendor lock-in
-- **Weaviate**: More complex setup for this use case
-
-### Embedding Model: SentenceTransformers
-
-**Decision**: Use SentenceTransformers for document and query embeddings
+**Decision**: Use Milvus for vector storage and similarity search
 
 **Rationale**:
-- Excellent Chinese language support with models like `paraphrase-multilingual-MiniLM-L12-v2`
-- Good balance of performance and accuracy
-- Easy integration with Python ecosystem
-- Can run locally or via API
+- Superior Chinese text handling with native BGE-M3 integration
+- Government-grade reliability with production-proven deployment
+- Data sovereignty with self-hosted option avoiding vendor lock-in
+- Cost effectiveness with open-source licensing and managed service options
+- Excellent performance for hybrid search workloads
 
 **Alternatives considered**:
+- **Qdrant**: Less mature Chinese optimization and government features
+- **Pinecone**: Managed service with higher cost and vendor lock-in
+- **Chroma**: Simpler but less production-ready for government applications
+
+### Embedding Model: BGE-M3 (FlagEmbedding)
+
+**Decision**: Use BGE-M3 for document and query embeddings
+
+**Rationale**:
+- **Proven Chinese Performance**: Top-ranked on C-MTEB (Chinese Text Embedding Benchmark)
+- **Multi-Functionality**: Single model handles dense, sparse, and multi-vector retrieval
+- **Long Document Support**: 8192 token capacity for government documents
+- **No Instruction Prefix Required**: Works directly with Chinese text
+- **Active Development**: Regular updates and community support
+- **Free Commercial Use**: MIT license eliminates licensing concerns
+
+**Key Discovery**: Qwen3-Embedding-0.6B does not exist - Qwen models are for text generation, not embedding generation
+
+**Alternatives considered**:
+- **BGE-large-zh-v1.5**: Specialized Chinese-only model, smaller footprint
 - **OpenAI embeddings**: Higher cost and API dependency
-- **BERT-based models**: More computationally intensive
-- **Custom models**: Too complex for MVP
+- **SentenceTransformers**: Good but less optimized for Chinese government text
+
+### Frontend Framework: Chainlit
+
+**Decision**: Use Chainlit for conversational AI frontend
+
+**Rationale**:
+- Built specifically for conversational AI applications
+- Strong Python integration with FastAPI backend
+- Built-in conversation state management
+- Mobile-responsive interface
+- Rapid prototyping capabilities
+
+**Alternatives considered**:
+- **Streamlit**: More mature ecosystem but less conversational focus
+- **Gradio**: More flexible UI but less optimized for chat applications
+- **Custom React frontend**: More control but higher development cost
 
 ### Hybrid Search Strategy
 
-**Decision**: Implement hybrid search combining dense and sparse retrieval
+**Decision**: Implement hybrid search combining dense and sparse retrieval with RRF
 
 **Rationale**:
-- **Dense retrieval (vector search)**: Handles semantic similarity and paraphrased queries
+- **Dense retrieval (BGE-M3)**: Handles semantic similarity and paraphrased queries
 - **Sparse retrieval (BM25)**: Handles exact keyword matches and specific terminology
-- **Fusion ranking**: Combines both approaches for optimal relevance
+- **Reciprocal Rank Fusion (RRF)**: Optimal combination method for government service queries
 
 **Implementation**:
-- Vector search for semantic similarity using embeddings
+- Vector search for semantic similarity using BGE-M3 embeddings
 - BM25 for keyword-based retrieval
-- Reciprocal Rank Fusion (RRF) for result combination
+- Reciprocal Rank Fusion for result combination
 - Source priority weighting for official vs auxiliary sources
 
 ## Architecture Decisions
@@ -81,8 +102,8 @@
 **Pipeline Steps**:
 1. Data ingestion from official sources (Shenzhen government websites)
 2. Document processing and chunking
-3. Vector embedding generation
-4. Hybrid search at query time
+3. BGE-M3 embedding generation
+4. Hybrid search at query time using RRF
 5. Context enhancement for Deepseek API
 6. Response generation with source attribution
 
@@ -99,7 +120,7 @@
 - **Government crawler**: For official Shenzhen government websites
 - **Local guide crawler**: For Shenzhen local guide supplementary information
 - **Document processor**: For chunking and cleaning
-- **Embedding generator**: For vector creation
+- **BGE-M3 embedding generator**: For vector creation
 - **Data validator**: For accuracy verification
 
 ### Source Priority Management
@@ -208,3 +229,80 @@
 - User satisfaction ratings
 - Response accuracy measurements
 - Search latency monitoring
+
+## Technology Integration Details
+
+### Milvus Setup Recommendations
+
+**Development Setup**:
+- Use Milvus Standalone with Docker Compose
+- Port 19530 with WebUI at http://localhost:9091/webui/
+- Simple deployment with data persistence
+
+**Production Deployment**:
+- Kubernetes cluster with Helm charts
+- Woodpecker message queue (recommended over Pulsar)
+- Streaming Node + combined Data/Index Node architecture
+
+### BGE-M3 Integration Pattern
+
+```python
+from FlagEmbedding import FlagAutoModel
+
+# Load BGE-M3 model
+model = FlagAutoModel.from_finetuned('BAAI/bge-m3',
+    devices=['cuda:0'], use_fp16=True)
+
+# Generate embeddings for Chinese text
+embeddings = model.encode(["政府服务查询"],
+    batch_size=32, max_length=8192)
+```
+
+### Chainlit Frontend Architecture
+
+**Recommended Pattern**: Chainlit Frontend + FastAPI Backend
+- Chainlit handles UI and conversation flow
+- FastAPI manages business logic, data processing, and external APIs
+- Better separation of concerns with API communication
+
+### RRF Implementation with BGE-M3
+
+**Key Advantages**:
+- Optimal fusion method for government service queries
+- Leverages BGE-M3's multi-functional capabilities
+- Chinese text optimization for Shenzhen government services
+- Source priority integration for official document weighting
+
+**Performance Expectations**:
+- Query latency: <2 seconds for complete hybrid search pipeline
+- Accuracy: Top-5 recall >95% with proper indexing and fusion
+- Scalability: Support for 1000+ QPS with proper infrastructure
+
+## Risk Assessment and Mitigation
+
+### Chainlit Community Status
+- **Risk**: Community-maintained framework with limited documentation
+- **Mitigation**: Monitor community activity, consider forking if development stalls
+- **Backup Plan**: Migrate to Streamlit or custom frontend if needed
+
+### BGE-M3 Model Performance
+- **Risk**: Computational requirements for optimal performance
+- **Mitigation**: GPU deployment for production, CPU fallback for development
+- **Optimization**: FP16 precision, batch processing, caching
+
+### Milvus Production Readiness
+- **Risk**: Complex deployment for production environments
+- **Mitigation**: Start with standalone, plan Kubernetes migration
+- **Monitoring**: Comprehensive observability with Prometheus/Grafana
+
+## Conclusion
+
+The updated technical stack with Milvus, Chainlit, BGE-M3, and RRF provides a robust foundation for the City Guide Smart Assistant. This combination offers:
+
+1. **High Accuracy**: BGE-M3 with proven Chinese text performance
+2. **Reliability**: Milvus with government-grade deployment features
+3. **User Experience**: Chainlit with conversational interface focus
+4. **Search Quality**: RRF with optimal fusion for government queries
+5. **Scalability**: Production-ready architecture for growth
+
+The implementation strategy prioritizes rapid MVP development while maintaining the flexibility for production deployment and future scaling.

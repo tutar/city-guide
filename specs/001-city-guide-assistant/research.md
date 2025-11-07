@@ -6,6 +6,22 @@
 
 ## Technology Stack Decisions
 
+### Runtime Environment
+
+**Decision**: Use Python 3.12+ and Node.js v22+ for development and production
+
+**Rationale**:
+- **Python 3.12+**: Python 3.11 reached end-of-life (EoL) in October 2025, requiring upgrade to 3.12+ for security updates and long-term support
+- **Node.js v22+**: Node.js 18+ reached end-of-life (EoL) in April 2025, requiring upgrade to v22+ for security updates and modern features
+- **Security Compliance**: Government services require current, supported runtime versions for security patches
+- **Performance Improvements**: Python 3.12+ offers performance optimizations and new language features
+- **Modern Tooling**: Node.js v22+ provides improved package management and development tooling
+
+**Alternatives considered**:
+- **Python 3.11**: Rejected due to EoL status and lack of security updates
+- **Node.js 18**: Rejected due to EoL status and lack of security updates
+- **Other Python versions**: 3.12+ provides optimal balance of stability and features
+
 ### AI Model: Deepseek API
 
 **Decision**: Use Deepseek API for AI reasoning and conversation generation
@@ -57,19 +73,20 @@
 
 ### Frontend Framework: Chainlit
 
-**Decision**: Use Chainlit for conversational AI frontend
+**Decision**: Use Chainlit for conversational AI interface
 
 **Rationale**:
 - Built specifically for conversational AI applications
-- Strong Python integration with FastAPI backend
+- Strong Python integration with FastAPI services
 - Built-in conversation state management
 - Mobile-responsive interface
 - Rapid prototyping capabilities
+- Single codebase for both backend logic and frontend interface
 
 **Alternatives considered**:
 - **Streamlit**: More mature ecosystem but less conversational focus
 - **Gradio**: More flexible UI but less optimized for chat applications
-- **Custom React frontend**: More control but higher development cost
+- **Custom React frontend**: More control but higher development cost and complexity
 
 ### Hybrid Search Strategy
 
@@ -264,12 +281,13 @@ with torch.no_grad():
     embeddings = model_output.last_hidden_state.mean(dim=1)
 ```
 
-### Chainlit Frontend Architecture
+### Chainlit Application Architecture
 
-**Recommended Pattern**: Chainlit Frontend + FastAPI Backend
-- Chainlit handles UI and conversation flow
-- FastAPI manages business logic, data processing, and external APIs
-- Better separation of concerns with API communication
+**Recommended Pattern**: Integrated Chainlit Application
+- Chainlit handles UI, conversation flow, and user interaction
+- FastAPI services manage business logic, data processing, and external APIs
+- Single codebase with clear separation between presentation and business logic
+- Simplified deployment and development workflow
 
 ### RRF Implementation with Qwen3-Embedding-0.6B
 

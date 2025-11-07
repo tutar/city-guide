@@ -11,12 +11,12 @@ Build an AI-powered conversational interface for Shenzhen government services us
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+ for backend, Node.js 18+ for frontend
+**Language/Version**: Python 3.12+ for application (Python 3.11+ EoL), Node.js v22+ for tooling (Node.js 18+ EoL)
 **Primary Dependencies**: FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client
 **Storage**: PostgreSQL for metadata, Milvus for vectors, Redis for caching
-**Testing**: pytest for backend, Jest for frontend, contract testing
-**Target Platform**: Linux server for backend, web browser for frontend
-**Project Type**: web application (frontend + backend)
+**Testing**: pytest for backend, Chainlit testing utilities
+**Target Platform**: Linux server for backend, web browser for Chainlit interface
+**Project Type**: single project with integrated Chainlit frontend
 **Performance Goals**: <2s AI response time, <1s search latency, 100+ concurrent users
 **Constraints**: <200ms p95 for search, <100MB memory per embedding model instance, Chinese language optimization
 **Scale/Scope**: 10k government service documents, 50+ service categories, multi-language support
@@ -25,7 +25,20 @@ Build an AI-powered conversational interface for Shenzhen government services us
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+✅ **Code Quality Standards**: Test-first development, comprehensive documentation, modular design
+✅ **Test-First Development**: TDD approach with >90% test coverage for critical paths
+✅ **User Experience Consistency**: Chainlit provides consistent conversational interface
+✅ **Performance & Scalability**: <2s response time targets, 100+ concurrent users
+✅ **Security & Data Integrity**: External API validation, data verification, source attribution
+✅ **Modern Technology Stack**: Python 3.12+ and Node.js v22+ ensure long-term support and security
+
+**POST-DESIGN RE-EVALUATION**:
+✅ **Updated Runtime Versions**: Python 3.12+ and Node.js v22+ address EoL concerns and provide security compliance
+✅ **Simplified Architecture**: Single project structure reduces complexity while maintaining separation of concerns
+✅ **Development Efficiency**: Integrated Chainlit frontend eliminates frontend/backend coordination overhead
+✅ **Deployment Simplicity**: Single Docker container deployment reduces operational complexity
+
+**All constitution gates pass** - Architecture aligns with quality standards and constraints
 
 ## Project Structure
 
@@ -44,58 +57,47 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```text
-backend/
-├── src/
-│   ├── models/
-│   │   ├── conversation.py
-│   │   ├── services.py
-│   │   └── embeddings.py
-│   ├── services/
-│   │   ├── search_service.py
-│   │   ├── embedding_service.py
-│   │   ├── ai_service.py
-│   │   └── data_service.py
-│   ├── api/
-│   │   ├── conversation.py
-│   │   ├── services.py
-│   │   └── search.py
+src/
+├── models/
+│   ├── conversation.py
+│   ├── services.py
+│   └── embeddings.py
+├── services/
+│   ├── search_service.py
+│   ├── embedding_service.py
+│   ├── ai_service.py
+│   └── data_service.py
+├── api/
+│   ├── conversation.py
+│   ├── services.py
+│   └── search.py
+├── chainlit/
+│   ├── app.py
+│   ├── components/
+│   │   ├── chat_interface.py
+│   │   ├── service_navigation.py
+│   │   └── search_results.py
 │   └── utils/
 │       ├── config.py
 │       ├── logging.py
 │       └── validation.py
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── contract/
-└── scripts/
-    ├── setup_database.py
-    ├── setup_vector_db.py
-    └── data_ingestion.py
+└── utils/
+    ├── config.py
+    ├── logging.py
+    └── validation.py
 
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── ChatInterface/
-│   │   ├── ServiceNavigation/
-│   │   └── SearchResults/
-│   ├── pages/
-│   │   ├── Home/
-│   │   ├── Services/
-│   │   └── Conversation/
-│   ├── services/
-│   │   ├── api.js
-│   │   ├── conversation.js
-│   │   └── search.js
-│   └── utils/
-│       ├── constants.js
-│       └── helpers.js
-└── tests/
-    ├── unit/
-    ├── integration/
-    └── e2e/
+tests/
+├── unit/
+├── integration/
+└── contract/
+
+scripts/
+├── setup_database.py
+├── setup_vector_db.py
+└── data_ingestion.py
 ```
 
-**Structure Decision**: Web application structure selected with separate backend (FastAPI) and frontend (Chainlit) components. This provides clear separation of concerns, enables independent development and deployment, and supports the conversational AI focus with Chainlit's specialized capabilities.
+**Structure Decision**: Single project structure selected with integrated Chainlit frontend. This simplifies deployment and development while maintaining clear separation between business logic (services), data models, API endpoints, and the Chainlit conversational interface. The structure supports the conversational AI focus with Chainlit's specialized capabilities while keeping all code in a single codebase with modern Python 3.12+ and Node.js v22+ tooling.
 
 ## Complexity Tracking
 

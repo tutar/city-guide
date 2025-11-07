@@ -10,8 +10,8 @@ The City Guide Smart Assistant is an AI-powered conversational interface that pr
 ## Prerequisites
 
 ### Development Environment
-- Python 3.11+ for backend
-- Node.js 18+ for frontend
+- Python 3.12+ for application (Python 3.11+ EoL)
+- Node.js v22+ for tooling (Node.js 18+ EoL)
 - PostgreSQL 14+ for database
 - Redis 6+ for caching
 
@@ -21,11 +21,10 @@ The City Guide Smart Assistant is an AI-powered conversational interface that pr
 
 ## Getting Started
 
-### 1. Backend Setup
+### 1. Application Setup
 
 ```bash
-# Clone and setup backend
-cd backend
+# Clone and setup application
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
@@ -49,38 +48,20 @@ python -m scripts.setup_database
 # Vector database setup
 python -m scripts.setup_vector_db
 
-# Run development server
-uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+# Run Chainlit application
+chainlit run src/chainlit/app.py
 ```
 
-### 2. Frontend Setup
+### 2. Verify Setup
 
-```bash
-# Clone and setup frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Environment configuration
-cp .env.example .env.local
-# Edit .env.local with your settings:
-# - REACT_APP_API_BASE_URL=http://localhost:8000/v1
-
-# Run development server
-npm start
-```
-
-### 3. Verify Setup
-
-1. **Backend Health Check**:
+1. **Application Health Check**:
    ```bash
-   curl http://localhost:8000/v1/health
+   curl http://localhost:8000/health
    # Should return: {"status": "healthy", "version": "1.0.0"}
    ```
 
-2. **Frontend Access**:
-   - Open http://localhost:3000 in your browser
+2. **Chainlit Interface Access**:
+   - Open http://localhost:8000 in your browser
    - You should see the City Guide Smart Assistant interface
 
 ## Core Features
@@ -133,11 +114,10 @@ results = response.json()["results"]
 
 ## Development Workflow
 
-### Backend Development
+### Application Development
 
 1. **Run Tests**:
    ```bash
-   cd backend
    pytest tests/unit/
    pytest tests/integration/
    pytest tests/contract/
@@ -153,23 +133,15 @@ results = response.json()["results"]
    python -m alembic upgrade head
    ```
 
-### Frontend Development
-
-1. **Run Tests**:
+4. **Chainlit Development**:
    ```bash
-   cd frontend
-   npm test
-   npm run test:e2e
-   ```
-
-2. **Build for Production**:
-   ```bash
-   npm run build
+   # Run in development mode with hot reload
+   chainlit run src/chainlit/app.py --watch
    ```
 
 ## Configuration
 
-### Backend Environment Variables
+### Application Environment Variables
 
 ```bash
 # Database
@@ -191,22 +163,15 @@ JWT_ALGORITHM=HS256
 # External APIs
 GOVERNMENT_API_BASE_URL=https://api.shenzhen.gov.cn
 GOVERNMENT_API_KEY=your_government_key
-```
 
-### Frontend Environment Variables
-
-```bash
-# API Configuration
-REACT_APP_API_BASE_URL=http://localhost:8000/v1
-
-# Feature Flags
-REACT_APP_ENABLE_ANALYTICS=false
-REACT_APP_ENABLE_OFFLINE_MODE=true
+# Chainlit Configuration
+CHAINLIT_HOST=0.0.0.0
+CHAINLIT_PORT=8000
 ```
 
 ## Testing
 
-### Backend Testing Strategy
+### Application Testing Strategy
 
 ```bash
 # Unit tests
@@ -221,82 +186,44 @@ pytest tests/contract/
 # Performance tests
 pytest tests/performance/
 
+# Chainlit UI tests
+pytest tests/chainlit/
+
 # All tests with coverage
 pytest --cov=src --cov-report=html
 ```
 
-### Frontend Testing Strategy
-
-```bash
-# Unit tests
-npm test
-
-# Integration tests
-npm run test:integration
-
-# E2E tests
-npm run test:e2e
-
-# Accessibility tests
-npm run test:a11y
-```
-
 ## Deployment
 
-### Backend Deployment
+### Application Deployment
 
 1. **Build Docker Image**:
    ```dockerfile
-   FROM python:3.11-slim
+   FROM python:3.12-slim
    WORKDIR /app
    COPY requirements.txt .
    RUN pip install -r requirements.txt
    COPY . .
-   CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+   CMD ["chainlit", "run", "src/chainlit/app.py", "--host", "0.0.0.0", "--port", "8000"]
    ```
 
 2. **Deploy to Production**:
    ```bash
-   docker build -t cityguide-backend .
-   docker run -p 8000:8000 --env-file .env cityguide-backend
-   ```
-
-### Frontend Deployment
-
-1. **Build for Production**:
-   ```bash
-   npm run build
-   ```
-
-2. **Serve with Nginx**:
-   ```nginx
-   server {
-       listen 80;
-       server_name cityguide.example.com;
-       root /var/www/cityguide-frontend/build;
-       index index.html;
-
-       location / {
-           try_files $uri $uri/ /index.html;
-       }
-   }
+   docker build -t cityguide-app .
+   docker run -p 8000:8000 --env-file .env cityguide-app
    ```
 
 ## Monitoring & Observability
 
-### Backend Metrics
+### Application Metrics
 
 - Response time metrics
 - Error rate monitoring
 - Database connection pool status
 - External API health checks
-
-### Frontend Metrics
-
-- Page load performance
-- User interaction analytics
-- Error tracking
-- Accessibility compliance
+- Chainlit conversation analytics
+- User interaction patterns
+- Search performance metrics
 
 ## Troubleshooting
 
@@ -337,8 +264,8 @@ REACT_APP_DEBUG=true
 
 ## Support
 
-- **Backend Issues**: Check backend logs at `/var/log/cityguide/backend.log`
-- **Frontend Issues**: Check browser developer console
+- **Application Issues**: Check application logs at `/var/log/cityguide/app.log`
+- **Chainlit Issues**: Check browser developer console
 - **API Issues**: Review API documentation at `/docs` endpoint
 - **Database Issues**: Check PostgreSQL logs
 

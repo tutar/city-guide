@@ -3,7 +3,7 @@
 **Feature**: City Guide Smart Assistant
 **Branch**: `001-city-guide-assistant`
 **Generated**: 2025-11-07
-**Total Tasks**: 48
+**Total Tasks**: 68
 
 ## Implementation Strategy
 
@@ -27,36 +27,40 @@ Phase 2: Foundational
 └── T014-T015: Search infrastructure
 
 Phase 3: User Story 1 (P1)
-├── T016-T018: Service data
-├── T019-T021: Conversation flow
-├── T022-T024: Navigation system
-└── T025-T027: Integration
+├── T016-T018: Test creation (TDD)
+├── T019-T021: Service data
+├── T022-T025: Conversation flow
+├── T026-T028: Accessibility testing
+├── T029-T031: Navigation system
+└── T032-T034: Integration
 
 Phase 4: User Story 2 (P2)
-├── T028-T030: Complex service handling
-├── T031-T033: Explanations
-└── T034-T035: Location services
+├── T035-T037: Complex service handling
+├── T038-T040: Explanations
+└── T041-T042: Location services
 
 Phase 5: User Story 3 (P3)
-├── T036-T038: Dynamic navigation
-├── T039-T041: Context management
-└── T042-T043: Related services
+├── T043-T045: Dynamic navigation
+├── T046-T048: Context management
+└── T049-T050: Related services
 
 Phase 6: Polish
-├── T044-T046: Performance & monitoring
-└── T047-T048: Documentation & deployment
+├── T051-T057: Success criteria measurement
+├── T058-T060: Performance & monitoring
+└── T061-T062: Documentation & deployment
 ```
 
 ## Parallel Execution Examples
 
 **After Phase 2 completion**:
-- User Story 1 (T016-T027) and User Story 2 (T028-T035) can be developed in parallel
-- User Story 3 (T036-T043) can start once User Story 1 navigation patterns are established
+- User Story 1 (T016-T034) and User Story 2 (T035-T042) can be developed in parallel
+- User Story 3 (T043-T050) can start once User Story 1 navigation patterns are established
 
 **Within each story**:
-- Model creation (T016, T028, T036) can run in parallel
-- Service implementation (T017, T029, T037) can run in parallel
-- API endpoints (T018, T030, T038) can run in parallel
+- Test creation (T016-T018, T035-T037, T043-T045) can run in parallel
+- Model creation (T019, T035, T043) can run in parallel
+- Service implementation (T020, T036, T044) can run in parallel
+- API endpoints (T021, T037, T045) can run in parallel
 
 ---
 
@@ -101,84 +105,119 @@ Phase 6: Polish
 
 **Independent Test Criteria**: Can simulate conversation about Hong Kong/Macau passport requirements and verify system provides accurate step-by-step guidance with contextual navigation options
 
+### Test Creation (TDD)
+
+- [ ] T016 [US1] Create acceptance tests for passport guidance conversation flow in tests/integration/test_passport_guidance.py
+- [ ] T017 [US1] Create unit tests for ServiceCategory model and validation in tests/unit/test_services.py
+- [ ] T018 [US1] Create integration tests for conversation context management in tests/integration/test_conversation_context.py
+
 ### Service Data Setup
 
-- [ ] T016 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/data_ingestion.py
-- [ ] T017 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/data_ingestion.py
-- [ ] T018 [P] [US1] Create sample passport document embeddings for search in scripts/data_ingestion.py
+- [ ] T019 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/data_ingestion.py
+- [ ] T020 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/data_ingestion.py
+- [ ] T021 [P] [US1] Create sample passport document embeddings for search in scripts/data_ingestion.py
 
 ### Conversation Flow
 
-- [ ] T019 [US1] Implement conversation start endpoint with service context in src/api/conversation.py
-- [ ] T020 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
-- [ ] T021 [US1] Implement conversation history management in src/services/data_service.py
+- [ ] T022 [US1] Create unit tests for Deepseek API integration in tests/unit/test_ai_service.py
+- [ ] T023 [US1] Implement conversation start endpoint with service context in src/api/conversation.py
+- [ ] T024 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
+- [ ] T025 [US1] Implement conversation history management in src/services/data_service.py
+
+### Accessibility Testing
+
+- [ ] T026 [US1] Create accessibility tests for Chainlit interface components in tests/accessibility/test_chainlit_accessibility.py
+- [ ] T027 [US1] Implement keyboard navigation support for service navigation in src/chainlit/components/service_navigation.py
+- [ ] T028 [US1] Add screen reader compatibility for conversation interface in src/chainlit/components/chat_interface.py
 
 ### Navigation System
 
-- [ ] T022 [US1] Create dynamic navigation option generation based on conversation context in src/services/search_service.py
-- [ ] T023 [US1] Implement navigation option filtering by service category in src/services/data_service.py
-- [ ] T024 [US1] Add external URL handling for appointment systems in src/utils/validation.py
+- [ ] T029 [US1] Create dynamic navigation option generation based on conversation context in src/services/search_service.py
+- [ ] T030 [US1] Implement navigation option filtering by service category in src/services/data_service.py
+- [ ] T031 [US1] Add external URL handling for appointment systems in src/utils/validation.py
 
 ### Integration
 
-- [ ] T025 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
-- [ ] T026 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
-- [ ] T027 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
+- [ ] T032 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
+- [ ] T033 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
+- [ ] T034 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
 
 ## Phase 4: User Story 2 - Navigate Complex Government Services (P2)
 
 **Independent Test Criteria**: Can ask about complex government procedures and verify system provides clear explanations of technical terms and requirements
 
+### Test Creation (TDD)
+
+- [ ] T035 [US2] Create acceptance tests for complex service explanation scenarios in tests/integration/test_complex_services.py
+- [ ] T036 [US2] Create unit tests for technical term explanation service in tests/unit/test_ai_service.py
+- [ ] T037 [US2] Create integration tests for location-based service filtering in tests/integration/test_location_services.py
+
 ### Complex Service Handling
 
-- [ ] T028 [P] [US2] Create additional service categories (visas, permits, registrations) in scripts/data_ingestion.py
-- [ ] T029 [P] [US2] Implement technical term explanation service in src/services/ai_service.py
-- [ ] T030 [P] [US2] Add fee structure information handling in src/models/services.py
+- [ ] T038 [P] [US2] Create additional service categories (visas, permits, registrations) in scripts/data_ingestion.py
+- [ ] T039 [P] [US2] Implement technical term explanation service in src/services/ai_service.py
+- [ ] T040 [P] [US2] Add fee structure information handling in src/models/services.py
 
 ### Explanations
 
-- [ ] T031 [US2] Create explanation generation for complex procedures in src/services/ai_service.py
-- [ ] T032 [US2] Implement context-aware explanation selection in src/services/search_service.py
-- [ ] T033 [US2] Add explanation quality validation in src/utils/validation.py
+- [ ] T041 [US2] Create explanation generation for complex procedures in src/services/ai_service.py
+- [ ] T042 [US2] Implement context-aware explanation selection in src/services/search_service.py
+- [ ] T043 [US2] Add explanation quality validation in src/utils/validation.py
 
 ### Location Services
 
-- [ ] T034 [US2] Implement location-based service filtering in src/services/search_service.py
-- [ ] T035 [US2] Add map integration for service locations in src/chainlit/components/service_navigation.py
+- [ ] T044 [US2] Implement location-based service filtering in src/services/search_service.py
+- [ ] T045 [US2] Add map integration for service locations in src/chainlit/components/service_navigation.py
 
 ## Phase 5: User Story 3 - Dynamic Contextual Navigation (P3)
 
 **Independent Test Criteria**: Can navigate through different service categories and verify navigation options adapt contextually to current conversation
 
+### Test Creation (TDD)
+
+- [ ] T046 [US3] Create acceptance tests for dynamic navigation scenarios in tests/integration/test_dynamic_navigation.py
+- [ ] T047 [US3] Create unit tests for context-aware navigation generation in tests/unit/test_search_service.py
+- [ ] T048 [US3] Create integration tests for service relationship mapping in tests/integration/test_service_relationships.py
+
 ### Dynamic Navigation
 
-- [ ] T036 [P] [US3] Implement context-aware navigation option generation in src/services/search_service.py
-- [ ] T037 [P] [US3] Create navigation option prioritization based on conversation history in src/services/data_service.py
-- [ ] T038 [P] [US3] Add main menu navigation with service categories in src/chainlit/components/service_navigation.py
+- [ ] T049 [P] [US3] Implement context-aware navigation option generation in src/services/search_service.py
+- [ ] T050 [P] [US3] Create navigation option prioritization based on conversation history in src/services/data_service.py
+- [ ] T051 [P] [US3] Add main menu navigation with service categories in src/chainlit/components/service_navigation.py
 
 ### Context Management
 
-- [ ] T039 [US3] Enhance conversation context with service relationship tracking in src/models/conversation.py
-- [ ] T040 [US3] Implement related service suggestion algorithm in src/services/search_service.py
-- [ ] T041 [US3] Add context persistence across conversation turns in src/services/data_service.py
+- [ ] T052 [US3] Enhance conversation context with service relationship tracking in src/models/conversation.py
+- [ ] T053 [US3] Implement related service suggestion algorithm in src/services/search_service.py
+- [ ] T054 [US3] Add context persistence across conversation turns in src/services/data_service.py
 
 ### Related Services
 
-- [ ] T042 [US3] Create service relationship mapping in scripts/data_ingestion.py
-- [ ] T043 [US3] Implement cross-service navigation flow in src/chainlit/components/service_navigation.py
+- [ ] T055 [US3] Create service relationship mapping in scripts/data_ingestion.py
+- [ ] T056 [US3] Implement cross-service navigation flow in src/chainlit/components/service_navigation.py
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
+### Success Criteria Measurement
+
+- [ ] T057 Implement user journey timing analytics for SC-001 (3-minute completion) in src/services/analytics_service.py
+- [ ] T058 Create accuracy verification system for SC-002 (99% accuracy) in src/utils/validation.py
+- [ ] T059 Add user success rate tracking for SC-003 (90% first-attempt success) in src/services/data_service.py
+- [ ] T060 Implement navigation option analytics for SC-004 (70% click rate) in src/chainlit/components/service_navigation.py
+- [ ] T061 Create user satisfaction collection system for SC-005 (4.5/5.0 rating) in src/chainlit/app.py
+- [ ] T062 Add support request reduction tracking for SC-006 (40% reduction) in src/services/analytics_service.py
+- [ ] T063 Implement task completion tracking for SC-007 (85% completion) in src/services/data_service.py
+
 ### Performance & Monitoring
 
-- [ ] T044 Implement search performance monitoring with latency tracking in src/utils/logging.py
-- [ ] T045 Add conversation quality metrics and user feedback in src/services/data_service.py
-- [ ] T046 Set up error handling and fallback mechanisms in src/utils/validation.py
+- [ ] T064 Implement search performance monitoring with latency tracking in src/utils/logging.py
+- [ ] T065 Add conversation quality metrics and user feedback in src/services/data_service.py
+- [ ] T066 Set up error handling and fallback mechanisms in src/utils/validation.py
 
 ### Documentation & Deployment
 
-- [ ] T047 Create API documentation with OpenAPI specifications in docs/api/
-- [ ] T048 Set up deployment configuration with Docker in docker-compose.yml
+- [ ] T067 Create API documentation with OpenAPI specifications in docs/api/
+- [ ] T068 Set up deployment configuration with Docker in docker-compose.yml
 
 ## Implementation Notes
 

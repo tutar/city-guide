@@ -109,8 +109,8 @@ Phase 6: Polish
 ### Test Creation (TDD)
 
 - [X] T016 [US1] Create acceptance tests for passport guidance conversation flow in tests/integration/test_passport_guidance.py
-- [ ] T017 [US1] Create unit tests for ServiceCategory model and validation in tests/unit/test_services.py
-- [ ] T018 [US1] Create integration tests for conversation context management in tests/integration/test_conversation_context.py
+- [X] T017 [US1] Create unit tests for ServiceCategory model and validation in tests/unit/test_services.py
+- [X] T018 [US1] Create integration tests for conversation context management in tests/integration/test_conversation_context.py
 
 ### Service Data Setup
 

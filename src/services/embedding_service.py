@@ -22,7 +22,7 @@ class EmbeddingService:
     """Service for managing vector embeddings and semantic search"""
 
     def __init__(self):
-        self.collection_name = settings.milvus.milvus_collection
+        self.collection_name = settings.milvus.collection
         self.embedding_dimension = settings.ai.embedding_dimension
         self._connect()
         self._setup_collection()
@@ -32,10 +32,10 @@ class EmbeddingService:
         try:
             connections.connect(
                 alias="default",
-                host=settings.milvus.milvus_host,
-                port=settings.milvus.milvus_port
+                host=settings.milvus.host,
+                port=settings.milvus.port
             )
-            logger.info(f"Connected to Milvus at {settings.milvus.milvus_host}:{settings.milvus.milvus_port}")
+            logger.info(f"Connected to Milvus at {settings.milvus.host}:{settings.milvus.port}")
         except Exception as e:
             logger.error(f"Failed to connect to Milvus: {e}")
             raise

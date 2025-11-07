@@ -4,58 +4,69 @@ Configuration management for City Guide Smart Assistant
 
 import os
 from typing import Optional
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseSettings):
     """Database configuration settings"""
 
-    postgres_host: str = Field(default="localhost", env="POSTGRES_HOST")
-    postgres_port: int = Field(default=5432, env="POSTGRES_PORT")
-    postgres_db: str = Field(default="city_guide", env="POSTGRES_DB")
-    postgres_user: str = Field(default="postgres", env="POSTGRES_USER")
-    postgres_password: str = Field(default="password", env="POSTGRES_PASSWORD")
+    model_config = SettingsConfigDict(env_prefix="POSTGRES_")
+
+    host: str = Field(default="localhost")
+    port: int = Field(default=5432)
+    db: str = Field(default="city_guide")
+    user: str = Field(default="postgres")
+    password: str = Field(default="password")
 
     @property
     def database_url(self) -> str:
         """Generate PostgreSQL connection URL"""
         return (
-            f"postgresql://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+            f"postgresql://{self.user}:{self.password}"
+            f"@{self.host}:{self.port}/{self.db}"
         )
 
 
 class MilvusSettings(BaseSettings):
     """Milvus vector database configuration"""
 
-    milvus_host: str = Field(default="localhost", env="MILVUS_HOST")
-    milvus_port: int = Field(default=19530, env="MILVUS_PORT")
-    milvus_collection: str = Field(default="document_embeddings", env="MILVUS_COLLECTION")
+    model_config = SettingsConfigDict(env_prefix="MILVUS_")
+
+    host: str = Field(default="localhost")
+    port: int = Field(default=19530)
+    collection: str = Field(default="document_embeddings")
 
 
 class AISettings(BaseSettings):
     """AI service configuration"""
 
-    deepseek_api_key: str = Field(..., env="DEEPSEEK_API_KEY")
-    deepseek_base_url: str = Field(default="https://api.deepseek.com", env="DEEPSEEK_BASE_URL")
-    max_tokens: int = Field(default=1000, env="MAX_TOKENS")
-    temperature: float = Field(default=0.7, env="TEMPERATURE")
+    model_config = SettingsConfigDict(env_prefix="")
+
+    deepseek_api_key: str = Field(default="test-api-key", alias="DEEPSEEK_API_KEY")
+    deepseek_base_url: str = Field(default="https://api.deepseek.com", alias="DEEPSEEK_BASE_URL")
+    max_tokens: int = Field(default=1000, alias="MAX_TOKENS")
+    temperature: float = Field(default=0.7, alias="TEMPERATURE")
 
     # Embedding model settings
-    embedding_model: str = Field(default="Qwen/Qwen3-Embedding-0.6B", env="EMBEDDING_MODEL")
-    embedding_dimension: int = Field(default=1024, env="EMBEDDING_DIMENSION")
+    embedding_model: str = Field(default="Qwen/Qwen3-Embedding-0.6B", alias="EMBEDDING_MODEL")
+    embedding_dimension: int = Field(default=1024, alias="EMBEDDING_DIMENSION")
 
 
 class ChainlitSettings(BaseSettings):
     """Chainlit frontend configuration"""
 
-    chainlit_host: str = Field(default="0.0.0.0", env="CHAINLIT_HOST")
-    chainlit_port: int = Field(default=8000, env="CHAINLIT_PORT")
-    debug_mode: bool = Field(default=False, env="DEBUG_MODE")
+    model_config = SettingsConfigDict(env_prefix="CHAINLIT_")
+
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(default=8000)
+    debug_mode: bool = Field(default=False)
 
 
 class Settings(BaseSettings):
     """Main application settings"""
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     app_name: str = "City Guide Smart Assistant"
     app_version: str = "1.0.0"
@@ -67,12 +78,8 @@ class Settings(BaseSettings):
     chainlit: ChainlitSettings = ChainlitSettings()
 
     # Performance settings
-    search_timeout: int = Field(default=5, env="SEARCH_TIMEOUT")
-    conversation_timeout: int = Field(default=1800, env="CONVERSATION_TIMEOUT")  # 30 minutes
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    search_timeout: int = Field(default=5, alias="SEARCH_TIMEOUT")
+    conversation_timeout: int = Field(default=1800, alias="CONVERSATION_TIMEOUT")  # 30 minutes
 
 
 # Global settings instance

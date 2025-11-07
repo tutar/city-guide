@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: City Guide Smart Assistant - Services API
+  description: API for managing government service categories and information
+  version: 1.0.0
+
+paths:
+  /services:
+    get:
+      summary: List all service categories
+      description: Retrieve all available government service categories
+      tags:
+        - Services
+      parameters:
+        - name: is_active
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Filter by active status
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of services to return
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Pagination offset
+      responses:
+        '200':
+          description: Service categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceCategory'
+                  total_count:
+                    type: integer
+                  has_more:
+                    type: boolean
+
+  /services/{service_id}:
+    get:
+      summary: Get service category details
+      description: Retrieve detailed information about a specific service category
+      tags:
+        - Services
+      parameters:
+        - name: service_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Service category details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategoryDetail'
+        '404':
+          description: Service category not found
+
+  /services/{service_id}/navigation:
+    get:
+      summary: Get navigation options for service
+      description: Retrieve available navigation options for a specific service category
+      tags:
+        - Services
+      parameters:
+        - name: service_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Navigation options retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    $ref: '#/components/schemas/ServiceCategory'
+                  navigation_options:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NavigationOption'
+        '404':
+          description: Service category not found
+
+  /services/search:
+    get:
+      summary: Search service categories
+      description: Search service categories using hybrid search (vector + keyword)
+      tags:
+        - Services
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          description: Search query
+        - name: search_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [hybrid, vector, keyword]
+            default: hybrid
+          description: Search strategy to use
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceCategory'
+                  total_matches:
+                    type: integer
+                  search_metadata:
+                    type: object
+                    properties:
+                      search_type:
+                        type: string
+                      vector_results_count:
+                        type: integer
+                      keyword_results_count:
+                        type: integer
+                      hybrid_score:
+                        type: number
+
+components:
+  schemas:
+    ServiceCategoryDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        detailed_description:
+          type: string
+        official_source_url:
+          type: string
+        last_verified:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        navigation_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationOption'
+        official_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficialSource'
+        common_questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommonQuestion'
+        related_services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceCategory'
+
+    OfficialSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        base_url:
+          type: string
+        api_endpoint:
+          type: string
+          nullable: true
+        last_checked:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, inactive, error]
+
+    CommonQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        answer:
+          type: string
+        last_verified:
+          type: string
+          format: date-time
+
+    NavigationOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        action_type:
+          type: string
+          enum: [explain, requirements, appointment, location, related]
+        target_url:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    ServiceCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        official_source_url:
+          type: string
+        last_verified:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean

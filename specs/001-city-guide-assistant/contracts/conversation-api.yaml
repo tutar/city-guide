@@ -1,0 +1,376 @@
+openapi: 3.0.3
+info:
+  title: City Guide Smart Assistant - Conversation API
+  description: API for managing conversational interactions with the government service assistant
+  version: 1.0.0
+  contact:
+    name: Development Team
+    email: dev@cityguide.example.com
+
+servers:
+  - url: https://api.cityguide.example.com/v1
+    description: Production server
+  - url: http://localhost:8000/v1
+    description: Development server
+
+paths:
+  /conversation/start:
+    post:
+      summary: Start a new conversation
+      description: Initialize a new conversation session with optional service category
+      tags:
+        - Conversation
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_category_id:
+                  type: string
+                  format: uuid
+                  description: Optional initial service category
+                user_preferences:
+                  type: object
+                  properties:
+                    language:
+                      type: string
+                      enum: [zh-CN, en-US]
+                      default: zh-CN
+                    location:
+                      type: string
+                      description: User's location for context
+              example:
+                service_category_id: "123e4567-e89b-12d3-a456-426614174000"
+                user_preferences:
+                  language: "zh-CN"
+                  location: "Shenzhen"
+      responses:
+        '201':
+          description: Conversation started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '400':
+          description: Invalid request
+        '404':
+          description: Service category not found
+
+  /conversation/{session_id}/message:
+    post:
+      summary: Send a message in conversation
+      description: Process user message using Deepseek API with hybrid search and return AI response with navigation options
+      tags:
+        - Conversation
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: User's message text
+                  minLength: 1
+                  maxLength: 1000
+                search_type:
+                  type: string
+                  enum: [hybrid, vector, keyword]
+                  default: hybrid
+                  description: Search strategy to use
+              example:
+                message: "How do I get a Hong Kong passport?"
+                search_type: "hybrid"
+      responses:
+        '200':
+          description: Message processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '400':
+          description: Invalid message or session
+        '404':
+          description: Conversation session not found
+
+  /conversation/{session_id}:
+    get:
+      summary: Get conversation context
+      description: Retrieve current conversation state and history
+      tags:
+        - Conversation
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation context retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationContext'
+        '404':
+          description: Conversation session not found
+
+  /search:
+    post:
+      summary: Perform hybrid search
+      description: Execute hybrid search combining vector and keyword retrieval for government service information
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  description: Search query text
+                  minLength: 1
+                  maxLength: 500
+                search_type:
+                  type: string
+                  enum: [hybrid, vector, keyword]
+                  default: hybrid
+                top_k:
+                  type: integer
+                  minimum: 1
+                  maximum: 50
+                  default: 10
+                  description: Number of results to return
+                include_sources:
+                  type: boolean
+                  default: true
+                  description: Include source document information
+              example:
+                query: "passport application requirements"
+                search_type: "hybrid"
+                top_k: 10
+                include_sources: true
+      responses:
+        '200':
+          description: Search results retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchResult'
+                  search_metadata:
+                    $ref: '#/components/schemas/SearchMetadata'
+        '400':
+          description: Invalid search parameters
+
+components:
+  schemas:
+    ConversationResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Conversation session identifier
+        ai_response:
+          type: string
+          description: AI-generated response to user message
+        navigation_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationOption'
+        current_service_category:
+          $ref: '#/components/schemas/ServiceCategory'
+          nullable: true
+        conversation_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+
+    ConversationContext:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        user_session_id:
+          type: string
+        current_service_category:
+          $ref: '#/components/schemas/ServiceCategory'
+          nullable: true
+        conversation_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+        navigation_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationOption'
+        user_preferences:
+          type: object
+          properties:
+            language:
+              type: string
+            location:
+              type: string
+              nullable: true
+        created_at:
+          type: string
+          format: date-time
+        last_activity:
+          type: string
+          format: date-time
+
+    ConversationMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    NavigationOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        action_type:
+          type: string
+          enum: [explain, requirements, appointment, location, related]
+        target_url:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+
+    ServiceCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        official_source_url:
+          type: string
+        last_verified:
+          type: string
+          format: date-time
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_title:
+          type: string
+        document_content:
+          type: string
+        source_url:
+          type: string
+        source_priority:
+          type: string
+          enum: [official, auxiliary]
+        similarity_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        keyword_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        hybrid_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
+          additionalProperties: true
+
+    SearchMetadata:
+      type: object
+      properties:
+        query:
+          type: string
+        search_type:
+          type: string
+        total_results:
+          type: integer
+        search_time_ms:
+          type: number
+        vector_results_count:
+          type: integer
+        keyword_results_count:
+          type: integer
+        fusion_method:
+          type: string
+          enum: [reciprocal_rank_fusion, weighted_sum]
+
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    issue:
+                      type: string

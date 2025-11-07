@@ -1,36 +1,40 @@
 # city-guide Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-11-06
+Auto-generated from all feature plans. Last updated: 2025-11-07
 
 ## Active Technologies
-- Python 3.11 (backend), Chainlit (frontend) + FastAPI (backend), Chainlit (frontend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), FlagEmbedding (bge-m3/Qwen3-Embedding-0.6B) (001-city-guide-assistant)
-- PostgreSQL for structured data, Redis for session/cache, Milvus for embeddings (001-city-guide-assistant)
-- Python 3.11+ for backend and Chainlit frontend + FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client (001-city-guide-assistant)
+- Python 3.12+ (backend), Chainlit (frontend) + FastAPI (backend), Chainlit (frontend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), Qwen3-Embedding-0.6B (embeddings) (001-city-guide-assistant)
+- Node.js v22+ for tooling (001-city-guide-assistant)
 - PostgreSQL for metadata, Milvus for vectors, Redis for caching (001-city-guide-assistant)
-- Python 3.12+ for application (Python 3.11+ EoL), Node.js v22+ for tooling (Node.js 18+ EoL) + FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client (001-city-guide-assistant)
-
-- Python 3.11 (backend), TypeScript/React (frontend) + FastAPI (backend), React (frontend), OpenAI API (AI), PostgreSQL (database) (001-city-guide-assistant)
 
 ## Project Structure
 
 ```text
-backend/
-frontend/
+src/
+├── models/
+├── services/
+├── api/
+├── chainlit/
+└── utils/
+
 tests/
+├── unit/
+├── integration/
+└── contract/
+
+scripts/
 ```
 
 ## Commands
 
-cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] pytest [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] ruff check .
+cd src && pytest && ruff check .
 
 ## Code Style
 
-Python 3.11 (backend), TypeScript/React (frontend): Follow standard conventions
+Python 3.12+ (backend), Chainlit (frontend): Follow standard conventions
 
 ## Recent Changes
-- 001-city-guide-assistant: Added Python 3.12+ for application (Python 3.11+ EoL), Node.js v22+ for tooling (Node.js 18+ EoL) + FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client
-- 001-city-guide-assistant: Added Python 3.11+ for backend and Chainlit frontend + FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client
-- 001-city-guide-assistant: Added Python 3.11 (backend), Chainlit (frontend) + FastAPI (backend), Chainlit (frontend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), FlagEmbedding (bge-m3/Qwen3-Embedding-0.6B)
+- 001-city-guide-assistant: Updated to Python 3.12+ (Python 3.11+ EoL), Node.js v22+ (Node.js 18+ EoL) + FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client, Qwen3-Embedding-0.6B
 
 
 <!-- MANUAL ADDITIONS START -->

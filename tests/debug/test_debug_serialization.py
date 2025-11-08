@@ -40,28 +40,28 @@ def test_serialization():
 
     # Try to serialize conversation history
     try:
-        history_json = json.dumps(conversation.conversation_history)
+        json.dumps(conversation.conversation_history)
         print("✓ Conversation history serialized successfully")
     except Exception as e:
         print(f"✗ Failed to serialize conversation history: {e}")
 
     # Try to serialize navigation options
     try:
-        nav_json = json.dumps(conversation.navigation_options)
+        json.dumps(conversation.navigation_options)
         print("✓ Navigation options serialized successfully")
     except Exception as e:
         print(f"✗ Failed to serialize navigation options: {e}")
 
     # Try to serialize user preferences
     try:
-        pref_json = json.dumps(conversation.user_preferences)
+        json.dumps(conversation.user_preferences)
         print("✓ User preferences serialized successfully")
     except Exception as e:
         print(f"✗ Failed to serialize user preferences: {e}")
 
     # Try to serialize the whole conversation
     try:
-        conv_json = json.dumps(conversation.model_dump())
+        json.dumps(conversation.model_dump())
         print("✓ Whole conversation serialized successfully")
     except Exception as e:
         print(f"✗ Failed to serialize whole conversation: {e}")

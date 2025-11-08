@@ -190,8 +190,8 @@ class TestSearchServiceNavigation:
         result = self.search_service.add_external_url_handling(url)
 
         assert result["url"] == url
-        assert result["is_government_url"] == True
-        assert result["requires_validation"] == False
+        assert result["is_government_url"] is True
+        assert result["requires_validation"] is False
         assert result["handling_type"] == "external_redirect"
 
     def test_add_external_url_handling_invalid_url(self):
@@ -209,8 +209,8 @@ class TestSearchServiceNavigation:
         result = self.search_service.add_external_url_handling(url)
 
         assert result["url"] == url
-        assert result["is_government_url"] == False
-        assert result["requires_validation"] == True
+        assert result["is_government_url"] is False
+        assert result["requires_validation"] is True
 
     def test_navigation_option_priority_ordering(self):
         """Test that navigation options are sorted by priority"""

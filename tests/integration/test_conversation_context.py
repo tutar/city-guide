@@ -32,7 +32,7 @@ class TestConversationContextIntegration:
         assert conversation.conversation_history == []
         assert conversation.navigation_options == []
         assert conversation.user_preferences == {}
-        assert conversation.is_active == True
+        assert conversation.is_active is True
         assert isinstance(conversation.id, uuid.UUID)
         assert isinstance(conversation.created_at, datetime)
         assert isinstance(conversation.last_activity, datetime)
@@ -91,28 +91,28 @@ class TestConversationContextIntegration:
 
         # When conversation is active and recently active
         conversation.last_activity = datetime.now(UTC) - timedelta(minutes=10)
-        assert conversation.should_archive() == False
+        assert conversation.should_archive() is False
 
         # When conversation is inactive
         conversation.is_active = False
-        assert conversation.should_archive() == True
+        assert conversation.should_archive() is True
 
         # When conversation is active but inactive for too long
         conversation.is_active = True
         conversation.last_activity = datetime.now(UTC) - timedelta(minutes=35)
-        assert conversation.should_archive() == True
+        assert conversation.should_archive() is True
 
     def test_conversation_completion(self):
         """Test marking conversation as completed"""
         # Given an active conversation
         conversation = ConversationContext(user_session_id="test-session-complete")
-        assert conversation.is_active == True
+        assert conversation.is_active is True
 
         # When marking as completed
         conversation.mark_completed()
 
         # Then should be inactive
-        assert conversation.is_active == False
+        assert conversation.is_active is False
 
     def test_conversation_history_validation(self):
         """Test conversation history size validation"""

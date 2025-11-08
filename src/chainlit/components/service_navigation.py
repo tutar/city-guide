@@ -3,9 +3,10 @@ Service navigation component with keyboard navigation support
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import chainlit as cl
+
 from src.services.data_service import DataService
 
 # Configure logging
@@ -71,7 +72,7 @@ class ServiceNavigation:
 
 Available options:"""
 
-    async def handle_keyboard_navigation(self, key: str) -> Optional[str]:
+    async def handle_keyboard_navigation(self, key: str) -> str | None:
         """Handle keyboard navigation events"""
         if not self.navigation_elements:
             return None
@@ -125,7 +126,7 @@ Available options:"""
         current_element = self.navigation_elements[self.current_focus_index]
         return f"Focused on: {current_element['label']}"
 
-    def get_current_focus(self) -> Optional[dict[str, Any]]:
+    def get_current_focus(self) -> dict[str, Any] | None:
         """Get currently focused navigation element"""
         if not self.navigation_elements or self.current_focus_index >= len(
             self.navigation_elements
@@ -148,41 +149,45 @@ Available options:"""
             if not service_categories:
                 return cl.Message(
                     content="No service categories available at the moment.",
-                    author="System"
+                    author="System",
                 )
 
             # Create navigation options from service categories
             navigation_options = []
             for category in service_categories:
-                navigation_options.append({
-                    "label": category.name,
-                    "description": category.description,
-                    "action_type": "select_service",
-                    "service_category_id": str(category.id),
-                    "priority": 1
-                })
+                navigation_options.append(
+                    {
+                        "label": category.name,
+                        "description": category.description,
+                        "action_type": "select_service",
+                        "service_category_id": str(category.id),
+                        "priority": 1,
+                    }
+                )
 
             # Add general navigation options
-            navigation_options.extend([
-                {
-                    "label": "Search Services",
-                    "description": "Search for specific government services",
-                    "action_type": "search",
-                    "priority": 2
-                },
-                {
-                    "label": "Recent Queries",
-                    "description": "View your recent service queries",
-                    "action_type": "history",
-                    "priority": 3
-                },
-                {
-                    "label": "Help & Support",
-                    "description": "Get help using the assistant",
-                    "action_type": "help",
-                    "priority": 4
-                }
-            ])
+            navigation_options.extend(
+                [
+                    {
+                        "label": "Search Services",
+                        "description": "Search for specific government services",
+                        "action_type": "search",
+                        "priority": 2,
+                    },
+                    {
+                        "label": "Recent Queries",
+                        "description": "View your recent service queries",
+                        "action_type": "history",
+                        "priority": 3,
+                    },
+                    {
+                        "label": "Help & Support",
+                        "description": "Get help using the assistant",
+                        "action_type": "help",
+                        "priority": 4,
+                    },
+                ]
+            )
 
             # Create the navigation menu
             main_menu = await self.create_navigation_menu(navigation_options)
@@ -208,7 +213,7 @@ Available options:"""
             logger.error(f"Failed to create main menu: {e}")
             return cl.Message(
                 content="Unable to load main menu. Please try again later.",
-                author="System"
+                author="System",
             )
 
 
@@ -228,7 +233,7 @@ class KeyboardNavigationManager:
         if component_id in self.components:
             self.active_component = self.components[component_id]
 
-    async def handle_key_event(self, key: str) -> Optional[str]:
+    async def handle_key_event(self, key: str) -> str | None:
         """Handle keyboard event and route to active component"""
         if self.active_component and hasattr(
             self.active_component, "handle_keyboard_navigation"

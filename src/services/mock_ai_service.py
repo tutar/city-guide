@@ -4,7 +4,7 @@ Provides predefined responses for demonstration without external API calls
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from src.utils.config import settings
 
@@ -35,7 +35,7 @@ class MockAIService:
         self,
         user_query: str,
         context_documents: list[dict[str, Any]],
-        conversation_history: Optional[list[dict[str, str]]] = None,
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
         """Generate mock government service guidance"""
         try:

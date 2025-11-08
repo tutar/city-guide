@@ -105,8 +105,6 @@ class TestChainlitAccessibility:
         # And should meet WCAG AAA contrast ratios (7:1 for normal text) where possible
 
         # Mock color values
-        mock_text_color = "#000000"  # Black
-        mock_background_color = "#FFFFFF"  # White
 
         # Calculate contrast ratio (simplified)
         # In practice, this would use a proper contrast calculation algorithm

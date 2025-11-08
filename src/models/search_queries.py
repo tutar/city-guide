@@ -4,7 +4,7 @@ Search query models for City Guide Smart Assistant
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
@@ -32,10 +32,10 @@ class SearchQuery(BaseModel):
     processing_time_ms: int = Field(
         default=0, ge=0, description="Search processing time in milliseconds"
     )
-    user_feedback: Optional[str] = Field(
+    user_feedback: str | None = Field(
         None, description="User feedback on search results"
     )
-    satisfaction_score: Optional[int] = Field(
+    satisfaction_score: int | None = Field(
         None, ge=1, le=5, description="User satisfaction score (1-5)"
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -71,7 +71,7 @@ class SearchQuery(BaseModel):
             "user_satisfaction": self.satisfaction_score is not None,
         }
 
-    def mark_satisfaction(self, score: int, feedback: Optional[str] = None) -> None:
+    def mark_satisfaction(self, score: int, feedback: str | None = None) -> None:
         """Record user satisfaction with search results"""
         if not 1 <= score <= 5:
             raise ValueError("Satisfaction score must be between 1 and 5")
@@ -99,7 +99,7 @@ class SearchAnalytics(BaseModel):
     average_processing_time: float = Field(
         ..., ge=0.0, description="Average processing time in milliseconds"
     )
-    average_satisfaction_score: Optional[float] = Field(
+    average_satisfaction_score: float | None = Field(
         None, ge=1.0, le=5.0, description="Average user satisfaction score"
     )
     top_queries: list[dict[str, Any]] = Field(

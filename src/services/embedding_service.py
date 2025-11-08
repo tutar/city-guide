@@ -5,7 +5,7 @@ Embedding service for City Guide Smart Assistant using Milvus vector database
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pymilvus import (
     Collection,
@@ -121,7 +121,7 @@ class EmbeddingService:
             ]
 
             # Insert into collection
-            result = self.collection.insert(data)
+            self.collection.insert(data)
             self.collection.flush()
 
             logger.info(f"Stored document embedding: {document_embedding.id}")
@@ -135,7 +135,7 @@ class EmbeddingService:
         self,
         query_embedding: list[float],
         limit: int = 10,
-        filter_expression: Optional[str] = None,
+        filter_expression: str | None = None,
     ) -> list[dict[str, Any]]:
         """Search for similar documents using vector similarity"""
         try:
@@ -183,7 +183,7 @@ class EmbeddingService:
             logger.error(f"Failed to search similar documents: {e}")
             raise
 
-    def get_document_by_id(self, document_id: str) -> Optional[dict[str, Any]]:
+    def get_document_by_id(self, document_id: str) -> dict[str, Any] | None:
         """Get document embedding by ID"""
         try:
             self.collection.load()
@@ -223,7 +223,7 @@ class EmbeddingService:
     def delete_document_embedding(self, document_id: str) -> bool:
         """Delete a document embedding by ID"""
         try:
-            result = self.collection.delete(expr=f"id in ['{document_id}']")
+            self.collection.delete(expr=f"id in ['{document_id}']")
             self.collection.flush()
 
             logger.info(f"Deleted document embedding: {document_id}")
@@ -328,7 +328,7 @@ class EmbeddingService:
             ]
 
             # Insert into collection
-            result = self.search_query_collection.insert(data)
+            self.search_query_collection.insert(data)
             self.search_query_collection.flush()
 
             logger.info(f"Stored search query: {search_query.id}")

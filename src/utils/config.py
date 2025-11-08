@@ -2,7 +2,8 @@
 Configuration management for City Guide Smart Assistant
 """
 
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):

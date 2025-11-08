@@ -4,7 +4,6 @@ Service-related data models for City Guide Smart Assistant
 
 import uuid
 from datetime import UTC, datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 from pydantic.networks import HttpUrl
@@ -17,10 +16,10 @@ class ServiceCategory(BaseModel):
     name: str = Field(
         ..., min_length=1, max_length=255, description="Service category name"
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None, description="Brief description of the service"
     )
-    official_source_url: Optional[HttpUrl] = Field(
+    official_source_url: HttpUrl | None = Field(
         None, description="URL to official government information"
     )
     last_verified: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -71,8 +70,8 @@ class NavigationOption(BaseModel):
         ...,
         description="Type of action: explain, requirements, appointment, location, related",
     )
-    target_url: Optional[HttpUrl] = Field(None, description="URL for external actions")
-    description: Optional[str] = Field(
+    target_url: HttpUrl | None = Field(None, description="URL for external actions")
+    description: str | None = Field(
         None, description="Detailed description of what this option provides"
     )
     priority: int = Field(default=5, ge=1, le=10, description="Display order priority")
@@ -118,7 +117,7 @@ class OfficialInformationSource(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: str = Field(..., min_length=1, max_length=255, description="Source name")
     base_url: HttpUrl = Field(..., description="Base URL for the source")
-    api_endpoint: Optional[str] = Field(None, description="API endpoint if available")
+    api_endpoint: str | None = Field(None, description="API endpoint if available")
     update_frequency: str = Field(
         default="weekly",
         description="Update frequency: daily, weekly, monthly, on_change",

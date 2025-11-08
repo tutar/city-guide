@@ -4,14 +4,11 @@ Integration tests for service relationship mapping and cross-service navigation
 
 import uuid
 from datetime import UTC, datetime
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from src.models.conversation_model import ConversationContext, Message
-from src.models.services import ServiceCategory, NavigationOption
+from src.models.services import ServiceCategory
 from src.services.data_service import DataService
-from src.services.search_service import SearchService
 
 
 class TestServiceRelationships:
@@ -21,7 +18,9 @@ class TestServiceRelationships:
         """Test integration of service relationship mapping with conversation context"""
         # Given a conversation about passport services
         with patch("src.services.data_service.DataService") as mock_data_service:
-            with patch("src.services.search_service.SearchService") as mock_search_service:
+            with patch(
+                "src.services.search_service.SearchService"
+            ) as mock_search_service:
                 # Mock service categories with relationships
                 passport_category = ServiceCategory(
                     id=uuid.uuid4(),
@@ -60,11 +59,17 @@ class TestServiceRelationships:
                 )
 
                 # Setup mock data service
-                mock_data_instance = mock_data_service.return_value.__enter__.return_value
-                mock_data_instance.get_conversation_context.return_value = conversation_context
+                mock_data_instance = (
+                    mock_data_service.return_value.__enter__.return_value
+                )
+                mock_data_instance.get_conversation_context.return_value = (
+                    conversation_context
+                )
                 mock_data_instance.get_service_category.return_value = passport_category
                 mock_data_instance.get_all_service_categories.return_value = [
-                    passport_category, visa_category, id_card_category
+                    passport_category,
+                    visa_category,
+                    id_card_category,
                 ]
 
                 # Setup mock search service for related services
@@ -74,20 +79,24 @@ class TestServiceRelationships:
                         "name": "Hong Kong Visa Services",
                         "description": "Visa application and extension services",
                         "relevance_score": 0.8,
-                        "reason": "Often needed together for international travel"
+                        "reason": "Often needed together for international travel",
                     },
                     {
                         "name": "Hong Kong ID Card Services",
                         "description": "ID card application and renewal",
                         "relevance_score": 0.6,
-                        "reason": "Common identification document"
-                    }
+                        "reason": "Common identification document",
+                    },
                 ]
 
                 # When getting related services
                 with DataService() as data_service:
-                    current_context = data_service.get_conversation_context("test-session-123")
-                    current_category = data_service.get_service_category(current_context.current_service_category_id)
+                    current_context = data_service.get_conversation_context(
+                        "test-session-123"
+                    )
+                    current_category = data_service.get_service_category(
+                        current_context.current_service_category_id
+                    )
                     all_categories = data_service.get_all_service_categories()
 
                 related_services = mock_search_instance.get_related_services(
@@ -102,7 +111,9 @@ class TestServiceRelationships:
                 assert related_services[1]["relevance_score"] == 0.6
 
                 # Verify conversation context is maintained
-                assert current_context.current_service_category_id == passport_category.id
+                assert (
+                    current_context.current_service_category_id == passport_category.id
+                )
                 assert len(all_categories) == 3
 
     def test_cross_service_navigation_flow_integration(self):
@@ -143,16 +154,20 @@ class TestServiceRelationships:
                         "label": "Related: Visa Services",
                         "action_type": "navigate_service",
                         "target_service_id": str(visa_category.id),
-                        "priority": 2
+                        "priority": 2,
                     }
-                ]
+                ],
             )
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_conversation_context.return_value = conversation_context
+            mock_data_instance.get_conversation_context.return_value = (
+                conversation_context
+            )
             mock_data_instance.get_service_category.return_value = visa_category
-            mock_data_instance.update_conversation_context.return_value = conversation_context
+            mock_data_instance.update_conversation_context.return_value = (
+                conversation_context
+            )
 
             # When user navigates to related service
             with DataService() as data_service:
@@ -160,7 +175,9 @@ class TestServiceRelationships:
 
                 # Simulate user selecting related service
                 related_service_id = context.navigation_options[0]["target_service_id"]
-                new_category = data_service.get_service_category(uuid.UUID(related_service_id))
+                new_category = data_service.get_service_category(
+                    uuid.UUID(related_service_id)
+                )
 
                 # Update context with new service category
                 context.current_service_category_id = new_category.id
@@ -172,7 +189,10 @@ class TestServiceRelationships:
 
             # Verify navigation history is maintained
             assert len(updated_context.conversation_history) == 2
-            assert updated_context.navigation_options[0]["label"] == "Related: Visa Services"
+            assert (
+                updated_context.navigation_options[0]["label"]
+                == "Related: Visa Services"
+            )
 
     def test_service_relationship_context_persistence(self):
         """Test that service relationships persist across conversation turns"""
@@ -203,48 +223,57 @@ class TestServiceRelationships:
                     {
                         "label": "Passport Requirements",
                         "action_type": "requirements",
-                        "priority": 1
+                        "priority": 1,
                     },
                     {
                         "label": "Related: Visa Services",
                         "action_type": "navigate_service",
-                        "priority": 2
-                    }
-                ]
+                        "priority": 2,
+                    },
+                ],
             )
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_conversation_context.return_value = conversation_context
-            mock_data_instance.update_conversation_context.return_value = conversation_context
+            mock_data_instance.get_conversation_context.return_value = (
+                conversation_context
+            )
+            mock_data_instance.update_conversation_context.return_value = (
+                conversation_context
+            )
 
             # When adding new message about related service
             with DataService() as data_service:
                 context = data_service.get_conversation_context("test-session-123")
 
                 # Add new message about visa services
-                context.add_message(
-                    role="user",
-                    content="visa application process"
-                )
+                context.add_message(role="user", content="visa application process")
 
                 # Update context
                 updated_context = data_service.update_conversation_context(context)
 
             # Then context should persist with new message and maintain relationships
             assert len(updated_context.conversation_history) == 4
-            assert updated_context.conversation_history[3].content == "visa application process"
+            assert (
+                updated_context.conversation_history[3].content
+                == "visa application process"
+            )
             assert updated_context.conversation_history[3].role == "user"
 
             # Verify navigation options still include related services
             assert len(updated_context.navigation_options) == 2
-            assert any("Related: Visa Services" in opt["label"] for opt in updated_context.navigation_options)
+            assert any(
+                "Related: Visa Services" in opt["label"]
+                for opt in updated_context.navigation_options
+            )
 
     def test_service_relationship_analytics_integration(self):
         """Test integration of service relationship analytics"""
         # Given multiple service interactions
         with patch("src.services.data_service.DataService") as mock_data_service:
-            with patch("src.services.search_service.SearchService") as mock_search_service:
+            with patch(
+                "src.services.search_service.SearchService"
+            ) as mock_search_service:
                 # Mock service categories
                 passport_category = ServiceCategory(
                     id=uuid.uuid4(),
@@ -282,9 +311,16 @@ class TestServiceRelationships:
                 )
 
                 # Setup mock data service
-                mock_data_instance = mock_data_service.return_value.__enter__.return_value
-                mock_data_instance.get_conversation_context.return_value = conversation_context
-                mock_data_instance.get_service_category.side_effect = [passport_category, visa_category]
+                mock_data_instance = (
+                    mock_data_service.return_value.__enter__.return_value
+                )
+                mock_data_instance.get_conversation_context.return_value = (
+                    conversation_context
+                )
+                mock_data_instance.get_service_category.side_effect = [
+                    passport_category,
+                    visa_category,
+                ]
 
                 # Setup mock search service for relationship analytics
                 mock_search_instance = mock_search_service.return_value
@@ -293,7 +329,7 @@ class TestServiceRelationships:
                         "name": "Visa Services",
                         "description": "Visa application and extension services",
                         "relevance_score": 0.8,
-                        "reason": "Common service transition"
+                        "reason": "Common service transition",
                     }
                 ]
 
@@ -308,12 +344,17 @@ class TestServiceRelationships:
                         next_msg = context.conversation_history[i + 1]
 
                         # Simple keyword-based service detection
-                        if "passport" in current_msg.content.lower() and "visa" in next_msg.content.lower():
-                            service_transitions.append({
-                                "from": "passport",
-                                "to": "visa",
-                                "context": "user query transition"
-                            })
+                        if (
+                            "passport" in current_msg.content.lower()
+                            and "visa" in next_msg.content.lower()
+                        ):
+                            service_transitions.append(
+                                {
+                                    "from": "passport",
+                                    "to": "visa",
+                                    "context": "user query transition",
+                                }
+                            )
 
                 # Get related services for analytics
                 related_services = mock_search_instance.get_related_services(
@@ -372,30 +413,36 @@ class TestServiceRelationships:
                     {
                         "label": "Passport Requirements",
                         "action_type": "requirements",
-                        "priority": 1
+                        "priority": 1,
                     },
                     {
                         "label": "Related: Visa Services",
                         "action_type": "navigate_service",
                         "target_service_id": str(visa_category.id),
-                        "priority": 2
+                        "priority": 2,
                     },
                     {
                         "label": "Related: ID Card Services",
                         "action_type": "navigate_service",
                         "target_service_id": str(id_card_category.id),
-                        "priority": 3
-                    }
-                ]
+                        "priority": 3,
+                    },
+                ],
             )
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_conversation_context.return_value = conversation_context
+            mock_data_instance.get_conversation_context.return_value = (
+                conversation_context
+            )
             mock_data_instance.get_service_category.side_effect = [
-                passport_category, visa_category, id_card_category
+                passport_category,
+                visa_category,
+                id_card_category,
             ]
-            mock_data_instance.update_conversation_context.return_value = conversation_context
+            mock_data_instance.update_conversation_context.return_value = (
+                conversation_context
+            )
 
             # When user navigates through multiple services
             with DataService() as data_service:
@@ -403,12 +450,16 @@ class TestServiceRelationships:
 
                 # Navigate to visa services
                 visa_service_id = context.navigation_options[1]["target_service_id"]
-                visa_category = data_service.get_service_category(uuid.UUID(visa_service_id))
+                visa_category = data_service.get_service_category(
+                    uuid.UUID(visa_service_id)
+                )
                 context.current_service_category_id = visa_category.id
 
                 # Navigate to ID card services
                 id_card_service_id = context.navigation_options[2]["target_service_id"]
-                id_card_category = data_service.get_service_category(uuid.UUID(id_card_service_id))
+                id_card_category = data_service.get_service_category(
+                    uuid.UUID(id_card_service_id)
+                )
                 context.current_service_category_id = id_card_category.id
 
                 updated_context = data_service.update_conversation_context(context)
@@ -419,7 +470,8 @@ class TestServiceRelationships:
 
             # Verify all related services are tracked
             service_ids = [
-                opt["target_service_id"] for opt in updated_context.navigation_options
+                opt["target_service_id"]
+                for opt in updated_context.navigation_options
                 if "target_service_id" in opt
             ]
             assert len(service_ids) == 2

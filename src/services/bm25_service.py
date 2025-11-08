@@ -210,7 +210,7 @@ class BM25Service:
 
             # Remove document
             removed_doc = self.documents.pop(doc_index)
-            removed_length = self.doc_lengths.pop(doc_index)
+            self.doc_lengths.pop(doc_index)
             removed_term_freq = self.term_freqs.pop(doc_index)
 
             # Update document frequencies

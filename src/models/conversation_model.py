@@ -4,7 +4,7 @@ Conversation-related data models for City Guide Smart Assistant
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
@@ -16,7 +16,7 @@ class Message(BaseModel):
     role: str = Field(..., description="Message role: user or assistant")
     content: str = Field(..., description="Message content")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    metadata: Optional[dict[str, Any]] = Field(default_factory=dict)
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
 
     @validator("role")
     @classmethod
@@ -45,7 +45,7 @@ class ConversationContext(BaseModel):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     user_session_id: str = Field(..., description="Anonymous session identifier")
-    current_service_category_id: Optional[uuid.UUID] = Field(
+    current_service_category_id: uuid.UUID | None = Field(
         None, description="Reference to current service"
     )
     conversation_history: list[Message] = Field(default_factory=list)
@@ -58,15 +58,15 @@ class ConversationContext(BaseModel):
     # Service relationship tracking
     service_relationships: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="Track relationships between services accessed in this conversation"
+        description="Track relationships between services accessed in this conversation",
     )
     related_services_suggested: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="Track related services that have been suggested to the user"
+        description="Track related services that have been suggested to the user",
     )
     service_transitions: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="Track transitions between different service categories"
+        description="Track transitions between different service categories",
     )
 
     @validator("user_session_id")
@@ -85,7 +85,7 @@ class ConversationContext(BaseModel):
         return v
 
     def add_message(
-        self, role: str, content: str, metadata: Optional[dict[str, Any]] = None
+        self, role: str, content: str, metadata: dict[str, Any] | None = None
     ) -> None:
         """Add a new message to the conversation history"""
         message = Message(role=role, content=content, metadata=metadata or {})
@@ -121,7 +121,7 @@ class ConversationContext(BaseModel):
         source_service_id: uuid.UUID,
         target_service_id: uuid.UUID,
         relationship_type: str,
-        relevance_score: float = 0.5
+        relevance_score: float = 0.5,
     ) -> None:
         """Add a service relationship to tracking"""
         relationship = {
@@ -129,7 +129,7 @@ class ConversationContext(BaseModel):
             "target_service_id": str(target_service_id),
             "relationship_type": relationship_type,
             "relevance_score": relevance_score,
-            "timestamp": datetime.now(UTC).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         self.service_relationships.append(relationship)
 
@@ -138,7 +138,7 @@ class ConversationContext(BaseModel):
         service_id: uuid.UUID,
         service_name: str,
         reason: str,
-        relevance_score: float = 0.5
+        relevance_score: float = 0.5,
     ) -> None:
         """Track a related service suggestion"""
         suggestion = {
@@ -146,7 +146,7 @@ class ConversationContext(BaseModel):
             "service_name": service_name,
             "reason": reason,
             "relevance_score": relevance_score,
-            "suggested_at": datetime.now(UTC).isoformat()
+            "suggested_at": datetime.now(UTC).isoformat(),
         }
         self.related_services_suggested.append(suggestion)
 
@@ -154,14 +154,14 @@ class ConversationContext(BaseModel):
         self,
         from_service_id: uuid.UUID,
         to_service_id: uuid.UUID,
-        transition_type: str = "user_navigation"
+        transition_type: str = "user_navigation",
     ) -> None:
         """Track a service transition"""
         transition = {
             "from_service_id": str(from_service_id),
             "to_service_id": str(to_service_id),
             "transition_type": transition_type,
-            "transition_time": datetime.now(UTC).isoformat()
+            "transition_time": datetime.now(UTC).isoformat(),
         }
         self.service_transitions.append(transition)
 
@@ -177,13 +177,15 @@ class ConversationContext(BaseModel):
         """Get all service relationships tracked in this conversation"""
         return self.service_relationships
 
-    def get_most_relevant_related_services(self, limit: int = 5) -> list[dict[str, Any]]:
+    def get_most_relevant_related_services(
+        self, limit: int = 5
+    ) -> list[dict[str, Any]]:
         """Get most relevant related services based on conversation context"""
         # Sort by relevance score and timestamp
         sorted_suggestions = sorted(
             self.related_services_suggested,
             key=lambda x: (x.get("relevance_score", 0), x.get("suggested_at", "")),
-            reverse=True
+            reverse=True,
         )
         return sorted_suggestions[:limit]
 

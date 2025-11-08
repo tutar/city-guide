@@ -245,7 +245,7 @@ class TestAIService:
                 # When calling chat completion with system prompt
                 messages = [{"role": "user", "content": "Hello"}]
                 system_prompt = "You are a helpful assistant."
-                result = ai_service.chat_completion(messages, system_prompt)
+                ai_service.chat_completion(messages, system_prompt)
 
                 # Then system prompt should be added to messages
                 expected_messages = [
@@ -567,9 +567,7 @@ Feedback: Good response overall
 
             # When calling chat completion with custom parameters
             messages = [{"role": "user", "content": "Hello"}]
-            result = ai_service.chat_completion(
-                messages, max_tokens=500, temperature=0.5
-            )
+            ai_service.chat_completion(messages, max_tokens=500, temperature=0.5)
 
             # Then custom parameters should be used
             call_args = mock_post.call_args

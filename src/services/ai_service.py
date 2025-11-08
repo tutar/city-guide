@@ -3,7 +3,7 @@ AI service for City Guide Smart Assistant using Deepseek API
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import requests
 import torch
@@ -73,9 +73,9 @@ class AIService:
     def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
-        max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None,
+        system_prompt: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         """Send chat completion request to Deepseek API"""
         try:
@@ -131,7 +131,7 @@ class AIService:
         self,
         user_query: str,
         context_documents: list[dict[str, Any]],
-        conversation_history: Optional[list[dict[str, str]]] = None,
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
         """Generate government service guidance using context from search results"""
         try:

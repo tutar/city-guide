@@ -295,9 +295,7 @@ async def create_sample_passport_documents():
                 embedding_vector=[0.0] * 1024,  # Placeholder for Qwen3-Embedding-0.6B
             )
 
-            embedding_id = embedding_service.store_document_embedding(
-                document_embedding
-            )
+            embedding_service.store_document_embedding(document_embedding)
             logger.info(
                 f"Added passport document to vector database: {doc['document_title']}"
             )
@@ -353,11 +351,15 @@ async def create_additional_service_categories():
                 service_category = ServiceCategory(
                     name=category_data["name"],
                     description=category_data["description"],
-                    official_source_url=category_data["official_source_url"] if category_data["official_source_url"] else None,
+                    official_source_url=category_data["official_source_url"]
+                    if category_data["official_source_url"]
+                    else None,
                     last_verified=datetime.now(UTC),
                     is_active=True,
                 )
-                created_category = data_service.create_service_category(service_category)
+                created_category = data_service.create_service_category(
+                    service_category
+                )
                 created_categories.append(created_category)
                 logger.info(f"Created service category: {created_category.name}")
             else:
@@ -468,27 +470,37 @@ async def create_service_relationships():
         # For now, we'll just log the relationships
         for source_service, relationships in service_relationships.items():
             if source_service in category_map:
-                logger.info(f"Defined {len(relationships)} relationships for {source_service}")
+                logger.info(
+                    f"Defined {len(relationships)} relationships for {source_service}"
+                )
                 for relationship in relationships:
                     related_service = relationship["related_service"]
                     if related_service in category_map:
-                        logger.info(f"  - {related_service}: {relationship['relationship_type']} (score: {relationship['relevance_score']})")
+                        logger.info(
+                            f"  - {related_service}: {relationship['relationship_type']} (score: {relationship['relevance_score']})"
+                        )
 
-        logger.info(f"Defined service relationships for {len(service_relationships)} services")
+        logger.info(
+            f"Defined service relationships for {len(service_relationships)} services"
+        )
         return service_relationships
 
 
 async def main():
     """Main data ingestion function"""
 
-    logger.info("Starting data ingestion for Hong Kong/Macau passport services and service relationships...")
+    logger.info(
+        "Starting data ingestion for Hong Kong/Macau passport services and service relationships..."
+    )
 
     try:
         # Step 1: Create passport service category
         passport_service = await create_passport_service_category()
 
         if not passport_service:
-            logger.info("Passport service already exists, checking for additional services...")
+            logger.info(
+                "Passport service already exists, checking for additional services..."
+            )
         else:
             # Step 2: Create navigation options
             navigation_options = await create_passport_navigation_options(
@@ -510,7 +522,9 @@ async def main():
         service_relationships = await create_service_relationships()
 
         logger.info("Data ingestion completed successfully!")
-        logger.info(f"- Total service categories: {len(additional_categories) + (1 if passport_service else 0)}")
+        logger.info(
+            f"- Total service categories: {len(additional_categories) + (1 if passport_service else 0)}"
+        )
         logger.info(f"- Defined service relationships: {len(service_relationships)}")
 
     except Exception as e:

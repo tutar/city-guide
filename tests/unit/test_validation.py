@@ -18,9 +18,9 @@ class TestURLValidator:
         url = "https://immd.gov.hk/passport"
         result = URLValidator.validate_external_url(url)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert result["url"] == url
-        assert result["is_government_url"] == True
+        assert result["is_government_url"] is True
         assert result["domain"] == "immd.gov.hk"
         assert result["protocol"] == "https"
 
@@ -29,9 +29,9 @@ class TestURLValidator:
         url = "https://example.com/appointment"
         result = URLValidator.validate_external_url(url)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert result["url"] == url
-        assert result["is_government_url"] == False
+        assert result["is_government_url"] is False
         assert result["domain"] == "example.com"
 
     def test_validate_external_url_invalid_format(self):
@@ -39,7 +39,7 @@ class TestURLValidator:
         url = "not-a-url"
         result = URLValidator.validate_external_url(url)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "URL must start with http:// or https://" in result["error"]
 
     def test_validate_external_url_missing_hostname(self):
@@ -47,7 +47,7 @@ class TestURLValidator:
         url = "https://"
         result = URLValidator.validate_external_url(url)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "missing hostname" in result["error"]
 
     def test_validate_external_url_http_security_warning(self):
@@ -55,7 +55,7 @@ class TestURLValidator:
         url = "http://example.com"
         result = URLValidator.validate_external_url(url)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert "HTTP protocol is not secure" in result["security_issues"][0]
 
     def test_validate_appointment_url_valid(self):
@@ -63,16 +63,16 @@ class TestURLValidator:
         url = "https://immd.gov.hk/appointment/schedule"
         result = URLValidator.validate_appointment_url(url)
 
-        assert result["valid"] == True
-        assert result["is_appointment_system"] == True
-        assert result["appointment_indicators"]["appointment"] == True
+        assert result["valid"] is True
+        assert result["is_appointment_system"] is True
+        assert result["appointment_indicators"]["appointment"] is True
 
     def test_validate_appointment_url_not_appointment_system(self):
         """Test validation of URL that is not an appointment system"""
         url = "https://immd.gov.hk/about"
         result = URLValidator.validate_appointment_url(url)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "does not appear to be an appointment system" in result["error"]
 
     def test_validate_appointment_url_invalid_format(self):
@@ -80,7 +80,7 @@ class TestURLValidator:
         url = "invalid-url"
         result = URLValidator.validate_appointment_url(url)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "URL must start with http:// or https://" in result["error"]
 
 
@@ -97,7 +97,7 @@ class TestNavigationOptionValidator:
         }
         result = NavigationOptionValidator.validate_navigation_option(option)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert len(result["issues"]) == 0
 
     def test_validate_navigation_option_missing_required_fields(self):
@@ -105,7 +105,7 @@ class TestNavigationOptionValidator:
         option = {"target_url": "https://example.com"}
         result = NavigationOptionValidator.validate_navigation_option(option)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Missing required field: label" in result["issues"]
         assert "Missing required field: action_type" in result["issues"]
 
@@ -118,7 +118,7 @@ class TestNavigationOptionValidator:
         }
         result = NavigationOptionValidator.validate_navigation_option(option)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Invalid action_type" in result["issues"][0]
 
     def test_validate_navigation_option_invalid_url(self):
@@ -131,7 +131,7 @@ class TestNavigationOptionValidator:
         }
         result = NavigationOptionValidator.validate_navigation_option(option)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Invalid target URL" in result["issues"][0]
 
     def test_validate_navigation_option_long_label_warning(self):
@@ -140,7 +140,7 @@ class TestNavigationOptionValidator:
         option = {"label": long_label, "action_type": "explain", "priority": 5}
         result = NavigationOptionValidator.validate_navigation_option(option)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert "Label is very long" in result["warnings"][0]
 
     def test_validate_navigation_option_invalid_priority(self):
@@ -148,7 +148,7 @@ class TestNavigationOptionValidator:
         option = {"label": "Test Option", "action_type": "explain", "priority": 15}
         result = NavigationOptionValidator.validate_navigation_option(option)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert "Priority should be between 1 and 10" in result["warnings"][0]
 
 
@@ -164,7 +164,7 @@ class TestServiceCategoryValidator:
         }
         result = ServiceCategoryValidator.validate_service_category(category)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert len(result["issues"]) == 0
 
     def test_validate_service_category_missing_name(self):
@@ -175,7 +175,7 @@ class TestServiceCategoryValidator:
         }
         result = ServiceCategoryValidator.validate_service_category(category)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Missing required field: name" in result["issues"]
 
     def test_validate_service_category_empty_name(self):
@@ -183,7 +183,7 @@ class TestServiceCategoryValidator:
         category = {"name": "", "description": "Some description"}
         result = ServiceCategoryValidator.validate_service_category(category)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Name cannot be empty" in result["issues"]
 
     def test_validate_service_category_long_name(self):
@@ -192,7 +192,7 @@ class TestServiceCategoryValidator:
         category = {"name": long_name, "description": "Some description"}
         result = ServiceCategoryValidator.validate_service_category(category)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "exceeds maximum length" in result["issues"][0]
 
     def test_validate_service_category_non_government_url_warning(self):
@@ -203,7 +203,7 @@ class TestServiceCategoryValidator:
         }
         result = ServiceCategoryValidator.validate_service_category(category)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert "not from a recognized government domain" in result["warnings"][0]
 
     def test_validate_service_category_long_description_warning(self):
@@ -212,7 +212,7 @@ class TestServiceCategoryValidator:
         category = {"name": "Test Category", "description": long_description}
         result = ServiceCategoryValidator.validate_service_category(category)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert "Description is very long" in result["warnings"][0]
 
 
@@ -224,7 +224,7 @@ class TestInputValidation:
         input_text = "Hello, I need help with passport renewal"
         result = validate_and_sanitize_input(input_text)
 
-        assert result["valid"] == True
+        assert result["valid"] is True
         assert result["sanitized"] == input_text
         assert result["length"] == len(input_text)
 
@@ -233,7 +233,7 @@ class TestInputValidation:
         input_text = ""
         result = validate_and_sanitize_input(input_text)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Input cannot be empty" in result["error"]
 
     def test_validate_and_sanitize_input_whitespace_only(self):
@@ -241,7 +241,7 @@ class TestInputValidation:
         input_text = "   \n\t  "
         result = validate_and_sanitize_input(input_text)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "Input cannot be empty" in result["error"]
 
     def test_validate_and_sanitize_input_too_long(self):
@@ -249,7 +249,7 @@ class TestInputValidation:
         long_input = "A" * 1500
         result = validate_and_sanitize_input(long_input, max_length=1000)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "exceeds maximum length" in result["error"]
         assert len(result["sanitized"]) == 1000
 
@@ -258,7 +258,7 @@ class TestInputValidation:
         harmful_input = "Hello <script>alert('xss')</script> world"
         result = validate_and_sanitize_input(harmful_input)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "potentially harmful content" in result["error"]
         assert "<script>" not in result["sanitized"]
 
@@ -267,7 +267,7 @@ class TestInputValidation:
         harmful_input = "Click here: javascript:alert('xss')"
         result = validate_and_sanitize_input(harmful_input)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "potentially harmful content" in result["error"]
         assert "javascript:" not in result["sanitized"]
 
@@ -276,6 +276,6 @@ class TestInputValidation:
         harmful_input = "<img src=x onerror=alert('xss')>"
         result = validate_and_sanitize_input(harmful_input)
 
-        assert result["valid"] == False
+        assert result["valid"] is False
         assert "potentially harmful content" in result["error"]
         assert "onerror" not in result["sanitized"]

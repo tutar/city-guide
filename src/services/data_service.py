@@ -5,7 +5,6 @@ Database service layer for City Guide Smart Assistant
 import logging
 import uuid
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy import (
     JSON,
@@ -141,7 +140,7 @@ class DataService:
 
     def get_service_category(
         self, category_id: uuid.UUID
-    ) -> Optional[ServiceCategoryModel]:
+    ) -> ServiceCategoryModel | None:
         """Get service category by ID"""
         try:
             db_category = (
@@ -171,7 +170,7 @@ class DataService:
         try:
             db_categories = (
                 self.db.query(ServiceCategory)
-                .filter(ServiceCategory.is_active == True)
+                .filter(ServiceCategory.is_active is True)
                 .all()
             )
 
@@ -219,7 +218,7 @@ class DataService:
                             key: str(value)
                             if hasattr(value, "__str__")
                             and not isinstance(
-                                value, (str, int, float, bool, type(None))
+                                value, str | int | float | bool | type(None)
                             )
                             else value
                             for key, value in msg.metadata.items()
@@ -273,14 +272,14 @@ class DataService:
 
     def get_conversation_context(
         self, session_id: str
-    ) -> Optional[ConversationContextModel]:
+    ) -> ConversationContextModel | None:
         """Get conversation context by session ID"""
         try:
             db_context = (
                 self.db.query(ConversationContext)
                 .filter(
                     ConversationContext.user_session_id == session_id,
-                    ConversationContext.is_active == True,
+                    ConversationContext.is_active is True,
                 )
                 .first()
             )
@@ -318,7 +317,7 @@ class DataService:
                 self.db.query(ConversationContext)
                 .filter(
                     ConversationContext.user_session_id == session_id,
-                    ConversationContext.is_active == True,
+                    ConversationContext.is_active is True,
                 )
                 .first()
             )
@@ -341,7 +340,7 @@ class DataService:
                     "metadata": {
                         key: str(value)
                         if hasattr(value, "__str__")
-                        and not isinstance(value, (str, int, float, bool, type(None)))
+                        and not isinstance(value, str | int | float | bool | type(None))
                         else value
                         for key, value in msg.metadata.items()
                     },
@@ -360,13 +359,17 @@ class DataService:
             db_context.user_preferences = {
                 key: str(value)
                 if hasattr(value, "__str__")
-                and not isinstance(value, (str, int, float, bool, type(None)))
+                and not isinstance(value, str | int | float | bool | type(None))
                 else value
                 for key, value in conversation_context.user_preferences.items()
             }
             # Update service relationship tracking fields
-            db_context.service_relationships = conversation_context.service_relationships
-            db_context.related_services_suggested = conversation_context.related_services_suggested
+            db_context.service_relationships = (
+                conversation_context.service_relationships
+            )
+            db_context.related_services_suggested = (
+                conversation_context.related_services_suggested
+            )
             db_context.service_transitions = conversation_context.service_transitions
             db_context.last_activity = conversation_context.last_activity
             db_context.is_active = conversation_context.is_active
@@ -446,7 +449,7 @@ class DataService:
                 self.db.query(NavigationOption)
                 .filter(
                     NavigationOption.service_category_id == category_id,
-                    NavigationOption.is_active == True,
+                    NavigationOption.is_active is True,
                 )
                 .order_by(NavigationOption.priority)
                 .all()
@@ -479,7 +482,7 @@ class DataService:
                 self.db.query(NavigationOption)
                 .filter(
                     NavigationOption.service_category_id == category_id,
-                    NavigationOption.is_active == True,
+                    NavigationOption.is_active is True,
                     NavigationOption.priority <= priority_threshold,
                 )
                 .order_by(NavigationOption.priority)
@@ -555,7 +558,7 @@ class DataService:
         try:
             db_options = (
                 self.db.query(NavigationOption)
-                .filter(NavigationOption.is_active == True)
+                .filter(NavigationOption.is_active is True)
                 .order_by(NavigationOption.priority)
                 .all()
             )
@@ -624,7 +627,7 @@ class DataService:
         try:
             db_categories = (
                 self.db.query(ServiceCategory)
-                .filter(ServiceCategory.is_active == True)
+                .filter(ServiceCategory.is_active is True)
                 .order_by(ServiceCategory.name)
                 .all()
             )
@@ -653,10 +656,30 @@ class DataService:
 
         # Common keywords related to government services
         service_keywords = {
-            "requirement", "document", "material", "appointment", "schedule",
-            "location", "address", "cost", "fee", "price", "status", "track",
-            "application", "apply", "submit", "register", "renew", "extension",
-            "passport", "visa", "permit", "license", "registration", "business"
+            "requirement",
+            "document",
+            "material",
+            "appointment",
+            "schedule",
+            "location",
+            "address",
+            "cost",
+            "fee",
+            "price",
+            "status",
+            "track",
+            "application",
+            "apply",
+            "submit",
+            "register",
+            "renew",
+            "extension",
+            "passport",
+            "visa",
+            "permit",
+            "license",
+            "registration",
+            "business",
         }
 
         for message in messages:
@@ -671,7 +694,7 @@ class DataService:
         self,
         option: NavigationOptionModel,
         current_category_id: uuid.UUID | None,
-        conversation_keywords: set[str]
+        conversation_keywords: set[str],
     ) -> int:
         """Calculate priority score for navigation option based on context"""
         score = 0

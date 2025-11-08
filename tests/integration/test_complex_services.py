@@ -110,7 +110,7 @@ class TestComplexServices:
         conversation = conversation_service.create_conversation(session_id)
 
         # Add query with technical term
-        user_message = conversation_service.add_message(
+        conversation_service.add_message(
             conversation.id,
             "user",
             "What does 'tax registration certificate' mean in the context of business setup?",
@@ -161,7 +161,7 @@ class TestComplexServices:
         conversation = conversation_service.create_conversation(session_id)
 
         # Add location-specific query
-        user_message = conversation_service.add_message(
+        conversation_service.add_message(
             conversation.id,
             "user",
             "Where can I apply for a resident permit near Futian district?",

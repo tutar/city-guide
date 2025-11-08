@@ -91,15 +91,6 @@ class AccessibleChatInterface:
         # Create a visually hidden element for screen reader announcements
         # This is a workaround since Chainlit doesn't have direct aria-live support
 
-        announcement_metadata = {
-            "role": "alert",
-            "aria-live": "assertive"
-            if announcement_type in ["error", "success"]
-            else "polite",
-            "aria-atomic": "true",
-            "class": "sr-only",  # Screen reader only
-        }
-
         # Note: Chainlit doesn't support custom HTML elements directly
         # In a production environment, this would be implemented with custom frontend components
         # For now, we'll log the announcement

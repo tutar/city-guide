@@ -3,7 +3,7 @@ Conversation API endpoints for City Guide Smart Assistant
 """
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -21,14 +21,14 @@ router = APIRouter(prefix="/api/conversation", tags=["conversation"])
 class StartConversationRequest(BaseModel):
     """Request model for starting a conversation"""
 
-    user_session_id: Optional[str] = Field(
+    user_session_id: str | None = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="Anonymous session identifier. Auto-generated if not provided",
     )
-    initial_message: Optional[str] = Field(
+    initial_message: str | None = Field(
         None, description="Optional initial message to start the conversation"
     )
-    service_category_id: Optional[str] = Field(
+    service_category_id: str | None = Field(
         None, description="Optional service category ID to start with specific context"
     )
     user_preferences: dict[str, Any] = Field(
@@ -43,7 +43,7 @@ class StartConversationResponse(BaseModel):
     conversation_id: str = Field(..., description="Unique conversation identifier")
     welcome_message: str = Field(..., description="Welcome message from the assistant")
     navigation_options: list = Field(..., description="Initial navigation options")
-    service_context: Optional[dict[str, Any]] = Field(
+    service_context: dict[str, Any] | None = Field(
         None, description="Service context if starting with specific service"
     )
 
@@ -61,7 +61,7 @@ class SendMessageResponse(BaseModel):
     response: str = Field(..., description="Assistant response")
     navigation_options: list = Field(..., description="Updated navigation options")
     conversation_history: list = Field(..., description="Updated conversation history")
-    usage: Optional[dict[str, Any]] = Field(
+    usage: dict[str, Any] | None = Field(
         None, description="API usage information if available"
     )
 
@@ -77,7 +77,7 @@ async def start_conversation(request: StartConversationRequest):
     try:
         # Initialize services
         with DataService() as data_service:
-            search_service = SearchService()
+            SearchService()
             ai_service = AIService()
 
             # Check if session already exists

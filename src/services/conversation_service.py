@@ -5,7 +5,6 @@ Conversation service for City Guide Smart Assistant
 import logging
 import uuid
 from datetime import UTC, datetime
-from typing import Optional
 
 from src.models.conversation_model import ConversationContext
 from src.services.data_service import DataService
@@ -21,7 +20,7 @@ class ConversationService:
         self.data_service = DataService()
 
     def create_conversation(
-        self, user_session_id: str, user_preferences: Optional[dict] = None
+        self, user_session_id: str, user_preferences: dict | None = None
     ) -> ConversationContext:
         """Create a new conversation context"""
         try:
@@ -43,7 +42,7 @@ class ConversationService:
             logger.error(f"Failed to create conversation: {e}")
             raise
 
-    def get_conversation(self, session_id: str) -> Optional[ConversationContext]:
+    def get_conversation(self, session_id: str) -> ConversationContext | None:
         """Get conversation context by session ID"""
         try:
             with self.data_service as data_service:
@@ -61,7 +60,7 @@ class ConversationService:
             raise
 
     def add_message(
-        self, session_id: str, role: str, content: str, metadata: Optional[dict] = None
+        self, session_id: str, role: str, content: str, metadata: dict | None = None
     ) -> ConversationContext:
         """Add a message to conversation history"""
         try:

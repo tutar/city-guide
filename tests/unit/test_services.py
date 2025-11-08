@@ -38,7 +38,7 @@ class TestServiceCategory:
             == "Passport application and renewal services for Hong Kong residents"
         )
         assert str(service.official_source_url) == "https://www.gov.hk/en/residents/"
-        assert service.is_active == True
+        assert service.is_active is True
         assert isinstance(service.id, uuid.UUID)
         assert isinstance(service.created_at, datetime)
         assert isinstance(service.updated_at, datetime)
@@ -147,7 +147,7 @@ class TestNavigationOption:
         assert option.action_type == "requirements"
         assert option.description == "View required documents and materials"
         assert option.priority == 1
-        assert option.is_active == True
+        assert option.is_active is True
         assert isinstance(option.id, uuid.UUID)
 
     def test_navigation_option_action_type_validation(self):

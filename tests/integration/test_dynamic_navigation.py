@@ -4,12 +4,10 @@ Integration tests for dynamic contextual navigation scenarios
 
 import uuid
 from datetime import UTC, datetime
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from src.models.conversation_model import ConversationContext, Message
-from src.models.services import ServiceCategory, NavigationOption
+from src.models.services import NavigationOption, ServiceCategory
 from src.services.data_service import DataService
 from src.services.search_service import SearchService
 
@@ -21,7 +19,9 @@ class TestDynamicNavigation:
         """Test that navigation options adapt based on conversation context"""
         # Given a conversation about passport services
         with patch("src.services.data_service.DataService") as mock_data_service:
-            with patch("src.services.search_service.SearchService") as mock_search_service:
+            with patch(
+                "src.services.search_service.SearchService"
+            ) as mock_search_service:
                 # Mock service categories
                 passport_category = ServiceCategory(
                     id=uuid.uuid4(),
@@ -51,7 +51,7 @@ class TestDynamicNavigation:
                     ),
                 ]
 
-                visa_options = [
+                [
                     NavigationOption(
                         service_category_id=visa_category.id,
                         label="Visa Types",
@@ -80,24 +80,49 @@ class TestDynamicNavigation:
                 )
 
                 # Setup mock data service
-                mock_data_instance = mock_data_service.return_value.__enter__.return_value
-                mock_data_instance.get_conversation_context.return_value = conversation_context
+                mock_data_instance = (
+                    mock_data_service.return_value.__enter__.return_value
+                )
+                mock_data_instance.get_conversation_context.return_value = (
+                    conversation_context
+                )
                 mock_data_instance.get_service_category.return_value = passport_category
-                mock_data_instance.get_navigation_options_by_category.return_value = passport_options
-                mock_data_instance.get_all_service_categories.return_value = [passport_category, visa_category]
+                mock_data_instance.get_navigation_options_by_category.return_value = (
+                    passport_options
+                )
+                mock_data_instance.get_all_service_categories.return_value = [
+                    passport_category,
+                    visa_category,
+                ]
 
                 # Setup mock search service
                 mock_search_instance = mock_search_service.return_value
                 mock_search_instance.generate_dynamic_navigation_options.return_value = [
-                    {"label": "Requirements", "action_type": "requirements", "priority": 1},
-                    {"label": "Make Appointment", "action_type": "appointment", "priority": 2}
+                    {
+                        "label": "Requirements",
+                        "action_type": "requirements",
+                        "priority": 1,
+                    },
+                    {
+                        "label": "Make Appointment",
+                        "action_type": "appointment",
+                        "priority": 2,
+                    },
                 ]
 
                 # When generating navigation options
                 with DataService() as data_service:
-                    current_context = data_service.get_conversation_context("test-session-123")
-                    current_category = data_service.get_service_category(current_context.current_service_category_id)
-                    navigation_options = data_service.get_navigation_options_by_category(current_category.id)
+                    current_context = data_service.get_conversation_context(
+                        "test-session-123"
+                    )
+                    current_category = data_service.get_service_category(
+                        current_context.current_service_category_id
+                    )
+                    navigation_options = (
+                        data_service.get_navigation_options_by_category(
+                            current_category.id
+                        )
+                    )
 
                 # Then should return passport-specific options
                 assert len(navigation_options) == 2
@@ -130,7 +155,9 @@ class TestDynamicNavigation:
 
             # When getting related services
             search_service = SearchService()
-            related = search_service.get_related_services("passport", "test-session-123")
+            related = search_service.get_related_services(
+                "passport", "test-session-123"
+            )
 
             # Then should return related services with relevance scores
             assert len(related) == 2
@@ -183,17 +210,25 @@ class TestDynamicNavigation:
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_conversation_context.return_value = conversation_context
-            mock_data_instance.get_prioritized_navigation_options.return_value = prioritized_options
+            mock_data_instance.get_conversation_context.return_value = (
+                conversation_context
+            )
+            mock_data_instance.get_prioritized_navigation_options.return_value = (
+                prioritized_options
+            )
 
             # When getting prioritized navigation options
             with DataService() as data_service:
                 context = data_service.get_conversation_context("test-session-123")
-                options = data_service.get_prioritized_navigation_options(context.user_session_id)
+                options = data_service.get_prioritized_navigation_options(
+                    context.user_session_id
+                )
 
             # Then should return options prioritized by conversation history
             assert len(options) == 2
-            assert options[0].label == "Make Appointment"  # Most relevant based on recent query
+            assert (
+                options[0].label == "Make Appointment"
+            )  # Most relevant based on recent query
             assert options[0].priority == 1
             assert options[1].label == "Requirements"
             assert options[1].priority == 2
@@ -223,7 +258,9 @@ class TestDynamicNavigation:
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_all_service_categories.return_value = service_categories
+            mock_data_instance.get_all_service_categories.return_value = (
+                service_categories
+            )
 
             # When getting all service categories for main menu
             with DataService() as data_service:
@@ -260,9 +297,13 @@ class TestDynamicNavigation:
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_conversation_context.return_value = conversation_context
+            mock_data_instance.get_conversation_context.return_value = (
+                conversation_context
+            )
             mock_data_instance.get_service_category.return_value = visa_category
-            mock_data_instance.update_conversation_context.return_value = conversation_context
+            mock_data_instance.update_conversation_context.return_value = (
+                conversation_context
+            )
 
             # When user switches to visa services
             with DataService() as data_service:
@@ -301,23 +342,27 @@ class TestDynamicNavigation:
 
             # Setup mock data service
             mock_data_instance = mock_data_service.return_value.__enter__.return_value
-            mock_data_instance.get_conversation_context.return_value = conversation_context
-            mock_data_instance.update_conversation_context.return_value = conversation_context
+            mock_data_instance.get_conversation_context.return_value = (
+                conversation_context
+            )
+            mock_data_instance.update_conversation_context.return_value = (
+                conversation_context
+            )
 
             # When adding new message to conversation
             with DataService() as data_service:
                 context = data_service.get_conversation_context("test-session-123")
 
                 # Add new message using the model method
-                context.add_message(
-                    role="user",
-                    content="how to make appointment"
-                )
+                context.add_message(role="user", content="how to make appointment")
 
                 # Update context
                 updated_context = data_service.update_conversation_context(context)
 
             # Then context should persist with new message
             assert len(updated_context.conversation_history) == 3
-            assert updated_context.conversation_history[2].content == "how to make appointment"
+            assert (
+                updated_context.conversation_history[2].content
+                == "how to make appointment"
+            )
             assert updated_context.conversation_history[2].role == "user"

@@ -197,7 +197,7 @@ class TestPassportGuidance:
 
         # Then verify URL validation and handling
         assert url_handling["url"] == appointment_url
-        assert url_handling["is_government_url"] == True
+        assert url_handling["is_government_url"] is True
         assert url_handling["handling_type"] == "external_redirect"
 
     @pytest.mark.asyncio
@@ -253,9 +253,7 @@ class TestPassportGuidance:
             return_value=mock_search_service,
         ):
             # Process the query
-            search_results = await mock_search_service.hybrid_search(
-                Mock(query=user_query, limit=10)
-            )
+            await mock_search_service.hybrid_search(Mock(query=user_query, limit=10))
 
             guidance_response = await mock_ai_service.generate_government_guidance(
                 user_query=user_query, context_documents=[], conversation_history=[]

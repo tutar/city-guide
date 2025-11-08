@@ -4,7 +4,7 @@ Navigation generator for City Guide Smart Assistant
 
 import logging
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from src.services.ai_service import AIService
 from src.services.data_service import DataService
@@ -23,7 +23,7 @@ class NavigationGenerator:
     def generate_dynamic_navigation_options(
         self,
         conversation_context: dict[str, Any],
-        search_results: Optional[list] = None,
+        search_results: list | None = None,
         max_options: int = 5,
     ) -> list[dict[str, Any]]:
         """Generate dynamic navigation options based on conversation context and search results"""
@@ -226,7 +226,7 @@ class NavigationGenerator:
     def filter_navigation_options(
         self,
         options: list[dict[str, Any]],
-        action_types: Optional[list[str]] = None,
+        action_types: list[str] | None = None,
         min_confidence: float = 0.0,
         max_options: int = 5,
     ) -> list[dict[str, Any]]:
@@ -267,7 +267,7 @@ class NavigationGenerator:
         return context
 
     def generate_stage_specific_options(
-        self, conversation_stage: str, service_category_id: Optional[str] = None
+        self, conversation_stage: str, service_category_id: str | None = None
     ) -> list[dict[str, Any]]:
         """Generate navigation options specific to the conversation stage"""
         stage_options = {

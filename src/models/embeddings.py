@@ -4,7 +4,7 @@ Embedding-related data models for City Guide Smart Assistant
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
@@ -70,10 +70,8 @@ class SearchQuery(BaseModel):
     search_results: list[dict[str, Any]] = Field(
         default_factory=list, description="Retrieved document IDs and scores"
     )
-    hybrid_score: Optional[float] = Field(
-        None, description="Combined hybrid search score"
-    )
-    response_quality: Optional[int] = Field(
+    hybrid_score: float | None = Field(None, description="Combined hybrid search score")
+    response_quality: int | None = Field(
         None, ge=1, le=5, description="User feedback rating (1-5)"
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -106,8 +104,8 @@ class SearchResult(BaseModel):
     document_content: str
     source_url: str
     similarity_score: float
-    keyword_score: Optional[float] = None
-    hybrid_score: Optional[float] = None
+    keyword_score: float | None = None
+    hybrid_score: float | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @validator("similarity_score")
@@ -126,7 +124,7 @@ class HybridSearchRequest(BaseModel):
     """Request model for hybrid search combining semantic and keyword search"""
 
     query: str = Field(..., description="Search query text")
-    service_category_id: Optional[uuid.UUID] = Field(
+    service_category_id: uuid.UUID | None = Field(
         None, description="Filter by service category"
     )
     limit: int = Field(

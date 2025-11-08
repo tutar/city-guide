@@ -4,7 +4,7 @@ Navigation service for City Guide Smart Assistant
 
 import logging
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from src.services.data_service import DataService
 from src.services.navigation_generator import NavigationGenerator
@@ -23,8 +23,8 @@ class NavigationService:
     def get_navigation_options_by_category(
         self,
         service_category_id: uuid.UUID,
-        conversation_context: Optional[dict[str, Any]] = None,
-        search_results: Optional[list] = None,
+        conversation_context: dict[str, Any] | None = None,
+        search_results: list | None = None,
     ) -> list[dict[str, Any]]:
         """Get navigation options filtered by service category with dynamic generation"""
         try:
@@ -76,7 +76,7 @@ class NavigationService:
     def filter_navigation_options(
         self,
         options: list[dict[str, Any]],
-        action_types: Optional[list[str]] = None,
+        action_types: list[str] | None = None,
         min_priority: int = 1,
         max_priority: int = 10,
         include_external: bool = True,
@@ -173,8 +173,8 @@ class NavigationService:
         action_type: str,
         description: str,
         priority: int = 5,
-        target_url: Optional[str] = None,
-    ) -> Optional[dict[str, Any]]:
+        target_url: str | None = None,
+    ) -> dict[str, Any] | None:
         """Create a new navigation option"""
         try:
             with self.data_service as data_service:

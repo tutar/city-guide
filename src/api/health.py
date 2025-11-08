@@ -37,7 +37,7 @@ async def readiness_check() -> dict[str, Any]:
     try:
         # Check PostgreSQL database
         with DataService() as data_service:
-            result = data_service.session.execute(text("SELECT 1"))
+            data_service.session.execute(text("SELECT 1"))
             checks["database"]["status"] = "healthy"
             checks["database"]["details"] = "Database connection successful"
     except Exception as e:

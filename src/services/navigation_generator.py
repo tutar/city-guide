@@ -76,13 +76,24 @@ class NavigationGenerator:
                 )
                 navigation_options.extend(ai_options)
 
+            # Generate stage-specific options
+            conversation_stage = self._determine_conversation_stage(
+                conversation_context
+            )
+            stage_options = self.generate_stage_specific_options(
+                conversation_stage, current_service_category_id
+            )
+            navigation_options.extend(stage_options)
+
             # Remove duplicates and sort by priority
             unique_options = self._deduplicate_and_sort_options(navigation_options)
 
             # Limit to max options
             final_options = unique_options[:max_options]
 
-            logger.info(f"Generated {len(final_options)} navigation options")
+            logger.info(
+                f"Generated {len(final_options)} navigation options for stage: {conversation_stage}"
+            )
             return final_options
 
         except Exception as e:
@@ -255,24 +266,285 @@ class NavigationGenerator:
 
         return context
 
+    def generate_stage_specific_options(
+        self, conversation_stage: str, service_category_id: Optional[str] = None
+    ) -> list[dict[str, Any]]:
+        """Generate navigation options specific to the conversation stage"""
+        stage_options = {
+            "information_gathering": [
+                {
+                    "label": "Requirements Overview",
+                    "action_type": "requirements",
+                    "description": "View all required documents and materials",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Application Process",
+                    "action_type": "explain",
+                    "description": "Step-by-step application guide",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Common Questions",
+                    "action_type": "explain",
+                    "description": "Frequently asked questions",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "requirements_phase": [
+                {
+                    "label": "Document Checklist",
+                    "action_type": "requirements",
+                    "description": "Complete list of required documents",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Document Templates",
+                    "action_type": "download",
+                    "description": "Download official forms and templates",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Photo Requirements",
+                    "action_type": "explain",
+                    "description": "Detailed photo specifications",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "application_phase": [
+                {
+                    "label": "Online Application",
+                    "action_type": "appointment",
+                    "description": "Start online application process",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "In-Person Application",
+                    "action_type": "location",
+                    "description": "Find nearest service location",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Application Tips",
+                    "action_type": "explain",
+                    "description": "Helpful tips for successful application",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "appointment_phase": [
+                {
+                    "label": "Book Appointment",
+                    "action_type": "appointment",
+                    "description": "Schedule your appointment online",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Appointment Locations",
+                    "action_type": "location",
+                    "description": "Find appointment service centers",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Appointment Preparation",
+                    "action_type": "requirements",
+                    "description": "What to bring to your appointment",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "location_phase": [
+                {
+                    "label": "Find Nearest Location",
+                    "action_type": "location",
+                    "description": "Locate nearby service centers",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Operating Hours",
+                    "action_type": "explain",
+                    "description": "Check service center hours",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Contact Information",
+                    "action_type": "contact",
+                    "description": "Get phone numbers and email",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "status_check": [
+                {
+                    "label": "Check Application Status",
+                    "action_type": "status",
+                    "description": "Track your application progress",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Processing Times",
+                    "action_type": "explain",
+                    "description": "Expected processing duration",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Contact Support",
+                    "action_type": "contact",
+                    "description": "Get help with status inquiries",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "cost_inquiry": [
+                {
+                    "label": "Fee Structure",
+                    "action_type": "explain",
+                    "description": "Detailed cost breakdown",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Payment Methods",
+                    "action_type": "explain",
+                    "description": "Accepted payment options",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Fee Waivers",
+                    "action_type": "explain",
+                    "description": "Eligibility for fee reductions",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+            "troubleshooting": [
+                {
+                    "label": "Common Issues",
+                    "action_type": "explain",
+                    "description": "Solutions to frequent problems",
+                    "priority": 1,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Technical Support",
+                    "action_type": "contact",
+                    "description": "Get technical assistance",
+                    "priority": 2,
+                    "source": "stage_specific",
+                },
+                {
+                    "label": "Alternative Methods",
+                    "action_type": "explain",
+                    "description": "Other ways to complete your task",
+                    "priority": 3,
+                    "source": "stage_specific",
+                },
+            ],
+        }
+
+        # Return options for the specific stage, or empty list if stage not recognized
+        return stage_options.get(conversation_stage, [])
+
     def _determine_conversation_stage(
         self, conversation_context: dict[str, Any]
     ) -> str:
-        """Determine the current stage of the conversation"""
+        """Determine the current stage of the conversation with enhanced detection"""
         current_query = conversation_context.get("current_query", "").lower()
+        conversation_history = conversation_context.get("conversation_history", [])
 
-        # Basic conversation stage detection
-        if any(word in current_query for word in ["how", "what", "where", "when"]):
+        # Enhanced conversation stage detection with context awareness
+        query_lower = current_query.lower()
+
+        # Check for specific patterns in the conversation
+        if any(
+            word in query_lower
+            for word in ["how", "what", "where", "when", "explain", "tell me about"]
+        ):
             return "information_gathering"
-        elif any(word in current_query for word in ["apply", "submit", "register"]):
+        elif any(
+            word in query_lower
+            for word in [
+                "apply",
+                "submit",
+                "register",
+                "start application",
+                "begin process",
+            ]
+        ):
             return "application_phase"
         elif any(
-            word in current_query for word in ["requirement", "document", "material"]
+            word in query_lower
+            for word in [
+                "requirement",
+                "document",
+                "material",
+                "need to bring",
+                "required",
+            ]
         ):
             return "requirements_phase"
-        elif any(word in current_query for word in ["appointment", "schedule", "book"]):
+        elif any(
+            word in query_lower
+            for word in [
+                "appointment",
+                "schedule",
+                "book",
+                "make appointment",
+                "reserve",
+            ]
+        ):
             return "appointment_phase"
-        elif any(word in current_query for word in ["location", "address", "where"]):
+        elif any(
+            word in query_lower
+            for word in ["location", "address", "where", "nearest", "service center"]
+        ):
             return "location_phase"
+        elif any(
+            word in query_lower
+            for word in ["status", "check", "track", "progress", "update"]
+        ):
+            return "status_check"
+        elif any(
+            word in query_lower
+            for word in ["cost", "fee", "price", "how much", "payment"]
+        ):
+            return "cost_inquiry"
+        elif any(
+            word in query_lower
+            for word in ["problem", "issue", "error", "trouble", "help with"]
+        ):
+            return "troubleshooting"
         else:
+            # Check conversation history for context
+            recent_messages = (
+                conversation_history[-3:]
+                if len(conversation_history) >= 3
+                else conversation_history
+            )
+            for msg in recent_messages:
+                content = msg.get("content", "").lower()
+                if any(
+                    word in content for word in ["requirement", "document", "material"]
+                ):
+                    return "requirements_phase"
+                elif any(word in content for word in ["appointment", "schedule"]):
+                    return "appointment_phase"
+                elif any(word in content for word in ["location", "address"]):
+                    return "location_phase"
+
             return "general_inquiry"

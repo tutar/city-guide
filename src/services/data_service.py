@@ -211,7 +211,15 @@ class DataService:
                         "role": msg.role,
                         "content": msg.content,
                         "timestamp": msg.timestamp.isoformat(),
-                        "metadata": msg.metadata,
+                        "metadata": {
+                            key: str(value)
+                            if hasattr(value, "__str__")
+                            and not isinstance(
+                                value, (str, int, float, bool, type(None))
+                            )
+                            else value
+                            for key, value in msg.metadata.items()
+                        },
                     }
                     for msg in conversation_context.conversation_history
                 ],

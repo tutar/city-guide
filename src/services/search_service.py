@@ -299,3 +299,47 @@ class SearchService:
         except Exception as e:
             logger.error(f"Failed to handle external URL: {e}")
             raise
+
+    def search_documents(
+        self, query: str, service_category_id: str | None = None, limit: int = 10
+    ) -> list[dict[str, Any]]:
+        """
+        Search for documents using hybrid search
+
+        This method provides a simplified interface for document search
+        that can be used by the conversation API.
+        """
+        try:
+            # Create search request
+            search_request = HybridSearchRequest(
+                query=query,
+                limit=limit,
+                include_semantic_search=True,
+                include_keyword_search=True,
+                service_category_id=service_category_id,
+            )
+
+            # Perform hybrid search
+            search_results = self.hybrid_search(search_request)
+
+            # Convert to simple dict format for API response
+            documents = []
+            for result in search_results:
+                doc = {
+                    "document_id": str(result.document_id),
+                    "document_title": result.document_title,
+                    "document_content": result.document_content,
+                    "source_url": result.source_url,
+                    "similarity_score": result.similarity_score,
+                    "hybrid_score": getattr(result, "hybrid_score", 0),
+                    "metadata": result.metadata,
+                }
+                documents.append(doc)
+
+            logger.info(f"Search documents completed: {len(documents)} results")
+            return documents
+
+        except Exception as e:
+            logger.error(f"Failed to search documents: {e}")
+            # Return empty list as fallback
+            return []

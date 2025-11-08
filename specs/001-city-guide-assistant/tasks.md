@@ -78,37 +78,37 @@ Phase 6: Polish
 ### Project Initialization
 
 - [X] T001 Create project structure per implementation plan in specs/001-city-guide-assistant/plan.md
-- [ ] T002 Create pyproject.toml with Poetry configuration for dependency management
-- [ ] T003 Create docker-compose.yml with PostgreSQL, Milvus, and Redis services
-- [ ] T004 Create .env.example template with all required environment variables
+- [X] T002 Create pyproject.toml with Poetry configuration for dependency management
+- [X] T003 Create docker-compose.yml with PostgreSQL, Milvus, and Redis services
+- [X] T004 Create .env.example template with all required environment variables
 - [ ] T005 Create Makefile with common development commands
 - [ ] T006 Set up virtual environment and install development dependencies
-- [ ] T007 Initialize git repository with proper .gitignore for Python project
-- [ ] T008 Set up pre-commit hooks for code quality (ruff, black, mypy)
+- [X] T007 Initialize git repository with proper .gitignore for Python project
+- [X] T008 Set up pre-commit hooks for code quality (ruff, black, mypy)
 
 ## Phase 2: Foundational
 
 ### Database Setup
 
-- [ ] T009 Set up PostgreSQL database with connection configuration in src/utils/config.py
-- [ ] T010 Create database setup script in scripts/setup_database.py
+- [X] T009 Set up PostgreSQL database with connection configuration in src/utils/config.py
+- [X] T010 Create database setup script in scripts/setup_database.py
 - [ ] T011 Create vector database setup script in scripts/setup_vector_db.py
-- [ ] T012 Create database migration system with Alembic
+- [X] T012 Create database migration system with Alembic
 
 ### Core Data Models
 
-- [ ] T013 Create ServiceCategory model with validation rules in src/models/service_categories.py
-- [ ] T014 Create ConversationContext model with state transitions in src/models/conversation_context.py
-- [ ] T015 Create NavigationOption model with action types in src/models/navigation_options.py
+- [X] T013 Create ServiceCategory model with validation rules in src/models/services.py
+- [X] T014 Create ConversationContext model with state transitions in src/models/conversation_model.py
+- [X] T015 Create NavigationOption model with action types in src/models/services.py
 - [ ] T016 Create OfficialInformationSource model in src/models/official_sources.py
 - [ ] T017 Create DocumentEmbedding model in src/models/document_embeddings.py
 - [ ] T018 Create SearchQuery model in src/models/search_queries.py
 
 ### Database Services
 
-- [ ] T019 Implement ServiceCategory database service with CRUD operations in src/services/service_category_service.py
-- [ ] T020 Implement ConversationContext database service with session management in src/services/conversation_service.py
-- [ ] T021 Implement NavigationOption database service with priority ordering in src/services/navigation_service.py
+- [X] T019 Implement ServiceCategory database service with CRUD operations in src/services/data_service.py
+- [X] T020 Implement ConversationContext database service with session management in src/services/data_service.py
+- [X] T021 Implement NavigationOption database service with priority ordering in src/services/data_service.py
 
 ### Vector Database Setup
 
@@ -118,8 +118,8 @@ Phase 6: Polish
 
 ### AI Integration
 
-- [ ] T025 Set up Deepseek API client with rate limiting in src/services/ai_service.py
-- [ ] T026 Configure Qwen3-Embedding-0.6B model for Chinese text in src/services/embedding_service.py
+- [X] T025 Set up Deepseek API client with rate limiting in src/services/ai_service.py
+- [X] T026 Configure Qwen3-Embedding-0.6B model for Chinese text in src/services/ai_service.py
 
 ### Search Infrastructure
 
@@ -128,7 +128,7 @@ Phase 6: Polish
 
 ### Infrastructure Services
 
-- [ ] T029 Implement configuration management in src/utils/config.py
+- [X] T029 Implement configuration management in src/utils/config.py
 - [ ] T030 Implement health check endpoints in src/api/health.py
 
 ## Phase 3: User Story 1 - Get Hong Kong/Macau Passport Guidance (P1)
@@ -137,27 +137,27 @@ Phase 6: Polish
 
 ### Test Creation (TDD)
 
-- [ ] T031 [US1] Create acceptance tests for passport guidance conversation flow in tests/integration/test_passport_guidance.py
-- [ ] T032 [US1] Create unit tests for ServiceCategory model and validation in tests/unit/test_services.py
-- [ ] T033 [US1] Create integration tests for conversation context management in tests/integration/test_conversation_context.py
+- [X] T031 [US1] Create acceptance tests for passport guidance conversation flow in tests/integration/test_passport_guidance.py
+- [X] T032 [US1] Create unit tests for ServiceCategory model and validation in tests/unit/test_services.py
+- [X] T033 [US1] Create integration tests for conversation context management in tests/integration/test_conversation_context.py
 
 ### Service Data Setup
 
-- [ ] T034 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/load_initial_data.py
-- [ ] T035 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/load_initial_data.py
+- [X] T034 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/load_initial_data.py
+- [X] T035 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/load_initial_data.py
 - [ ] T036 [P] [US1] Create sample passport document embeddings for search in scripts/generate_embeddings.py
 
 ### Conversation Flow
 
-- [ ] T037 [US1] Create unit tests for Deepseek API integration in tests/unit/test_ai_service.py
+- [X] T037 [US1] Create unit tests for Deepseek API integration in tests/unit/test_ai_service.py
 - [ ] T038 [US1] Implement conversation start endpoint with service context in src/api/conversations.py
-- [ ] T039 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
-- [ ] T040 [US1] Implement conversation history management in src/services/conversation_service.py
+- [X] T039 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
+- [X] T040 [US1] Implement conversation history management in src/services/conversation_service.py
 
 ### Navigation System
 
-- [ ] T041 [US1] Create dynamic navigation option generation based on conversation context in src/services/navigation_generator.py
-- [ ] T042 [US1] Implement navigation option filtering by service category in src/services/navigation_service.py
+- [X] T041 [US1] Create dynamic navigation option generation based on conversation context in src/services/navigation_generator.py
+- [X] T042 [US1] Implement navigation option filtering by service category in src/services/navigation_service.py
 - [ ] T043 [US1] Add external URL handling for appointment systems in src/utils/validation.py
 
 ### Integration
@@ -165,7 +165,7 @@ Phase 6: Polish
 - [ ] T044 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
 - [ ] T045 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
 - [ ] T046 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
-- [ ] T047 [US1] Create integration tests for passport guidance flow in tests/integration/test_passport_guidance.py
+- [X] T047 [US1] Create integration tests for passport guidance flow in tests/integration/test_passport_guidance.py
 
 ### External Service Integration (FR-005)
 
@@ -179,26 +179,26 @@ Phase 6: Polish
 
 ### Test Creation (TDD)
 
-- [ ] T048 [US2] Create acceptance tests for complex service explanation scenarios in tests/integration/test_complex_services.py
-- [ ] T049 [US2] Create unit tests for technical term explanation service in tests/unit/test_ai_service.py
-- [ ] T050 [US2] Create integration tests for location-based service filtering in tests/integration/test_location_services.py
+- [X] T048 [US2] Create acceptance tests for complex service explanation scenarios in tests/integration/test_complex_services.py
+- [X] T049 [US2] Create unit tests for technical term explanation service in tests/unit/test_ai_service.py
+- [X] T050 [US2] Create integration tests for location-based service filtering in tests/integration/test_location_services.py
 
 ### Complex Service Handling
 
-- [ ] T051 [P] [US2] Create additional service categories (visas, permits, registrations) in scripts/data_ingestion.py
-- [ ] T052 [P] [US2] Implement technical term explanation service in src/services/ai_service.py
-- [ ] T053 [P] [US2] Add fee structure information handling in src/models/services.py
+- [X] T051 [P] [US2] Create additional service categories (visas, permits, registrations) in scripts/data_ingestion.py
+- [X] T052 [P] [US2] Implement technical term explanation service in src/services/ai_service.py
+- [X] T053 [P] [US2] Add fee structure information handling in src/models/services.py
 
 ### Explanations
 
-- [ ] T054 [US2] Create explanation generation for complex procedures in src/services/ai_service.py
-- [ ] T055 [US2] Implement context-aware explanation selection in src/services/search_service.py
-- [ ] T056 [US2] Add explanation quality validation in src/utils/validation.py
+- [X] T054 [US2] Create explanation generation for complex procedures in src/services/ai_service.py
+- [X] T055 [US2] Implement context-aware explanation selection in src/services/search_service.py
+- [X] T056 [US2] Add explanation quality validation in src/utils/validation.py
 
 ### Location Services
 
-- [ ] T057 [US2] Implement location-based service filtering in src/services/search_service.py
-- [ ] T058 [US2] Add map integration for service locations in src/chainlit/components/service_navigation.py
+- [X] T057 [US2] Implement location-based service filtering in src/services/search_service.py
+- [X] T058 [US2] Add map integration for service locations in src/chainlit/components/service_navigation.py
 
 ## Phase 5: User Story 3 - Dynamic Contextual Navigation (P3)
 

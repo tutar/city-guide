@@ -60,7 +60,9 @@ if __name__ == "__main__":
 
     try:
         result = update_service_category_timezones()
-        logger.info(f"Timezone update completed successfully: {result} categories updated")
+        logger.info(
+            f"Timezone update completed successfully: {result} categories updated"
+        )
     except Exception as e:
         logger.error(f"Timezone update failed: {e}")
         exit(1)

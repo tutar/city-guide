@@ -8,9 +8,11 @@ from typing import Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from src.models.conversation import ConversationContext
-from src.services.ai_service import AIService
+from src.models.conversation_model import ConversationContext
 from src.services.data_service import DataService
+
+# from src.services.ai_service import AIService
+from src.services.mock_ai_service import MockAIService as AIService
 from src.services.search_service import SearchService
 
 router = APIRouter(prefix="/api/conversation", tags=["conversation"])
@@ -218,11 +220,20 @@ async def send_message(request: SendMessageRequest):
                 service_category_id=conversation_context.current_service_category_id,
             )
 
+            # Convert Message objects to dictionaries for AI service
+            conversation_history_dicts = [
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                }
+                for msg in conversation_context.get_recent_messages()
+            ]
+
             # Generate AI response
             response = ai_service.generate_government_guidance(
                 user_query=request.message,
                 context_documents=search_results,
-                conversation_history=conversation_context.get_recent_messages(),
+                conversation_history=conversation_history_dicts,
             )
 
             # Add assistant response to conversation

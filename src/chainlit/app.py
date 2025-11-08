@@ -32,8 +32,19 @@ async def on_chat_start():
     try:
         response = await start_conversation(request)
 
-        # Send welcome message
-        await cl.Message(content=response.welcome_message, author="Assistant").send()
+        # Send enhanced welcome message with context
+        welcome_content = f"""{response.welcome_message}
+
+**💡 How I can help you:**
+- **Government Services**: Passport applications, business registration, visa services
+- **Document Requirements**: Complete checklists and required materials
+- **Application Process**: Step-by-step guidance for various services
+- **Service Locations**: Find nearest government service centers
+- **Status Tracking**: Check application progress and processing times
+
+Feel free to ask me anything about government services!"""
+
+        await cl.Message(content=welcome_content, author="Assistant").send()
 
         # Store conversation context
         cl.user_session.set("conversation_id", response.conversation_id)
@@ -84,27 +95,105 @@ async def on_message(message: cl.Message):
 
 
 async def display_navigation_options(navigation_options: list):
-    """Display navigation options as interactive elements"""
+    """Display navigation options as interactive elements with enhanced UI"""
     if not navigation_options:
         return
 
-    # Create action elements for navigation options
-    actions = []
+    # Group navigation options by action type for better organization
+    grouped_options = {}
+    for option in navigation_options:
+        action_type = option.get("action_type", "general")
+        if action_type not in grouped_options:
+            grouped_options[action_type] = []
+        grouped_options[action_type].append(option)
+
+    # Define icons for different action types
+    action_icons = {
+        "requirements": "📋",
+        "explain": "📖",
+        "location": "📍",
+        "appointment": "📅",
+        "status": "📊",
+        "contact": "📞",
+        "download": "📥",
+        "external": "🔗",
+        "general": "💡",
+    }
+
+    # Group by priority for better visual hierarchy
+    high_priority_options = []
+    medium_priority_options = []
+    low_priority_options = []
 
     for option in navigation_options:
-        action = cl.Action(
-            name=option.get("label", "Unknown"),
-            value=option.get("label", ""),
-            description=option.get("description", ""),
-            label=option.get("label", "Unknown"),
-        )
-        actions.append(action)
+        priority = option.get("priority", 5)
+        if priority <= 2:
+            high_priority_options.append(option)
+        elif priority <= 4:
+            medium_priority_options.append(option)
+        else:
+            low_priority_options.append(option)
 
-    # Send navigation options
-    if actions:
+    # Display high priority options first
+    if high_priority_options:
         await cl.Message(
-            content="You can also:", actions=actions, author="Navigation"
+            content="**Recommended Next Steps:**", author="Navigation"
         ).send()
+
+        high_priority_actions = []
+        for option in high_priority_options:
+            action_type = option.get("action_type", "general")
+            icon = action_icons.get(action_type, "💡")
+            action = cl.Action(
+                name=option.get("label", "Unknown"),
+                value=option.get("label", ""),
+                description=option.get("description", ""),
+                label=f"{icon} {option.get('label', 'Unknown')}",
+            )
+            high_priority_actions.append(action)
+
+        if high_priority_actions:
+            await cl.Message(actions=high_priority_actions, author="Navigation").send()
+
+    # Display medium priority options
+    if medium_priority_options:
+        await cl.Message(content="**Related Actions:**", author="Navigation").send()
+
+        medium_priority_actions = []
+        for option in medium_priority_options:
+            action_type = option.get("action_type", "general")
+            icon = action_icons.get(action_type, "💡")
+            action = cl.Action(
+                name=option.get("label", "Unknown"),
+                value=option.get("label", ""),
+                description=option.get("description", ""),
+                label=f"{icon} {option.get('label', 'Unknown')}",
+            )
+            medium_priority_actions.append(action)
+
+        if medium_priority_actions:
+            await cl.Message(
+                actions=medium_priority_actions, author="Navigation"
+            ).send()
+
+    # Display low priority options
+    if low_priority_options:
+        await cl.Message(content="**Additional Options:**", author="Navigation").send()
+
+        low_priority_actions = []
+        for option in low_priority_options:
+            action_type = option.get("action_type", "general")
+            icon = action_icons.get(action_type, "💡")
+            action = cl.Action(
+                name=option.get("label", "Unknown"),
+                value=option.get("label", ""),
+                description=option.get("description", ""),
+                label=f"{icon} {option.get('label', 'Unknown')}",
+            )
+            low_priority_actions.append(action)
+
+        if low_priority_actions:
+            await cl.Message(actions=low_priority_actions, author="Navigation").send()
 
 
 @cl.action_callback

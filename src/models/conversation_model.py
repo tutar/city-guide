@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, validator
 
 
 class Message(BaseModel):
@@ -18,7 +18,7 @@ class Message(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     metadata: Optional[dict[str, Any]] = Field(default_factory=dict)
 
-    @field_validator("role")
+    @validator("role")
     @classmethod
     def validate_role(cls, v):
         valid_roles = ["user", "assistant"]
@@ -26,19 +26,18 @@ class Message(BaseModel):
             raise ValueError(f"Role must be one of: {valid_roles}")
         return v
 
-    @field_validator("content")
+    @validator("content")
     @classmethod
     def content_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Content cannot be empty")
         return v.strip()
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
-    )
 
 
 class ConversationContext(BaseModel):
@@ -56,14 +55,14 @@ class ConversationContext(BaseModel):
     last_activity: datetime = Field(default_factory=lambda: datetime.now(UTC))
     is_active: bool = Field(default=True, description="Whether session is still active")
 
-    @field_validator("user_session_id")
+    @validator("user_session_id")
     @classmethod
     def session_id_must_be_valid(cls, v):
         if not v.strip():
             raise ValueError("Session ID cannot be empty")
         return v.strip()
 
-    @field_validator("conversation_history")
+    @validator("conversation_history")
     @classmethod
     def conversation_history_validation(cls, v):
         # Ensure conversation history doesn't grow too large
@@ -103,12 +102,11 @@ class ConversationContext(BaseModel):
         """Mark conversation as completed"""
         self.is_active = False
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
-    )
 
 
 class ConversationState(BaseModel):
@@ -127,7 +125,7 @@ class ConversationState(BaseModel):
         }
     )
 
-    @field_validator("state")
+    @validator("state")
     @classmethod
     def validate_state(cls, v):
         valid_states = ["created", "active", "inactive", "completed"]

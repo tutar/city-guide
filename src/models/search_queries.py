@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, validator
 
 
 class SearchQuery(BaseModel):
@@ -40,7 +40,7 @@ class SearchQuery(BaseModel):
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @field_validator("search_type")
+    @validator("search_type")
     @classmethod
     def validate_search_type(cls, v):
         valid_types = ["hybrid", "vector", "keyword"]
@@ -48,14 +48,14 @@ class SearchQuery(BaseModel):
             raise ValueError(f"Search type must be one of: {valid_types}")
         return v
 
-    @field_validator("query_text")
+    @validator("query_text")
     @classmethod
     def query_text_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Query text cannot be empty")
         return v.strip()
 
-    @field_validator("normalized_query")
+    @validator("normalized_query")
     @classmethod
     def normalized_query_must_not_be_empty(cls, v):
         if not v.strip():
@@ -80,12 +80,11 @@ class SearchQuery(BaseModel):
         if feedback:
             self.user_feedback = feedback
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
-    )
 
 
 class SearchAnalytics(BaseModel):
@@ -161,7 +160,7 @@ class QuerySuggestion(BaseModel):
         default=0, ge=0, description="How often suggestion was used"
     )
 
-    @field_validator("confidence_score")
+    @validator("confidence_score")
     @classmethod
     def validate_confidence_score(cls, v):
         if not 0.0 <= v <= 1.0:

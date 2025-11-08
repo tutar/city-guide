@@ -2,14 +2,14 @@
 Configuration management for City Guide Smart Assistant
 """
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseSettings, Field
 
 
 class DatabaseSettings(BaseSettings):
     """Database configuration settings"""
 
-    model_config = SettingsConfigDict(env_prefix="POSTGRES_")
+    class Config:
+        env_prefix = "POSTGRES_"
 
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
@@ -29,7 +29,8 @@ class DatabaseSettings(BaseSettings):
 class MilvusSettings(BaseSettings):
     """Milvus vector database configuration"""
 
-    model_config = SettingsConfigDict(env_prefix="MILVUS_")
+    class Config:
+        env_prefix = "MILVUS_"
 
     host: str = Field(default="localhost")
     port: int = Field(default=19530)
@@ -39,7 +40,8 @@ class MilvusSettings(BaseSettings):
 class AISettings(BaseSettings):
     """AI service configuration"""
 
-    model_config = SettingsConfigDict(env_prefix="")
+    class Config:
+        env_prefix = ""
 
     deepseek_api_key: str = Field(default="test-api-key", alias="DEEPSEEK_API_KEY")
     deepseek_base_url: str = Field(
@@ -58,7 +60,8 @@ class AISettings(BaseSettings):
 class ChainlitSettings(BaseSettings):
     """Chainlit frontend configuration"""
 
-    model_config = SettingsConfigDict(env_prefix="CHAINLIT_")
+    class Config:
+        env_prefix = "CHAINLIT_"
 
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
@@ -68,7 +71,9 @@ class ChainlitSettings(BaseSettings):
 class Settings(BaseSettings):
     """Main application settings"""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
     app_name: str = "City Guide Smart Assistant"
     app_version: str = "1.0.0"

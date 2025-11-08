@@ -6,7 +6,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, validator
+from pydantic.networks import HttpUrl
 
 
 class ServiceCategory(BaseModel):
@@ -29,7 +30,7 @@ class ServiceCategory(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @field_validator("name")
+    @validator("name")
     @classmethod
     def name_must_be_unique(cls, v):
         # This would be validated at database level
@@ -37,7 +38,7 @@ class ServiceCategory(BaseModel):
             raise ValueError("Name cannot be empty")
         return v.strip()
 
-    @field_validator("last_verified")
+    @validator("last_verified")
     @classmethod
     def last_verified_within_30_days(cls, v):
         # Ensure both datetimes are timezone-aware for comparison
@@ -48,12 +49,11 @@ class ServiceCategory(BaseModel):
             raise ValueError("Service information must be verified within last 30 days")
         return v
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
-    )
 
 
 class NavigationOption(BaseModel):
@@ -80,7 +80,7 @@ class NavigationOption(BaseModel):
         default=True, description="Whether this option is currently available"
     )
 
-    @field_validator("action_type")
+    @validator("action_type")
     @classmethod
     def validate_action_type(cls, v):
         valid_types = ["explain", "requirements", "appointment", "location", "related"]
@@ -88,17 +88,16 @@ class NavigationOption(BaseModel):
             raise ValueError(f"Action type must be one of: {valid_types}")
         return v
 
-    @field_validator("label")
+    @validator("label")
     @classmethod
     def label_must_be_clear(cls, v):
         if not v.strip():
             raise ValueError("Label must be clear and actionable")
         return v.strip()
 
-    @field_validator("target_url")
+    @validator("target_url")
     @classmethod
-    def validate_target_url(cls, v, info):
-        values = info.data
+    def validate_target_url(cls, v, values):
         if values.get("action_type") in ["appointment", "location"]:
             # For appointment and location actions, URL should be provided
             if not v:
@@ -107,11 +106,10 @@ class NavigationOption(BaseModel):
                 )
         return v
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
         }
-    )
 
 
 class OfficialInformationSource(BaseModel):
@@ -130,7 +128,7 @@ class OfficialInformationSource(BaseModel):
     error_count: int = Field(default=0, description="Number of consecutive errors")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @field_validator("update_frequency")
+    @validator("update_frequency")
     @classmethod
     def validate_update_frequency(cls, v):
         valid_frequencies = ["daily", "weekly", "monthly", "on_change"]
@@ -138,7 +136,7 @@ class OfficialInformationSource(BaseModel):
             raise ValueError(f"Update frequency must be one of: {valid_frequencies}")
         return v
 
-    @field_validator("status")
+    @validator("status")
     @classmethod
     def validate_status(cls, v):
         valid_statuses = ["active", "inactive", "error"]
@@ -146,9 +144,8 @@ class OfficialInformationSource(BaseModel):
             raise ValueError(f"Status must be one of: {valid_statuses}")
         return v
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
-    )

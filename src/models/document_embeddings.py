@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, validator
 
 
 class DocumentEmbedding(BaseModel):
@@ -35,7 +35,7 @@ class DocumentEmbedding(BaseModel):
         default=True, description="Whether this embedding is active"
     )
 
-    @field_validator("document_type")
+    @validator("document_type")
     @classmethod
     def validate_document_type(cls, v):
         valid_types = ["requirements", "procedures", "locations", "faqs"]
@@ -43,21 +43,21 @@ class DocumentEmbedding(BaseModel):
             raise ValueError(f"Document type must be one of: {valid_types}")
         return v
 
-    @field_validator("embedding")
+    @validator("embedding")
     @classmethod
     def validate_embedding_dimension(cls, v):
         if len(v) != 1024:
             raise ValueError(f"Embedding must be 1024-dimensional, got {len(v)}")
         return v
 
-    @field_validator("title")
+    @validator("title")
     @classmethod
     def title_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Title cannot be empty")
         return v.strip()
 
-    @field_validator("content")
+    @validator("content")
     @classmethod
     def content_must_not_be_empty(cls, v):
         if not v.strip():
@@ -80,12 +80,11 @@ class DocumentEmbedding(BaseModel):
         self.is_active = False
         self.updated_at = datetime.now(UTC)
 
-    model_config = ConfigDict(
-        json_encoders={
+    class Config:
+        json_encoders = {
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
-    )
 
 
 class SearchResult(BaseModel):
@@ -97,7 +96,7 @@ class SearchResult(BaseModel):
     )
     rank: int = Field(..., ge=1, description="Rank in search results")
 
-    @field_validator("similarity_score")
+    @validator("similarity_score")
     @classmethod
     def validate_similarity_score(cls, v):
         if not 0.0 <= v <= 1.0:
@@ -120,7 +119,7 @@ class BatchEmbeddingRequest(BaseModel):
         ..., description="Service category for all documents"
     )
 
-    @field_validator("documents")
+    @validator("documents")
     @classmethod
     def validate_documents(cls, v):
         if not v:

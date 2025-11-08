@@ -34,8 +34,7 @@ cd src && pytest && ruff check .
 Python 3.12+ (backend), Chainlit (frontend): Follow standard conventions
 
 ## Recent Changes
-- 001-city-guide-assistant: Updated to Python 3.12+ (Python 3.11+ EoL), Node.js v22+ (Node.js 18+ EoL) + FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client, Qwen3-Embedding-0.6B
-
+- 001-city-guide-assistant: Added Python 3.12+ (backend), Chainlit (frontend), Chainlit (frontend) + FastAPI (backend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), Qwen3-Embedding-0.6B (embeddings)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

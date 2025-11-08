@@ -7,38 +7,52 @@
 
 ## Summary
 
-Build an AI-powered conversational interface for Shenzhen government services using Deepseek API for reasoning, Qwen3-Embedding-0.6B for embeddings, Milvus for vector storage, Chainlit for frontend, and RRF for hybrid search. The system will provide accurate, step-by-step guidance through natural language interaction with source attribution and context-aware navigation.
+**Primary Requirement**: Build a City Guide Smart Assistant that provides accurate, step-by-step guidance for Shenzhen government services through natural conversation with dynamic contextual navigation.
+
+**Technical Approach**: Python 3.12+ backend with FastAPI, Chainlit frontend, PostgreSQL for metadata, Milvus for vector search, and Deepseek API for AI capabilities. Requires infrastructure setup with docker-compose.yml for service dependencies and Python dependency management.
 
 ## Technical Context
 
-**Language/Version**: Python 3.12+ for application (Python 3.11+ EoL), Node.js v22+ for tooling (Node.js 18+ EoL)
-**Primary Dependencies**: FastAPI, Chainlit, transformers, pymilvus, deepseek-api, qdrant-client
+**Language/Version**: Python 3.12+ (backend), Chainlit (frontend)
+**Primary Dependencies**: FastAPI (backend), Chainlit (frontend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), Qwen3-Embedding-0.6B (embeddings)
 **Storage**: PostgreSQL for metadata, Milvus for vectors, Redis for caching
-**Testing**: pytest for backend, Chainlit testing utilities
-**Target Platform**: Linux server for backend, web browser for Chainlit interface
-**Project Type**: single project with integrated Chainlit frontend
-**Performance Goals**: <2s AI response time, <1s search latency, 100+ concurrent users
-**Constraints**: <200ms p95 for search, <100MB memory per embedding model instance, Chinese language optimization
-**Scale/Scope**: 10k government service documents, 50+ service categories, multi-language support
+**Testing**: pytest, ruff, comprehensive test suite
+**Target Platform**: Linux server with container deployment
+**Project Type**: web application (backend API + frontend chat interface)
+**Performance Goals**: sub-200ms response times for core interactions, 99.9% uptime
+**Constraints**: Requires docker-compose.yml for infrastructure services (PostgreSQL, Milvus, Redis), Python dependency management needed
+**Scale/Scope**: 10k users, government service information with dynamic contextual navigation
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-✅ **Code Quality Standards**: Test-first development, comprehensive documentation, modular design
-✅ **Test-First Development**: TDD approach with >90% test coverage for critical paths
-✅ **User Experience Consistency**: Chainlit provides consistent conversational interface
-✅ **Performance & Scalability**: <2s response time targets, 100+ concurrent users
-✅ **Security & Data Integrity**: External API validation, data verification, source attribution
-✅ **Modern Technology Stack**: Python 3.12+ and Node.js v22+ ensure long-term support and security
+### ✅ **Code Quality Standards** - **PASS**
+- Project has comprehensive configuration management with Pydantic
+- Well-structured code organization with clear separation of concerns
+- Missing: dependency management and containerization (addressed in research)
 
-**POST-DESIGN RE-EVALUATION**:
-✅ **Updated Runtime Versions**: Python 3.12+ and Node.js v22+ address EoL concerns and provide security compliance
-✅ **Simplified Architecture**: Single project structure reduces complexity while maintaining separation of concerns
-✅ **Development Efficiency**: Integrated Chainlit frontend eliminates frontend/backend coordination overhead
-✅ **Deployment Simplicity**: Single Docker container deployment reduces operational complexity
+### ✅ **Test-First Development** - **PASS**
+- Test structure exists with pytest configuration
+- Unit tests for various components
+- Missing: comprehensive test coverage (addressed in research)
 
-**All constitution gates pass** - Architecture aligns with quality standards and constraints
+### ✅ **User Experience Consistency** - **PASS**
+- Chainlit provides consistent chat interface
+- Dynamic navigation system planned for contextual UX
+- Missing: accessibility standards verification (addressed in research)
+
+### ✅ **Performance & Scalability** - **PASS**
+- Performance goals defined (sub-200ms response times)
+- Scalable architecture with FastAPI and container deployment
+- Missing: performance monitoring setup (addressed in research)
+
+### ✅ **Security & Data Integrity** - **PASS**
+- Data validation with Pydantic models
+- External integrations with security review requirement
+- Missing: authentication/authorization implementation (addressed in research)
+
+**OVERALL STATUS**: ✅ **PASS** - All constitution principles are addressed with clear plans for missing components
 
 ## Project Structure
 
@@ -57,47 +71,23 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```text
-src/
-├── models/
-│   ├── conversation.py
-│   ├── services.py
-│   └── embeddings.py
-├── services/
-│   ├── search_service.py
-│   ├── embedding_service.py
-│   ├── ai_service.py
-│   └── data_service.py
-├── api/
-│   ├── conversation.py
-│   ├── services.py
-│   └── search.py
-├── chainlit/
-│   ├── app.py
-│   ├── components/
-│   │   ├── chat_interface.py
-│   │   ├── service_navigation.py
-│   │   └── search_results.py
-│   └── utils/
-│       ├── config.py
-│       ├── logging.py
-│       └── validation.py
-└── utils/
-    ├── config.py
-    ├── logging.py
-    └── validation.py
-
-tests/
-├── unit/
-├── integration/
-└── contract/
-
-scripts/
-├── setup_database.py
-├── setup_vector_db.py
-└── data_ingestion.py
+city-guide/
+├── src/                    # Main application code
+│   ├── models/            # Data models and database schemas
+│   ├── services/          # Business logic and service layer
+│   ├── api/               # FastAPI endpoints and routes
+│   ├── chainlit/          # Chainlit frontend components
+│   └── utils/             # Utility functions and configuration
+├── tests/                 # Test suites
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   └── contract/          # Contract tests
+├── scripts/               # Setup and data scripts
+├── specs/                 # Feature specifications and plans
+└── .specify/              # Development workflow templates
 ```
 
-**Structure Decision**: Single project structure selected with integrated Chainlit frontend. This simplifies deployment and development while maintaining clear separation between business logic (services), data models, API endpoints, and the Chainlit conversational interface. The structure supports the conversational AI focus with Chainlit's specialized capabilities while keeping all code in a single codebase with modern Python 3.12+ and Node.js v22+ tooling.
+**Structure Decision**: Single project structure with clear separation of concerns. The project uses FastAPI backend with Chainlit frontend in a unified codebase, following modern Python web application patterns.
 
 ## Complexity Tracking
 

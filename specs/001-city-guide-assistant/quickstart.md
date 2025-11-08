@@ -10,10 +10,14 @@ The City Guide Smart Assistant is an AI-powered conversational interface that pr
 ## Prerequisites
 
 ### Development Environment
+- Docker and Docker Compose
 - Python 3.12+ for application (Python 3.11+ EoL)
 - Node.js v22+ for tooling (Node.js 18+ EoL)
-- PostgreSQL 14+ for database
-- Redis 6+ for caching
+
+### Infrastructure Services
+- PostgreSQL 15+ for database
+- Milvus 2.3+ for vector search
+- Redis 7+ for caching
 
 ### API Keys
 - Deepseek API key for AI conversation
@@ -21,14 +25,33 @@ The City Guide Smart Assistant is an AI-powered conversational interface that pr
 
 ## Getting Started
 
-### 1. Application Setup
+### 1. Infrastructure Setup
+
+```bash
+# Start all infrastructure services using Docker Compose
+docker-compose up -d
+
+# Verify services are running
+docker-compose ps
+```
+
+Expected services:
+- PostgreSQL (port 5432)
+- Milvus (port 19530)
+- Redis (port 6379)
+
+### 2. Application Setup
 
 ```bash
 # Clone and setup application
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
+# Install dependencies using Poetry or pip
+# Option A: Using Poetry (recommended)
+poetry install
+
+# Option B: Using pip
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
@@ -52,17 +75,30 @@ python -m scripts.setup_vector_db
 chainlit run src/chainlit/app.py
 ```
 
-### 2. Verify Setup
+### 3. Verify Setup
 
-1. **Application Health Check**:
+1. **Infrastructure Health Check**:
    ```bash
-   curl http://localhost:8000/health
-   # Should return: {"status": "healthy", "version": "1.0.0"}
+   # Check all services are running
+   docker-compose ps
+
+   # Test database connection
+   python scripts/check_connections.py
    ```
 
-2. **Chainlit Interface Access**:
+2. **Application Health Check**:
+   ```bash
+   curl http://localhost:8000/api/v1/health
+   # Should return: {"status": "healthy", "dependencies": {"postgresql": "connected", "milvus": "connected", "redis": "connected"}}
+   ```
+
+3. **Chainlit Interface Access**:
    - Open http://localhost:8000 in your browser
    - You should see the City Guide Smart Assistant interface
+
+4. **API Documentation**:
+   - Access Swagger UI: http://localhost:8000/docs
+   - Access Milvus Web UI: http://localhost:9091/webui/
 
 ## Core Features
 

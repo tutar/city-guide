@@ -171,6 +171,52 @@ Represents user search queries for analytics and improvement.
 - `DocumentEmbedding.embedding_vector` (vector similarity search)
 - `SearchQuery.query_embedding` (query analysis)
 
+## Infrastructure Data Models
+
+### ServiceDependency
+Tracks infrastructure service dependencies for deployment and monitoring.
+
+**Fields**:
+- `id` (UUID): Primary key
+- `service_name` (string): Service name (e.g., "PostgreSQL", "Milvus", "Redis")
+- `service_type` (enum): ["database", "cache", "vector_db", "api"]
+- `version` (string): Required version
+- `health_check_url` (string, nullable): URL for health checks
+- `is_required` (boolean): Whether service is required for operation
+- `created_at` (datetime): Record creation timestamp
+- `updated_at` (datetime): Last update timestamp
+
+### EnvironmentConfiguration
+Manages environment-specific configuration settings.
+
+**Fields**:
+- `id` (UUID): Primary key
+- `environment` (enum): ["development", "staging", "production"]
+- `config_key` (string): Configuration key
+- `config_value` (string): Configuration value
+- `is_secret` (boolean): Whether value is sensitive
+- `description` (string): Configuration description
+- `created_at` (datetime): Record creation timestamp
+- `updated_at` (datetime): Last update timestamp
+
+## Infrastructure Relationships
+
+- **ServiceDependency** → **EnvironmentConfiguration** (One-to-Many)
+  - Service dependencies can have multiple environment configurations
+  - Configurations are specific to deployment environments
+
+## Infrastructure Validation Rules
+
+### Service Dependency Management
+- Required services must have health check endpoints defined
+- Service versions must be compatible with application requirements
+- Missing required services must trigger application startup failures
+
+### Environment Configuration
+- Secret values must be encrypted at rest
+- Development configurations must not be used in production
+- Configuration changes must be tracked with audit trail
+
 ## Data Retention Policies
 
 ### Conversation Data
@@ -187,3 +233,7 @@ Represents user search queries for analytics and improvement.
 - Document embeddings: Permanent (with regeneration on change)
 - Search queries: 6 months (for analytics and improvement)
 - Query embeddings: 3 months (for search optimization)
+
+### Infrastructure Data
+- Service dependency data: Permanent
+- Environment configurations: Permanent (with version history)

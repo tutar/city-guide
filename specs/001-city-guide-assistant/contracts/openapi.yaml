@@ -1,0 +1,363 @@
+openapi: 3.0.3
+info:
+  title: City Guide Smart Assistant API
+  description: API for Shenzhen government service guidance and dynamic navigation
+  version: 1.0.0
+  contact:
+    name: Development Team
+    email: dev@city-guide.example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.city-guide.example.com
+    description: Production server
+
+paths:
+  /api/v1/conversations:
+    post:
+      summary: Start a new conversation
+      description: Creates a new conversation session and returns initial context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartConversationRequest'
+      responses:
+        '201':
+          description: Conversation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '400':
+          description: Invalid request
+
+  /api/v1/conversations/{session_id}:
+    get:
+      summary: Get conversation context
+      description: Retrieves current conversation context including navigation options
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation context retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '404':
+          description: Conversation not found
+
+    post:
+      summary: Send message to conversation
+      description: Processes user message and returns AI response with updated navigation
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Message processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '404':
+          description: Conversation not found
+
+  /api/v1/services:
+    get:
+      summary: List available service categories
+      description: Returns all available government service categories
+      parameters:
+        - name: geographic_scope
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "Shenzhen"
+      responses:
+        '200':
+          description: Service categories retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceCategory'
+
+  /api/v1/services/{service_id}/procedures:
+    get:
+      summary: Get service procedures
+      description: Returns detailed procedures for a specific service category
+      parameters:
+        - name: service_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Service procedures retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  procedures:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceProcedure'
+        '404':
+          description: Service not found
+
+  /api/v1/search:
+    post:
+      summary: Search government services
+      description: Performs hybrid search across service information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  /api/v1/health:
+    get:
+      summary: Health check
+      description: Checks service health and dependencies
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  dependencies:
+                    type: object
+                    properties:
+                      postgresql:
+                        type: string
+                        example: "connected"
+                      milvus:
+                        type: string
+                        example: "connected"
+                      redis:
+                        type: string
+                        example: "connected"
+
+components:
+  schemas:
+    StartConversationRequest:
+      type: object
+      properties:
+        initial_message:
+          type: string
+          description: Optional initial message to start conversation
+        user_preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    SendMessageRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: User message text
+
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Search query text
+        session_id:
+          type: string
+          format: uuid
+          description: Optional session ID for contextual search
+
+    ConversationResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        current_topic:
+          $ref: '#/components/schemas/ServiceCategory'
+        conversation_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+        navigation_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationOption'
+        user_preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        suggested_queries:
+          type: array
+          items:
+            type: string
+
+    ServiceCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        official_source_url:
+          type: string
+          format: uri
+        geographic_scope:
+          type: string
+
+    ServiceProcedure:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        step_by_step_instructions:
+          type: array
+          items:
+            type: object
+            properties:
+              step_number:
+                type: integer
+              instruction:
+                type: string
+        material_requirements:
+          type: array
+          items:
+            type: string
+        estimated_time:
+          type: string
+        fees:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        appointment_required:
+          type: boolean
+        appointment_url:
+          type: string
+          format: uri
+
+    NavigationOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        action_type:
+          type: string
+          enum: ["navigate", "external_link", "explanation"]
+        target_url:
+          type: string
+          format: uri
+        description:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    ConversationMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: ["user", "assistant"]
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        language:
+          type: string
+          default: "zh-CN"
+        location:
+          type: string
+          default: "Shenzhen"
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        source:
+          type: string
+        relevance_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        source_priority:
+          type: integer
+          minimum: 1
+          maximum: 10

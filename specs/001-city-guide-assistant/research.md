@@ -320,6 +320,73 @@ with torch.no_grad():
 - **Mitigation**: Start with standalone, plan Kubernetes migration
 - **Monitoring**: Comprehensive observability with Prometheus/Grafana
 
+## Infrastructure Gaps Analysis (2025-11-08 Update)
+
+### Missing Infrastructure Components
+
+Based on codebase analysis, the following infrastructure components are missing:
+
+1. **Dependency Management** - No Python dependency specification
+2. **Containerization** - No Docker/docker-compose setup
+3. **Service Orchestration** - No database services (PostgreSQL, Milvus, Redis)
+4. **Environment Configuration** - No environment variable management
+5. **Development Setup** - No virtual environment or build scripts
+
+### Infrastructure Implementation Decisions
+
+#### Python Dependency Management
+
+**Decision**: Use `pyproject.toml` with Poetry for dependency management
+
+**Rationale**:
+- Modern Python packaging standard
+- Better dependency resolution than requirements.txt
+- Built-in virtual environment management
+- Clear separation of development vs production dependencies
+
+**Alternatives considered**:
+- `requirements.txt` - Too basic, no dependency resolution
+- `Pipfile` - Less standard than pyproject.toml
+- `setup.py` - Legacy approach, being phased out
+
+#### Container Orchestration
+
+**Decision**: Use `docker-compose.yml` with multi-service setup
+
+**Rationale**:
+- Standard for local development
+- Easy service dependency management
+- Consistent with production deployment patterns
+- Well-supported by CI/CD systems
+
+**Service Stack**:
+- PostgreSQL 15+ for relational data
+- Milvus 2.3+ for vector search
+- Redis 7+ for caching
+- Application container with Python 3.12
+
+#### Development Environment
+
+**Decision**: Poetry + Docker Compose + Makefile
+
+**Rationale**:
+- **Poetry**: Modern Python dependency management
+- **Docker Compose**: Consistent service orchestration
+- **Makefile**: Standard development commands
+
+### Required Dependencies
+
+**Core Framework**:
+- `fastapi>=0.104.0`, `chainlit>=1.0.0`, `uvicorn>=0.24.0`
+- `sqlalchemy>=2.0.0`, `psycopg2-binary>=2.9.0`
+- `pymilvus>=2.3.0`, `redis>=5.0.0`
+
+**AI/ML Stack**:
+- `transformers>=4.35.0`, `torch>=2.1.0`, `requests>=2.31.0`
+
+**Development Tools**:
+- `pytest>=7.4.0`, `ruff>=0.1.0`, `black>=23.0.0`, `mypy>=1.7.0`, `pre-commit>=3.5.0`
+
 ## Conclusion
 
 The updated technical stack with Milvus, Chainlit, Qwen3-Embedding-0.6B, and RRF provides a robust foundation for the City Guide Smart Assistant. This combination offers:
@@ -331,5 +398,7 @@ The updated technical stack with Milvus, Chainlit, Qwen3-Embedding-0.6B, and RRF
 5. **User Experience**: Chainlit with conversational interface focus
 6. **Search Quality**: RRF with optimal fusion for government queries
 7. **Scalability**: Production-ready architecture for growth
+
+**Infrastructure Status**: Missing dependency management and container orchestration - will be addressed in implementation phase with pyproject.toml and docker-compose.yml.
 
 The implementation strategy prioritizes rapid MVP development while maintaining the flexibility for production deployment and future scaling.

@@ -343,3 +343,126 @@ class SearchService:
             logger.error(f"Failed to search documents: {e}")
             # Return empty list as fallback
             return []
+
+    def get_related_services(
+        self, current_service: str, user_session_id: str
+    ) -> list[dict[str, Any]]:
+        """Get related services based on current service and conversation context"""
+        try:
+            # Define service relationships
+            service_relationships = {
+                "passport": [
+                    {
+                        "name": "Hong Kong Visa Services",
+                        "description": "Visa application and extension services",
+                        "relevance_score": 0.8,
+                        "reason": "Often needed together for international travel"
+                    },
+                    {
+                        "name": "Hong Kong ID Card Services",
+                        "description": "ID card application and renewal",
+                        "relevance_score": 0.6,
+                        "reason": "Common identification document"
+                    },
+                    {
+                        "name": "Business Registration",
+                        "description": "Business registration and licensing",
+                        "relevance_score": 0.4,
+                        "reason": "May be needed for business travel"
+                    }
+                ],
+                "visa": [
+                    {
+                        "name": "Hong Kong Passport Services",
+                        "description": "Passport application and renewal services",
+                        "relevance_score": 0.8,
+                        "reason": "Required for visa applications"
+                    },
+                    {
+                        "name": "Employment Services",
+                        "description": "Work permit and employment services",
+                        "relevance_score": 0.7,
+                        "reason": "Often related to work visas"
+                    },
+                    {
+                        "name": "Residence Services",
+                        "description": "Residence permit and registration",
+                        "relevance_score": 0.6,
+                        "reason": "Related to long-term stays"
+                    }
+                ],
+                "business registration": [
+                    {
+                        "name": "Tax Registration",
+                        "description": "Tax registration and filing services",
+                        "relevance_score": 0.9,
+                        "reason": "Required after business registration"
+                    },
+                    {
+                        "name": "Employment Services",
+                        "description": "Work permit and employment services",
+                        "relevance_score": 0.7,
+                        "reason": "Needed for hiring employees"
+                    },
+                    {
+                        "name": "Business Licensing",
+                        "description": "Additional business licenses and permits",
+                        "relevance_score": 0.8,
+                        "reason": "Complementary to business registration"
+                    }
+                ]
+            }
+
+            # Get conversation context for additional context
+            with DataService() as data_service:
+                conversation_context = data_service.get_conversation_context(user_session_id)
+
+            # Find related services
+            current_service_lower = current_service.lower()
+            related_services = []
+
+            # Check for exact matches
+            for service_name, related_list in service_relationships.items():
+                if service_name in current_service_lower:
+                    related_services.extend(related_list)
+                    break
+
+            # If no exact match, check for partial matches
+            if not related_services:
+                for service_name, related_list in service_relationships.items():
+                    if any(word in current_service_lower for word in service_name.split()):
+                        related_services.extend(related_list)
+                        break
+
+            # If still no matches, return some general suggestions
+            if not related_services:
+                related_services = [
+                    {
+                        "name": "Hong Kong Passport Services",
+                        "description": "Passport application and renewal services",
+                        "relevance_score": 0.5,
+                        "reason": "Common government service"
+                    },
+                    {
+                        "name": "Hong Kong Visa Services",
+                        "description": "Visa application and extension services",
+                        "relevance_score": 0.4,
+                        "reason": "Common government service"
+                    },
+                    {
+                        "name": "Business Registration",
+                        "description": "Business registration and licensing",
+                        "relevance_score": 0.3,
+                        "reason": "Common government service"
+                    }
+                ]
+
+            # Sort by relevance score
+            related_services.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+            logger.info(f"Found {len(related_services)} related services for '{current_service}'")
+            return related_services
+
+        except Exception as e:
+            logger.error(f"Failed to get related services: {e}")
+            return []

@@ -55,6 +55,20 @@ class ConversationContext(BaseModel):
     last_activity: datetime = Field(default_factory=lambda: datetime.now(UTC))
     is_active: bool = Field(default=True, description="Whether session is still active")
 
+    # Service relationship tracking
+    service_relationships: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Track relationships between services accessed in this conversation"
+    )
+    related_services_suggested: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Track related services that have been suggested to the user"
+    )
+    service_transitions: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Track transitions between different service categories"
+    )
+
     @validator("user_session_id")
     @classmethod
     def session_id_must_be_valid(cls, v):
@@ -101,6 +115,77 @@ class ConversationContext(BaseModel):
     def mark_completed(self) -> None:
         """Mark conversation as completed"""
         self.is_active = False
+
+    def add_service_relationship(
+        self,
+        source_service_id: uuid.UUID,
+        target_service_id: uuid.UUID,
+        relationship_type: str,
+        relevance_score: float = 0.5
+    ) -> None:
+        """Add a service relationship to tracking"""
+        relationship = {
+            "source_service_id": str(source_service_id),
+            "target_service_id": str(target_service_id),
+            "relationship_type": relationship_type,
+            "relevance_score": relevance_score,
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+        self.service_relationships.append(relationship)
+
+    def add_related_service_suggestion(
+        self,
+        service_id: uuid.UUID,
+        service_name: str,
+        reason: str,
+        relevance_score: float = 0.5
+    ) -> None:
+        """Track a related service suggestion"""
+        suggestion = {
+            "service_id": str(service_id),
+            "service_name": service_name,
+            "reason": reason,
+            "relevance_score": relevance_score,
+            "suggested_at": datetime.now(UTC).isoformat()
+        }
+        self.related_services_suggested.append(suggestion)
+
+    def add_service_transition(
+        self,
+        from_service_id: uuid.UUID,
+        to_service_id: uuid.UUID,
+        transition_type: str = "user_navigation"
+    ) -> None:
+        """Track a service transition"""
+        transition = {
+            "from_service_id": str(from_service_id),
+            "to_service_id": str(to_service_id),
+            "transition_type": transition_type,
+            "transition_time": datetime.now(UTC).isoformat()
+        }
+        self.service_transitions.append(transition)
+
+    def get_related_services_history(self) -> list[dict[str, Any]]:
+        """Get history of related services suggested"""
+        return self.related_services_suggested
+
+    def get_service_transitions(self) -> list[dict[str, Any]]:
+        """Get all service transitions in this conversation"""
+        return self.service_transitions
+
+    def get_service_relationships(self) -> list[dict[str, Any]]:
+        """Get all service relationships tracked in this conversation"""
+        return self.service_relationships
+
+    def get_most_relevant_related_services(self, limit: int = 5) -> list[dict[str, Any]]:
+        """Get most relevant related services based on conversation context"""
+        # Sort by relevance score and timestamp
+        sorted_suggestions = sorted(
+            self.related_services_suggested,
+            key=lambda x: (x.get("relevance_score", 0), x.get("suggested_at", "")),
+            reverse=True
+        )
+        return sorted_suggestions[:limit]
 
     class Config:
         json_encoders = {

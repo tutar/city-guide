@@ -2,9 +2,14 @@
 Service navigation component with keyboard navigation support
 """
 
+import logging
 from typing import Any, Optional
 
 import chainlit as cl
+from src.services.data_service import DataService
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ServiceNavigation:
@@ -132,6 +137,79 @@ Available options:"""
     def reset_focus(self):
         """Reset focus to first element"""
         self.current_focus_index = 0
+
+    async def create_main_menu(self) -> cl.Message:
+        """Create main menu with service categories"""
+        try:
+            # Get all service categories
+            with DataService() as data_service:
+                service_categories = data_service.get_all_service_categories()
+
+            if not service_categories:
+                return cl.Message(
+                    content="No service categories available at the moment.",
+                    author="System"
+                )
+
+            # Create navigation options from service categories
+            navigation_options = []
+            for category in service_categories:
+                navigation_options.append({
+                    "label": category.name,
+                    "description": category.description,
+                    "action_type": "select_service",
+                    "service_category_id": str(category.id),
+                    "priority": 1
+                })
+
+            # Add general navigation options
+            navigation_options.extend([
+                {
+                    "label": "Search Services",
+                    "description": "Search for specific government services",
+                    "action_type": "search",
+                    "priority": 2
+                },
+                {
+                    "label": "Recent Queries",
+                    "description": "View your recent service queries",
+                    "action_type": "history",
+                    "priority": 3
+                },
+                {
+                    "label": "Help & Support",
+                    "description": "Get help using the assistant",
+                    "action_type": "help",
+                    "priority": 4
+                }
+            ])
+
+            # Create the navigation menu
+            main_menu = await self.create_navigation_menu(navigation_options)
+
+            # Update the content to be more descriptive for main menu
+            main_menu.content = """# Main Menu
+
+Welcome to the City Guide Smart Assistant! Choose from the following options:
+
+## Service Categories
+Select a service category to get started, or use the other options below.
+
+**Navigation Instructions:**
+- **Tab** or **Arrow keys**: Navigate between options
+- **Enter**: Select option
+- **Escape**: Close menu
+
+Available options:"""
+
+            return main_menu
+
+        except Exception as e:
+            logger.error(f"Failed to create main menu: {e}")
+            return cl.Message(
+                content="Unable to load main menu. Please try again later.",
+                author="System"
+            )
 
 
 class KeyboardNavigationManager:

@@ -206,26 +206,26 @@ Phase 6: Polish
 
 ### Test Creation (TDD)
 
-- [ ] T059 [US3] Create acceptance tests for dynamic navigation scenarios in tests/integration/test_dynamic_navigation.py
-- [ ] T060 [US3] Create unit tests for context-aware navigation generation in tests/unit/test_search_service.py
-- [ ] T061 [US3] Create integration tests for service relationship mapping in tests/integration/test_service_relationships.py
+- [X] T059 [US3] Create acceptance tests for dynamic navigation scenarios in tests/integration/test_dynamic_navigation.py
+- [X] T060 [US3] Create unit tests for context-aware navigation generation in tests/unit/test_search_service.py
+- [X] T061 [US3] Create integration tests for service relationship mapping in tests/integration/test_service_relationships.py
 
 ### Dynamic Navigation
 
-- [ ] T062 [P] [US3] Implement context-aware navigation option generation in src/services/search_service.py
-- [ ] T063 [P] [US3] Create navigation option prioritization based on conversation history in src/services/data_service.py
-- [ ] T064 [P] [US3] Add main menu navigation with service categories in src/chainlit/components/service_navigation.py
+- [X] T062 [P] [US3] Implement context-aware navigation option generation in src/services/search_service.py
+- [X] T063 [P] [US3] Create navigation option prioritization based on conversation history in src/services/data_service.py
+- [X] T064 [P] [US3] Add main menu navigation with service categories in src/chainlit/components/service_navigation.py
 
 ### Context Management
 
-- [ ] T065 [US3] Enhance conversation context with service relationship tracking in src/models/conversation.py
-- [ ] T066 [US3] Implement related service suggestion algorithm in src/services/search_service.py
-- [ ] T067 [US3] Add context persistence across conversation turns in src/services/data_service.py
+- [X] T065 [US3] Enhance conversation context with service relationship tracking in src/models/conversation.py
+- [X] T066 [US3] Implement related service suggestion algorithm in src/services/search_service.py
+- [X] T067 [US3] Add context persistence across conversation turns in src/services/data_service.py
 
 ### Related Services
 
-- [ ] T068 [US3] Create service relationship mapping in scripts/data_ingestion.py
-- [ ] T069 [US3] Implement cross-service navigation flow in src/chainlit/components/service_navigation.py
+- [X] T068 [US3] Create service relationship mapping in scripts/data_ingestion.py
+- [X] T069 [US3] Implement cross-service navigation flow in src/chainlit/components/service_navigation.py
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 

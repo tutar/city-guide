@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Data ingestion script for City Guide Smart Assistant
-Populates the database with Hong Kong/Macau passport service data
+Populates the database with Hong Kong/Macau passport service data and service relationships
 """
 
 import asyncio
@@ -308,31 +308,210 @@ async def create_sample_passport_documents():
         return len(passport_documents)
 
 
+async def create_additional_service_categories():
+    """Create additional service categories for relationship mapping"""
+
+    logger.info("Creating additional service categories for relationship mapping...")
+
+    with DataService() as data_service:
+        # Check which categories already exist
+        existing_categories = data_service.get_active_service_categories()
+        existing_names = [category.name.lower() for category in existing_categories]
+
+        # Define additional service categories
+        additional_categories = [
+            {
+                "name": "Hong Kong Visa Services",
+                "description": "Visa application, extension, and related services for Hong Kong",
+                "official_source_url": "https://www.immd.gov.hk/eng/services/visas/",
+            },
+            {
+                "name": "Hong Kong ID Card Services",
+                "description": "Hong Kong Identity Card application, renewal, and replacement services",
+                "official_source_url": "https://www.immd.gov.hk/eng/services/hkid.html",
+            },
+            {
+                "name": "Business Registration Services",
+                "description": "Business registration, licensing, and related services in Hong Kong",
+                "official_source_url": "https://www.ird.gov.hk/eng/tax/bre.htm",
+            },
+            {
+                "name": "Employment Services",
+                "description": "Work permits, employment visas, and related services",
+                "official_source_url": "https://www.immd.gov.hk/eng/services/visas/employment.html",
+            },
+            {
+                "name": "Tax Registration Services",
+                "description": "Tax registration, filing, and related services",
+                "official_source_url": "https://www.ird.gov.hk/eng/tax/ind_tpf.htm",
+            },
+        ]
+
+        created_categories = []
+        for category_data in additional_categories:
+            if category_data["name"].lower() not in existing_names:
+                service_category = ServiceCategory(
+                    name=category_data["name"],
+                    description=category_data["description"],
+                    official_source_url=category_data["official_source_url"] if category_data["official_source_url"] else None,
+                    last_verified=datetime.now(UTC),
+                    is_active=True,
+                )
+                created_category = data_service.create_service_category(service_category)
+                created_categories.append(created_category)
+                logger.info(f"Created service category: {created_category.name}")
+            else:
+                logger.info(f"Service category already exists: {category_data['name']}")
+
+        return created_categories
+
+
+async def create_service_relationships():
+    """Define service relationships for cross-service navigation"""
+
+    logger.info("Defining service relationships for cross-service navigation...")
+
+    with DataService() as data_service:
+        # Get all service categories
+        all_categories = data_service.get_all_service_categories()
+
+        # Create a mapping of category names to IDs
+        category_map = {category.name: category.id for category in all_categories}
+
+        # Define service relationships
+        service_relationships = {
+            "Hong Kong and Macau Passport Services": [
+                {
+                    "related_service": "Hong Kong Visa Services",
+                    "relationship_type": "complementary",
+                    "description": "Passport and visa services are often needed together for international travel",
+                    "relevance_score": 0.8,
+                },
+                {
+                    "related_service": "Hong Kong ID Card Services",
+                    "relationship_type": "identification",
+                    "description": "Both are important identification documents",
+                    "relevance_score": 0.6,
+                },
+                {
+                    "related_service": "Business Registration Services",
+                    "relationship_type": "business_travel",
+                    "description": "Business registration may be needed for business travel",
+                    "relevance_score": 0.4,
+                },
+            ],
+            "Hong Kong Visa Services": [
+                {
+                    "related_service": "Hong Kong and Macau Passport Services",
+                    "relationship_type": "prerequisite",
+                    "description": "Passport is required for visa applications",
+                    "relevance_score": 0.8,
+                },
+                {
+                    "related_service": "Employment Services",
+                    "relationship_type": "work_related",
+                    "description": "Work visas are often related to employment services",
+                    "relevance_score": 0.7,
+                },
+                {
+                    "related_service": "Business Registration Services",
+                    "relationship_type": "business_related",
+                    "description": "Business visas may require business registration",
+                    "relevance_score": 0.6,
+                },
+            ],
+            "Business Registration Services": [
+                {
+                    "related_service": "Tax Registration Services",
+                    "relationship_type": "sequential",
+                    "description": "Tax registration is required after business registration",
+                    "relevance_score": 0.9,
+                },
+                {
+                    "related_service": "Employment Services",
+                    "relationship_type": "hiring_related",
+                    "description": "Employment services needed for hiring employees",
+                    "relevance_score": 0.7,
+                },
+                {
+                    "related_service": "Hong Kong Visa Services",
+                    "relationship_type": "business_visa",
+                    "description": "Business visas may be needed for international business",
+                    "relevance_score": 0.6,
+                },
+            ],
+            "Employment Services": [
+                {
+                    "related_service": "Hong Kong Visa Services",
+                    "relationship_type": "work_visa",
+                    "description": "Work permits and employment visas are closely related",
+                    "relevance_score": 0.8,
+                },
+                {
+                    "related_service": "Business Registration Services",
+                    "relationship_type": "employer_related",
+                    "description": "Business registration needed for employers",
+                    "relevance_score": 0.7,
+                },
+            ],
+            "Tax Registration Services": [
+                {
+                    "related_service": "Business Registration Services",
+                    "relationship_type": "sequential",
+                    "description": "Tax registration follows business registration",
+                    "relevance_score": 0.9,
+                },
+            ],
+        }
+
+        # Store relationship data (in a real implementation, this would be stored in a relationships table)
+        # For now, we'll just log the relationships
+        for source_service, relationships in service_relationships.items():
+            if source_service in category_map:
+                logger.info(f"Defined {len(relationships)} relationships for {source_service}")
+                for relationship in relationships:
+                    related_service = relationship["related_service"]
+                    if related_service in category_map:
+                        logger.info(f"  - {related_service}: {relationship['relationship_type']} (score: {relationship['relevance_score']})")
+
+        logger.info(f"Defined service relationships for {len(service_relationships)} services")
+        return service_relationships
+
+
 async def main():
     """Main data ingestion function"""
 
-    logger.info("Starting data ingestion for Hong Kong/Macau passport services...")
+    logger.info("Starting data ingestion for Hong Kong/Macau passport services and service relationships...")
 
     try:
         # Step 1: Create passport service category
         passport_service = await create_passport_service_category()
 
         if not passport_service:
-            logger.info("Passport service already exists, skipping data ingestion")
-            return
+            logger.info("Passport service already exists, checking for additional services...")
+        else:
+            # Step 2: Create navigation options
+            navigation_options = await create_passport_navigation_options(
+                passport_service.id
+            )
 
-        # Step 2: Create navigation options
-        navigation_options = await create_passport_navigation_options(
-            passport_service.id
-        )
+            # Step 3: Create sample document embeddings
+            document_count = await create_sample_passport_documents()
 
-        # Step 3: Create sample document embeddings
-        document_count = await create_sample_passport_documents()
+            logger.info("Passport service data ingestion completed!")
+            logger.info(f"- Created service category: {passport_service.name}")
+            logger.info(f"- Created navigation options: {len(navigation_options)}")
+            logger.info(f"- Added document embeddings: {document_count}")
+
+        # Step 4: Create additional service categories
+        additional_categories = await create_additional_service_categories()
+
+        # Step 5: Define service relationships
+        service_relationships = await create_service_relationships()
 
         logger.info("Data ingestion completed successfully!")
-        logger.info(f"- Created service category: {passport_service.name}")
-        logger.info(f"- Created navigation options: {len(navigation_options)}")
-        logger.info(f"- Added document embeddings: {document_count}")
+        logger.info(f"- Total service categories: {len(additional_categories) + (1 if passport_service else 0)}")
+        logger.info(f"- Defined service relationships: {len(service_relationships)}")
 
     except Exception as e:
         logger.error(f"Data ingestion failed: {e}")

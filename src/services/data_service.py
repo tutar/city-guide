@@ -66,6 +66,10 @@ class ConversationContext(Base):
     conversation_history = Column(JSON)
     navigation_options = Column(JSON)
     user_preferences = Column(JSON)
+    # Service relationship tracking fields
+    service_relationships = Column(JSON, default=list)
+    related_services_suggested = Column(JSON, default=list)
+    service_transitions = Column(JSON, default=list)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     last_activity = Column(DateTime, default=lambda: datetime.now(UTC))
     is_active = Column(Boolean, default=True)
@@ -233,6 +237,10 @@ class DataService:
                     for option in conversation_context.navigation_options
                 ],
                 user_preferences=conversation_context.user_preferences,
+                # Service relationship tracking fields
+                service_relationships=conversation_context.service_relationships,
+                related_services_suggested=conversation_context.related_services_suggested,
+                service_transitions=conversation_context.service_transitions,
                 is_active=conversation_context.is_active,
             )
             self.db.add(db_context)
@@ -249,6 +257,10 @@ class DataService:
                 ],
                 navigation_options=db_context.navigation_options,
                 user_preferences=db_context.user_preferences,
+                # Service relationship tracking fields
+                service_relationships=db_context.service_relationships,
+                related_services_suggested=db_context.related_services_suggested,
+                service_transitions=db_context.service_transitions,
                 created_at=db_context.created_at,
                 last_activity=db_context.last_activity,
                 is_active=db_context.is_active,
@@ -283,6 +295,10 @@ class DataService:
                     ],
                     navigation_options=db_context.navigation_options,
                     user_preferences=db_context.user_preferences,
+                    # Service relationship tracking fields
+                    service_relationships=db_context.service_relationships,
+                    related_services_suggested=db_context.related_services_suggested,
+                    service_transitions=db_context.service_transitions,
                     created_at=db_context.created_at,
                     last_activity=db_context.last_activity,
                     is_active=db_context.is_active,
@@ -348,6 +364,10 @@ class DataService:
                 else value
                 for key, value in conversation_context.user_preferences.items()
             }
+            # Update service relationship tracking fields
+            db_context.service_relationships = conversation_context.service_relationships
+            db_context.related_services_suggested = conversation_context.related_services_suggested
+            db_context.service_transitions = conversation_context.service_transitions
             db_context.last_activity = conversation_context.last_activity
             db_context.is_active = conversation_context.is_active
 
@@ -364,6 +384,10 @@ class DataService:
                 ],
                 navigation_options=db_context.navigation_options,
                 user_preferences=db_context.user_preferences,
+                # Service relationship tracking fields
+                service_relationships=db_context.service_relationships,
+                related_services_suggested=db_context.related_services_suggested,
+                service_transitions=db_context.service_transitions,
                 created_at=db_context.created_at,
                 last_activity=db_context.last_activity,
                 is_active=db_context.is_active,
@@ -553,3 +577,120 @@ class DataService:
         except Exception as e:
             logger.error(f"Failed to get all active navigation options: {e}")
             raise
+
+    def get_prioritized_navigation_options(
+        self, user_session_id: str
+    ) -> list[NavigationOptionModel]:
+        """Get navigation options prioritized based on conversation history"""
+        try:
+            # Get conversation context to understand current focus
+            conversation_context = self.get_conversation_context(user_session_id)
+
+            if not conversation_context:
+                # Return default options if no conversation context
+                return self.get_all_active_navigation_options()
+
+            # Analyze conversation history for prioritization
+            current_category_id = conversation_context.current_service_category_id
+            recent_messages = conversation_context.get_recent_messages(limit=5)
+
+            # Extract keywords from recent conversation
+            conversation_keywords = self._extract_conversation_keywords(recent_messages)
+
+            # Get all active navigation options
+            all_options = self.get_all_active_navigation_options()
+
+            # Prioritize options based on conversation context
+            prioritized_options = []
+            for option in all_options:
+                priority_score = self._calculate_priority_score(
+                    option, current_category_id, conversation_keywords
+                )
+                prioritized_options.append((priority_score, option))
+
+            # Sort by priority score (higher score = higher priority)
+            prioritized_options.sort(key=lambda x: x[0], reverse=True)
+
+            # Return top options
+            return [option for score, option in prioritized_options[:10]]
+
+        except Exception as e:
+            logger.error(f"Failed to get prioritized navigation options: {e}")
+            # Fallback to all active options
+            return self.get_all_active_navigation_options()
+
+    def get_all_service_categories(self) -> list[ServiceCategoryModel]:
+        """Get all service categories for main menu navigation"""
+        try:
+            db_categories = (
+                self.db.query(ServiceCategory)
+                .filter(ServiceCategory.is_active == True)
+                .order_by(ServiceCategory.name)
+                .all()
+            )
+
+            return [
+                ServiceCategoryModel(
+                    id=category.id,
+                    name=category.name,
+                    description=category.description,
+                    official_source_url=category.official_source_url,
+                    is_active=category.is_active,
+                    created_at=category.created_at,
+                    updated_at=category.updated_at,
+                    last_verified=category.last_verified,
+                )
+                for category in db_categories
+            ]
+
+        except Exception as e:
+            logger.error(f"Failed to get all service categories: {e}")
+            raise
+
+    def _extract_conversation_keywords(self, messages: list) -> set[str]:
+        """Extract keywords from conversation messages for prioritization"""
+        keywords = set()
+
+        # Common keywords related to government services
+        service_keywords = {
+            "requirement", "document", "material", "appointment", "schedule",
+            "location", "address", "cost", "fee", "price", "status", "track",
+            "application", "apply", "submit", "register", "renew", "extension",
+            "passport", "visa", "permit", "license", "registration", "business"
+        }
+
+        for message in messages:
+            content = message.content.lower()
+            for keyword in service_keywords:
+                if keyword in content:
+                    keywords.add(keyword)
+
+        return keywords
+
+    def _calculate_priority_score(
+        self,
+        option: NavigationOptionModel,
+        current_category_id: uuid.UUID | None,
+        conversation_keywords: set[str]
+    ) -> int:
+        """Calculate priority score for navigation option based on context"""
+        score = 0
+
+        # Base score from option priority (inverted: lower priority number = higher score)
+        score += (11 - option.priority) * 10
+
+        # Boost for current service category
+        if current_category_id and option.service_category_id == current_category_id:
+            score += 50
+
+        # Boost for keyword matches
+        option_label_lower = option.label.lower()
+        for keyword in conversation_keywords:
+            if keyword in option_label_lower:
+                score += 20
+
+        # Boost for common action types
+        if option.action_type in ["requirements", "appointment", "location"]:
+            score += 15
+
+        return score

@@ -93,8 +93,8 @@ class TestConversationAPI:
                         mock_conversation_context
                     )
 
-                    mock_search_instance = mock_search_service.return_value
-                    mock_ai_instance = mock_ai_service.return_value
+                    mock_search_service.return_value
+                    mock_ai_service.return_value
 
                     # When starting conversation with existing session
                     response = test_client.post(
@@ -147,8 +147,8 @@ class TestConversationAPI:
                         mock_conversation_context
                     )
 
-                    mock_search_instance = mock_search_service.return_value
-                    mock_ai_instance = mock_ai_service.return_value
+                    mock_search_service.return_value
+                    mock_ai_service.return_value
 
                     # When starting conversation with service context
                     response = test_client.post(
@@ -237,8 +237,8 @@ class TestConversationAPI:
                     )
                     mock_data_instance.get_conversation_context.return_value = None
 
-                    mock_search_instance = mock_search_service.return_value
-                    mock_ai_instance = mock_ai_service.return_value
+                    mock_search_service.return_value
+                    mock_ai_service.return_value
 
                     # When sending message to non-existent conversation
                     response = test_client.post(
@@ -279,8 +279,8 @@ class TestConversationAPI:
                         mock_conversation_context
                     )
 
-                    mock_search_instance = mock_search_service.return_value
-                    mock_ai_instance = mock_ai_service.return_value
+                    mock_search_service.return_value
+                    mock_ai_service.return_value
 
                     # When getting conversation history
                     response = test_client.get("/api/conversation/test-session/history")

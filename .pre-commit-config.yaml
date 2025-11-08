@@ -47,9 +47,9 @@ repos:
 
   - repo: local
     hooks:
-      - id: requirements-txt
-        name: Check requirements.txt consistency
-        entry: python -c "import tomllib; import sys; data = tomllib.load(open('pyproject.toml', 'rb')); deps = data.get('tool', {}).get('poetry', {}).get('dependencies', {}); dev_deps = data.get('tool', {}).get('poetry', {}).get('group', {}).get('dev', {}).get('dependencies', {}); print('Requirements check passed')"
+      - id: poetry-lock-consistency
+        name: Check poetry.lock consistency
+        entry: poetry check
         language: system
         pass_filenames: false
         always_run: false

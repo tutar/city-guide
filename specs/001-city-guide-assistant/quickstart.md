@@ -11,8 +11,7 @@ The City Guide Smart Assistant is an AI-powered conversational interface that pr
 
 ### Development Environment
 - Docker and Docker Compose
-- Python 3.12+ for application (Python 3.11+ EoL)
-- Node.js v22+ for tooling (Node.js 18+ EoL)
+- Python 3.12+ for application 、
 
 ### Infrastructure Services
 - PostgreSQL 15+ for database
@@ -47,13 +46,8 @@ Expected services:
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies using Poetry or pip
-# Option A: Using Poetry (recommended)
+# Install dependencies using Poetry
 poetry install
-
-# Option B: Using pip
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
 
 # Environment configuration
 cp .env.example .env
@@ -72,7 +66,7 @@ python -m scripts.setup_database
 python -m scripts.setup_vector_db
 
 # Run Chainlit application
-chainlit run src/chainlit/app.py
+chainlit run src/chainlit/app.py --host 0.0.0.0 --port 8001
 ```
 
 ### 3. Verify Setup
@@ -81,9 +75,6 @@ chainlit run src/chainlit/app.py
    ```bash
    # Check all services are running
    docker-compose ps
-
-   # Test database connection
-   python scripts/check_connections.py
    ```
 
 2. **Application Health Check**:
@@ -237,8 +228,19 @@ pytest --cov=src --cov-report=html
    ```dockerfile
    FROM python:3.12-slim
    WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install -r requirements.txt
+
+   # Install Poetry using the official installer
+   RUN pip install poetry
+
+   # Copy dependency files
+   COPY pyproject.toml poetry.lock ./
+
+   # Configure Poetry to not create virtual environment (use system Python)
+   RUN poetry config virtualenvs.create false
+
+   # Install dependencies using Poetry
+   RUN poetry install --no-dev
+
    COPY . .
    CMD ["chainlit", "run", "src/chainlit/app.py", "--host", "0.0.0.0", "--port", "8000"]
    ```

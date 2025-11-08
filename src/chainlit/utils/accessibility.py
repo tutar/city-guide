@@ -2,7 +2,7 @@
 Accessibility utilities for screen reader compatibility
 """
 
-from typing import Dict, Any, List
+from typing import Any
 
 
 class ScreenReaderUtils:
@@ -19,7 +19,7 @@ class ScreenReaderUtils:
             "message": f"Message: {content}",
             "navigation": f"Navigation: {content}",
             "error": f"Error: {content}",
-            "success": f"Success: {content}"
+            "success": f"Success: {content}",
         }
 
         base_label = labels.get(element_type, content)
@@ -44,17 +44,19 @@ class ScreenReaderUtils:
             "success": "polite",
             "status": "polite",
             "info": "polite",
-            "default": "off"
+            "default": "off",
         }
 
         return live_regions.get(content_type, "off")
 
     @staticmethod
-    def format_content_for_screen_reader(content: str, content_type: str = "info") -> str:
+    def format_content_for_screen_reader(
+        content: str, content_type: str = "info"
+    ) -> str:
         """Format content for better screen reader experience"""
 
         # Remove excessive whitespace
-        content = ' '.join(content.split())
+        content = " ".join(content.split())
 
         # Add semantic cues based on content type
         if content_type == "error":
@@ -80,7 +82,7 @@ class ScreenReaderUtils:
             "contentinfo": "contentinfo",
             "alert": "alert",
             "status": "status",
-            "dialog": "dialog"
+            "dialog": "dialog",
         }
 
         return roles.get(element_type, "")
@@ -99,8 +101,8 @@ class ColorContrastChecker:
         common_contrasts = {
             ("#000000", "#FFFFFF"): 21.0,  # Black on white
             ("#333333", "#FFFFFF"): 12.6,  # Dark gray on white
-            ("#666666", "#FFFFFF"): 5.7,   # Medium gray on white
-            ("#999999", "#FFFFFF"): 2.9,   # Light gray on white
+            ("#666666", "#FFFFFF"): 5.7,  # Medium gray on white
+            ("#999999", "#FFFFFF"): 2.9,  # Light gray on white
         }
 
         key = (foreground.upper(), background.upper())
@@ -129,16 +131,13 @@ class FocusManagement:
     """Utilities for focus management"""
 
     @staticmethod
-    def get_focus_order(elements: List[Dict[str, Any]]) -> List[str]:
+    def get_focus_order(elements: list[dict[str, Any]]) -> list[str]:
         """Determine logical focus order for elements"""
 
         # Sort by visual position and importance
         sorted_elements = sorted(
             elements,
-            key=lambda x: (
-                x.get("visual_order", 999),
-                x.get("importance", "low")
-            )
+            key=lambda x: (x.get("visual_order", 999), x.get("importance", "low")),
         )
 
         return [elem.get("id", "") for elem in sorted_elements if elem.get("id")]
@@ -152,7 +151,7 @@ class FocusManagement:
             "main_input": True,
             "first_navigation": True,
             "error_message": True,
-            "modal": True
+            "modal": True,
         }
 
         key = f"{element_type}_{context}".strip("_")
@@ -163,7 +162,7 @@ class AccessibilityValidator:
     """Validator for accessibility requirements"""
 
     @staticmethod
-    def validate_element_accessibility(element: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_element_accessibility(element: dict[str, Any]) -> dict[str, Any]:
         """Validate element against accessibility standards"""
 
         issues = []
@@ -193,14 +192,17 @@ class AccessibilityValidator:
             "element_id": element.get("id", "unknown"),
             "issues": issues,
             "warnings": warnings,
-            "passed": len(issues) == 0
+            "passed": len(issues) == 0,
         }
 
     @staticmethod
-    def generate_accessibility_report(elements: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def generate_accessibility_report(elements: list[dict[str, Any]]) -> dict[str, Any]:
         """Generate comprehensive accessibility report"""
 
-        results = [AccessibilityValidator.validate_element_accessibility(elem) for elem in elements]
+        results = [
+            AccessibilityValidator.validate_element_accessibility(elem)
+            for elem in elements
+        ]
 
         total_issues = sum(len(result["issues"]) for result in results)
         total_warnings = sum(len(result["warnings"]) for result in results)
@@ -211,6 +213,8 @@ class AccessibilityValidator:
             "passed_elements": passed_elements,
             "total_issues": total_issues,
             "total_warnings": total_warnings,
-            "compliance_score": (passed_elements / len(elements)) * 100 if elements else 100,
-            "detailed_results": results
+            "compliance_score": (passed_elements / len(elements)) * 100
+            if elements
+            else 100,
+            "detailed_results": results,
         }

@@ -2,8 +2,9 @@
 Service navigation component with keyboard navigation support
 """
 
+from typing import Any, Optional
+
 import chainlit as cl
-from typing import List, Dict, Any, Optional
 
 
 class ServiceNavigation:
@@ -13,7 +14,7 @@ class ServiceNavigation:
         self.current_focus_index = 0
         self.navigation_elements = []
 
-    async def create_navigation_menu(self, options: List[Dict[str, Any]]) -> cl.Message:
+    async def create_navigation_menu(self, options: list[dict[str, Any]]) -> cl.Message:
         """Create accessible navigation menu with keyboard support"""
         if not options:
             return None
@@ -33,15 +34,13 @@ class ServiceNavigation:
                     "aria-label": option.get("label", ""),
                     "aria-describedby": f"nav_desc_{i}",
                     "tabindex": "0" if i == 0 else "-1",  # First element gets focus
-                    "role": "button"
-                }
+                    "role": "button",
+                },
             )
             actions.append(action)
-            self.navigation_elements.append({
-                "action": action,
-                "index": i,
-                "label": option.get("label", "")
-            })
+            self.navigation_elements.append(
+                {"action": action, "index": i, "label": option.get("label", "")}
+            )
 
         # Create navigation message with accessibility features
         navigation_message = cl.Message(
@@ -51,8 +50,8 @@ class ServiceNavigation:
             metadata={
                 "role": "navigation",
                 "aria-label": "Service navigation menu",
-                "data-keyboard-navigation": "enabled"
-            }
+                "data-keyboard-navigation": "enabled",
+            },
         )
 
         return navigation_message
@@ -74,12 +73,16 @@ Available options:"""
 
         if key == "Tab":
             # Move to next element
-            self.current_focus_index = (self.current_focus_index + 1) % len(self.navigation_elements)
+            self.current_focus_index = (self.current_focus_index + 1) % len(
+                self.navigation_elements
+            )
             return self._update_focus()
 
         elif key == "ArrowDown":
             # Move down
-            self.current_focus_index = min(self.current_focus_index + 1, len(self.navigation_elements) - 1)
+            self.current_focus_index = min(
+                self.current_focus_index + 1, len(self.navigation_elements) - 1
+            )
             return self._update_focus()
 
         elif key == "ArrowUp":
@@ -117,9 +120,11 @@ Available options:"""
         current_element = self.navigation_elements[self.current_focus_index]
         return f"Focused on: {current_element['label']}"
 
-    def get_current_focus(self) -> Optional[Dict[str, Any]]:
+    def get_current_focus(self) -> Optional[dict[str, Any]]:
         """Get currently focused navigation element"""
-        if not self.navigation_elements or self.current_focus_index >= len(self.navigation_elements):
+        if not self.navigation_elements or self.current_focus_index >= len(
+            self.navigation_elements
+        ):
             return None
 
         return self.navigation_elements[self.current_focus_index]
@@ -147,15 +152,19 @@ class KeyboardNavigationManager:
 
     async def handle_key_event(self, key: str) -> Optional[str]:
         """Handle keyboard event and route to active component"""
-        if self.active_component and hasattr(self.active_component, 'handle_keyboard_navigation'):
+        if self.active_component and hasattr(
+            self.active_component, "handle_keyboard_navigation"
+        ):
             return await self.active_component.handle_keyboard_navigation(key)
         return None
 
-    def get_navigation_state(self) -> Dict[str, Any]:
+    def get_navigation_state(self) -> dict[str, Any]:
         """Get current navigation state"""
         return {
-            "active_component": self.active_component.__class__.__name__ if self.active_component else None,
-            "registered_components": list(self.components.keys())
+            "active_component": self.active_component.__class__.__name__
+            if self.active_component
+            else None,
+            "registered_components": list(self.components.keys()),
         }
 
 

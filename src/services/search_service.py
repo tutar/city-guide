@@ -3,15 +3,13 @@ Search service for City Guide Smart Assistant implementing hybrid search with RR
 """
 
 import logging
-import math
-from typing import List, Optional, Dict, Any
-from collections import defaultdict
+from typing import Any
 
-from src.services.embedding_service import EmbeddingService
-from src.services.ai_service import AIService
-from src.services.data_service import DataService
-from src.services.bm25_service import BM25Service
 from src.models.embeddings import HybridSearchRequest, SearchResult
+from src.services.ai_service import AIService
+from src.services.bm25_service import BM25Service
+from src.services.data_service import DataService
+from src.services.embedding_service import EmbeddingService
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -25,7 +23,7 @@ class SearchService:
         self.ai_service = AIService()
         self.bm25_service = BM25Service()
 
-    def hybrid_search(self, search_request: HybridSearchRequest) -> List[SearchResult]:
+    def hybrid_search(self, search_request: HybridSearchRequest) -> list[SearchResult]:
         """Perform hybrid search with RRF fusion"""
         try:
             # Generate query embedding
@@ -34,15 +32,21 @@ class SearchService:
             # Perform semantic search
             semantic_results = []
             if search_request.include_semantic_search:
-                semantic_results = self._semantic_search(query_embedding, search_request)
+                semantic_results = self._semantic_search(
+                    query_embedding, search_request
+                )
 
             # Perform keyword search
             keyword_results = []
             if search_request.include_keyword_search:
-                keyword_results = self._keyword_search(search_request.query, search_request)
+                keyword_results = self._keyword_search(
+                    search_request.query, search_request
+                )
 
             # Combine results using RRF fusion
-            combined_results = self._rrf_fusion(semantic_results, keyword_results, search_request.limit)
+            combined_results = self._rrf_fusion(
+                semantic_results, keyword_results, search_request.limit
+            )
 
             logger.info(f"Hybrid search completed: {len(combined_results)} results")
             return combined_results
@@ -52,22 +56,22 @@ class SearchService:
             raise
 
     def _semantic_search(
-        self,
-        query_embedding: List[float],
-        search_request: HybridSearchRequest
-    ) -> List[Dict[str, Any]]:
+        self, query_embedding: list[float], search_request: HybridSearchRequest
+    ) -> list[dict[str, Any]]:
         """Perform semantic vector search"""
         try:
             # Build filter expression if service category is specified
             filter_expression = None
             if search_request.service_category_id:
-                filter_expression = f"source_id == '{search_request.service_category_id}'"
+                filter_expression = (
+                    f"source_id == '{search_request.service_category_id}'"
+                )
 
             # Search for similar documents
             semantic_results = self.embedding_service.search_similar_documents(
                 query_embedding=query_embedding,
                 limit=search_request.limit * 2,  # Get more results for fusion
-                filter_expression=filter_expression
+                filter_expression=filter_expression,
             )
 
             # Convert to SearchResult format
@@ -79,7 +83,7 @@ class SearchService:
                     document_content="",  # Content would be fetched separately
                     source_url=result["document_url"],
                     similarity_score=result["similarity_score"],
-                    metadata=result.get("metadata", {})
+                    metadata=result.get("metadata", {}),
                 )
                 results.append(search_result)
 
@@ -91,14 +95,14 @@ class SearchService:
             return []
 
     def _keyword_search(
-        self,
-        query: str,
-        search_request: HybridSearchRequest
-    ) -> List[Dict[str, Any]]:
+        self, query: str, search_request: HybridSearchRequest
+    ) -> list[dict[str, Any]]:
         """Perform keyword search using BM25"""
         try:
             # Use BM25 service for keyword search
-            bm25_results = self.bm25_service.search(query, limit=search_request.limit * 2)
+            bm25_results = self.bm25_service.search(
+                query, limit=search_request.limit * 2
+            )
 
             # Convert to SearchResult format
             keyword_results = []
@@ -110,7 +114,7 @@ class SearchService:
                     source_url=result.get("source_url", ""),
                     similarity_score=result.get("bm25_score", 0),
                     keyword_score=result.get("bm25_score", 0),
-                    metadata=result.get("metadata", {})
+                    metadata=result.get("metadata", {}),
                 )
                 keyword_results.append(search_result)
 
@@ -121,13 +125,12 @@ class SearchService:
             logger.error(f"Keyword search failed: {e}")
             return []
 
-
     def _rrf_fusion(
         self,
-        semantic_results: List[SearchResult],
-        keyword_results: List[SearchResult],
-        limit: int
-    ) -> List[SearchResult]:
+        semantic_results: list[SearchResult],
+        keyword_results: list[SearchResult],
+        limit: int,
+    ) -> list[SearchResult]:
         """Combine search results using Reciprocal Rank Fusion"""
         try:
             # Create mapping of document_id to result
@@ -140,7 +143,7 @@ class SearchService:
                     all_results[doc_id] = {
                         "result": result,
                         "semantic_rank": rank,
-                        "keyword_rank": None
+                        "keyword_rank": None,
                     }
                 else:
                     all_results[doc_id]["semantic_rank"] = rank
@@ -152,7 +155,7 @@ class SearchService:
                     all_results[doc_id] = {
                         "result": result,
                         "semantic_rank": None,
-                        "keyword_rank": rank
+                        "keyword_rank": rank,
                     }
                 else:
                     all_results[doc_id]["keyword_rank"] = rank
@@ -192,10 +195,8 @@ class SearchService:
             return semantic_results[:limit]
 
     def generate_dynamic_navigation_options(
-        self,
-        conversation_context: Dict[str, Any],
-        search_results: List[SearchResult]
-    ) -> List[Dict[str, Any]]:
+        self, conversation_context: dict[str, Any], search_results: list[SearchResult]
+    ) -> list[dict[str, Any]]:
         """Generate dynamic navigation options based on conversation context and search results"""
         try:
             navigation_options = []
@@ -207,43 +208,49 @@ class SearchService:
                     "action_type": "explain",
                     "target_url": result.source_url,
                     "description": f"Detailed information about {result.document_title}",
-                    "priority": 5
+                    "priority": 5,
                 }
                 navigation_options.append(option)
 
             # Add service category navigation if available
-            if conversation_context.get('current_service_category_id'):
+            if conversation_context.get("current_service_category_id"):
                 with DataService() as data_service:
                     category_options = data_service.get_navigation_options_by_category(
-                        conversation_context['current_service_category_id']
+                        conversation_context["current_service_category_id"]
                     )
 
                     for option in category_options:
-                        navigation_options.append({
-                            "label": option.label,
-                            "action_type": option.action_type,
-                            "target_url": option.target_url,
-                            "description": option.description,
-                            "priority": option.priority
-                        })
+                        navigation_options.append(
+                            {
+                                "label": option.label,
+                                "action_type": option.action_type,
+                                "target_url": option.target_url,
+                                "description": option.description,
+                                "priority": option.priority,
+                            }
+                        )
 
             # Generate AI-powered suggestions
-            current_context = conversation_context.get('current_query', '')
-            available_services = [result.document_title for result in search_results[:5]]
+            current_context = conversation_context.get("current_query", "")
+            available_services = [
+                result.document_title for result in search_results[:5]
+            ]
 
             ai_suggestions = self.ai_service.generate_navigation_suggestions(
                 current_context, available_services
             )
 
             for suggestion in ai_suggestions:
-                navigation_options.append({
-                    "label": suggestion["label"],
-                    "action_type": suggestion["action_type"],
-                    "priority": 3
-                })
+                navigation_options.append(
+                    {
+                        "label": suggestion["label"],
+                        "action_type": suggestion["action_type"],
+                        "priority": 3,
+                    }
+                )
 
             # Sort by priority
-            navigation_options.sort(key=lambda x: x.get('priority', 5))
+            navigation_options.sort(key=lambda x: x.get("priority", 5))
 
             logger.info(f"Generated {len(navigation_options)} navigation options")
             return navigation_options
@@ -253,10 +260,8 @@ class SearchService:
             return []
 
     def filter_navigation_options_by_category(
-        self,
-        navigation_options: List[Dict[str, Any]],
-        service_category_id: str
-    ) -> List[Dict[str, Any]]:
+        self, navigation_options: list[dict[str, Any]], service_category_id: str
+    ) -> list[dict[str, Any]]:
         """Filter navigation options by service category"""
         try:
             # This would filter options based on service category relevance
@@ -267,16 +272,19 @@ class SearchService:
             logger.error(f"Failed to filter navigation options: {e}")
             return navigation_options
 
-    def add_external_url_handling(self, url: str) -> Dict[str, Any]:
+    def add_external_url_handling(self, url: str) -> dict[str, Any]:
         """Handle external URLs for appointment systems and other external services"""
         try:
             # Validate URL format
-            if not url.startswith(('http://', 'https://')):
+            if not url.startswith(("http://", "https://")):
                 raise ValueError("Invalid URL format")
 
             # Check if it's a government service URL
             government_domains = [
-                'gov.cn', 'sz.gov.cn', 'hongkong.gov.hk', 'macau.gov.mo'
+                "gov.cn",
+                "sz.gov.cn",
+                "hongkong.gov.hk",
+                "macau.gov.mo",
             ]
 
             is_government_url = any(domain in url for domain in government_domains)
@@ -285,7 +293,7 @@ class SearchService:
                 "url": url,
                 "is_government_url": is_government_url,
                 "requires_validation": not is_government_url,
-                "handling_type": "external_redirect"
+                "handling_type": "external_redirect",
             }
 
         except Exception as e:

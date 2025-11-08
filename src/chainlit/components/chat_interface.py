@@ -2,9 +2,10 @@
 Chat interface component with screen reader compatibility
 """
 
-import chainlit as cl
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
+import chainlit as cl
 
 from .search_results import search_results
 
@@ -17,8 +18,9 @@ class AccessibleChatInterface:
         self.last_announcement = ""
         self.aria_live_region = None
 
-    async def send_accessible_message(self, content: str, author: str = "Assistant",
-                                    message_type: str = "info") -> cl.Message:
+    async def send_accessible_message(
+        self, content: str, author: str = "Assistant", message_type: str = "info"
+    ) -> cl.Message:
         """Send message with accessibility features"""
 
         # Create message with accessibility metadata
@@ -27,7 +29,7 @@ class AccessibleChatInterface:
             "aria-live": "polite" if message_type == "info" else "assertive",
             "aria-label": f"Message from {author}",
             "timestamp": datetime.now().isoformat(),
-            "message-type": message_type
+            "message-type": message_type,
         }
 
         # Format content for better screen reader experience
@@ -35,20 +37,20 @@ class AccessibleChatInterface:
 
         # Create and send message
         message = cl.Message(
-            content=formatted_content,
-            author=author,
-            metadata=message_metadata
+            content=formatted_content, author=author, metadata=message_metadata
         )
 
         await message.send()
 
         # Store message for history
-        self.message_history.append({
-            "content": content,
-            "author": author,
-            "timestamp": message_metadata["timestamp"],
-            "type": message_type
-        })
+        self.message_history.append(
+            {
+                "content": content,
+                "author": author,
+                "timestamp": message_metadata["timestamp"],
+                "type": message_type,
+            }
+        )
 
         # Announce new message for screen readers
         await self._announce_new_message(author, message_type)
@@ -82,16 +84,20 @@ class AccessibleChatInterface:
         # For Chainlit, we can use a dedicated announcement message
         await self._create_announcement_element(announcement, message_type)
 
-    async def _create_announcement_element(self, announcement: str, announcement_type: str):
+    async def _create_announcement_element(
+        self, announcement: str, announcement_type: str
+    ):
         """Create announcement element for screen readers"""
         # Create a visually hidden element for screen reader announcements
         # This is a workaround since Chainlit doesn't have direct aria-live support
 
         announcement_metadata = {
             "role": "alert",
-            "aria-live": "assertive" if announcement_type in ["error", "success"] else "polite",
+            "aria-live": "assertive"
+            if announcement_type in ["error", "success"]
+            else "polite",
             "aria-atomic": "true",
-            "class": "sr-only"  # Screen reader only
+            "class": "sr-only",  # Screen reader only
         }
 
         # Note: Chainlit doesn't support custom HTML elements directly
@@ -99,7 +105,9 @@ class AccessibleChatInterface:
         # For now, we'll log the announcement
         print(f"SCREEN READER ANNOUNCEMENT: {announcement}")
 
-    async def create_input_field(self, placeholder: str = "Type your message...") -> Dict[str, Any]:
+    async def create_input_field(
+        self, placeholder: str = "Type your message..."
+    ) -> dict[str, Any]:
         """Create accessible input field"""
 
         input_metadata = {
@@ -108,7 +116,7 @@ class AccessibleChatInterface:
             "aria-describedby": "input-instructions",
             "placeholder": placeholder,
             "tabindex": "0",
-            "aria-required": "true"
+            "aria-required": "true",
         }
 
         # In Chainlit, the input field is provided by the framework
@@ -123,43 +131,36 @@ class AccessibleChatInterface:
         return {
             "metadata": input_metadata,
             "instructions": instructions,
-            "placeholder": placeholder
+            "placeholder": placeholder,
         }
 
     async def create_error_message(self, error_content: str) -> cl.Message:
         """Create accessible error message"""
         return await self.send_accessible_message(
-            content=error_content,
-            author="System",
-            message_type="error"
+            content=error_content, author="System", message_type="error"
         )
 
     async def create_success_message(self, success_content: str) -> cl.Message:
         """Create accessible success message"""
         return await self.send_accessible_message(
-            content=success_content,
-            author="System",
-            message_type="success"
+            content=success_content, author="System", message_type="success"
         )
 
-    def get_message_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_message_history(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent message history"""
         return self.message_history[-limit:]
 
-    async def create_skip_link(self) -> Dict[str, Any]:
+    async def create_skip_link(self) -> dict[str, Any]:
         """Create skip navigation link for keyboard users"""
 
         skip_link_metadata = {
             "role": "link",
             "aria-label": "Skip to main content",
             "href": "#main-content",
-            "class": "skip-link"
+            "class": "skip-link",
         }
 
-        return {
-            "content": "Skip to main content",
-            "metadata": skip_link_metadata
-        }
+        return {"content": "Skip to main content", "metadata": skip_link_metadata}
 
     async def update_aria_live_region(self, content: str, priority: str = "polite"):
         """Update aria-live region with new content"""
@@ -170,19 +171,17 @@ class AccessibleChatInterface:
             "role": "status",
             "aria-live": priority,
             "aria-atomic": "true",
-            "class": "aria-live-region"
+            "class": "aria-live-region",
         }
 
         # Create announcement message
         announcement = cl.Message(
-            content=content,
-            author="Screen Reader",
-            metadata=live_region_metadata
+            content=content, author="Screen Reader", metadata=live_region_metadata
         )
 
         await announcement.send()
 
-    def get_accessibility_report(self) -> Dict[str, Any]:
+    def get_accessibility_report(self) -> dict[str, Any]:
         """Generate accessibility report for the chat interface"""
 
         return {
@@ -191,7 +190,9 @@ class AccessibleChatInterface:
             "message_types": {
                 "info": len([m for m in self.message_history if m["type"] == "info"]),
                 "error": len([m for m in self.message_history if m["type"] == "error"]),
-                "success": len([m for m in self.message_history if m["type"] == "success"])
+                "success": len(
+                    [m for m in self.message_history if m["type"] == "success"]
+                ),
             },
             "accessibility_features": [
                 "Screen reader announcements",
@@ -199,28 +200,26 @@ class AccessibleChatInterface:
                 "ARIA attributes",
                 "Semantic HTML structure",
                 "Error and success messaging",
-                "Message history tracking"
-            ]
+                "Message history tracking",
+            ],
         }
 
     async def display_step_by_step_guidance(
         self,
-        steps: List[Dict[str, Any]],
+        steps: list[dict[str, Any]],
         service_name: str,
-        include_source_attribution: bool = True
+        include_source_attribution: bool = True,
     ) -> cl.Message:
         """Display step-by-step guidance with accessibility features"""
 
         # Use the search results component for step-by-step guidance
-        return await search_results.display_step_by_step_guidance(
-            steps, service_name
-        )
+        return await search_results.display_step_by_step_guidance(steps, service_name)
 
     async def display_search_results(
         self,
-        results: List[Dict[str, Any]],
+        results: list[dict[str, Any]],
         query: str,
-        show_source_attribution: bool = True
+        show_source_attribution: bool = True,
     ) -> cl.Message:
         """Display search results with accessibility features"""
 

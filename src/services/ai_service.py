@@ -3,11 +3,11 @@ AI service for City Guide Smart Assistant using Deepseek API
 """
 
 import logging
-import time
-from typing import List, Optional, Dict, Any
+from typing import Any, Optional
+
 import requests
-from transformers import AutoTokenizer, AutoModel
 import torch
+from transformers import AutoModel, AutoTokenizer
 
 from src.utils.config import settings
 
@@ -32,8 +32,12 @@ class AIService:
         """Setup the embedding model for Chinese text"""
         try:
             logger.info(f"Loading embedding model: {self.embedding_model_name}")
-            self.tokenizer = AutoTokenizer.from_pretrained(self.embedding_model_name, trust_remote_code=True)
-            self.embedding_model = AutoModel.from_pretrained(self.embedding_model_name, trust_remote_code=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.embedding_model_name, trust_remote_code=True
+            )
+            self.embedding_model = AutoModel.from_pretrained(
+                self.embedding_model_name, trust_remote_code=True
+            )
 
             # Set model to evaluation mode
             self.embedding_model.eval()
@@ -43,11 +47,13 @@ class AIService:
             logger.error(f"Failed to load embedding model: {e}")
             raise
 
-    def generate_embedding(self, text: str) -> List[float]:
+    def generate_embedding(self, text: str) -> list[float]:
         """Generate embedding vector for text using Qwen3-Embedding-0.6B"""
         try:
             # Tokenize input text
-            inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            inputs = self.tokenizer(
+                text, return_tensors="pt", padding=True, truncation=True, max_length=512
+            )
 
             # Generate embeddings
             with torch.no_grad():
@@ -66,11 +72,11 @@ class AIService:
 
     def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         system_prompt: Optional[str] = None,
         max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None
-    ) -> Dict[str, Any]:
+        temperature: Optional[float] = None,
+    ) -> dict[str, Any]:
         """Send chat completion request to Deepseek API"""
         try:
             # Prepare request payload
@@ -79,33 +85,39 @@ class AIService:
                 "messages": messages,
                 "max_tokens": max_tokens or self.max_tokens,
                 "temperature": temperature or self.temperature,
-                "stream": False
+                "stream": False,
             }
 
             # Add system prompt if provided
             if system_prompt:
-                payload["messages"].insert(0, {"role": "system", "content": system_prompt})
+                payload["messages"].insert(
+                    0, {"role": "system", "content": system_prompt}
+                )
 
             # Make API request
             headers = {
                 "Authorization": f"Bearer {self.deepseek_api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
 
             response = requests.post(
                 f"{self.deepseek_base_url}/chat/completions",
                 json=payload,
                 headers=headers,
-                timeout=30
+                timeout=30,
             )
 
             if response.status_code != 200:
-                logger.error(f"Deepseek API error: {response.status_code} - {response.text}")
+                logger.error(
+                    f"Deepseek API error: {response.status_code} - {response.text}"
+                )
                 raise Exception(f"API request failed: {response.status_code}")
 
             result = response.json()
 
-            logger.info(f"Deepseek API response received, tokens used: {result.get('usage', {}).get('total_tokens', 0)}")
+            logger.info(
+                f"Deepseek API response received, tokens used: {result.get('usage', {}).get('total_tokens', 0)}"
+            )
             return result
 
         except requests.exceptions.Timeout:
@@ -118,9 +130,9 @@ class AIService:
     def generate_government_guidance(
         self,
         user_query: str,
-        context_documents: List[Dict[str, Any]],
-        conversation_history: Optional[List[Dict[str, str]]] = None
-    ) -> Dict[str, Any]:
+        context_documents: list[dict[str, Any]],
+        conversation_history: Optional[list[dict[str, str]]] = None,
+    ) -> dict[str, Any]:
         """Generate government service guidance using context from search results"""
         try:
             # Prepare system prompt for government service guidance
@@ -138,8 +150,12 @@ Format your response with clear sections and bullet points when appropriate."""
 
             # Prepare context from documents
             context_text = ""
-            for i, doc in enumerate(context_documents[:3]):  # Use top 3 most relevant documents
-                context_text += f"\n\nDocument {i+1}: {doc.get('document_title', 'Unknown')}\n"
+            for i, doc in enumerate(
+                context_documents[:3]
+            ):  # Use top 3 most relevant documents
+                context_text += (
+                    f"\n\nDocument {i+1}: {doc.get('document_title', 'Unknown')}\n"
+                )
                 context_text += f"Content: {doc.get('document_content', '')[:500]}..."
 
             # Prepare user message with context
@@ -154,7 +170,9 @@ Please provide guidance for this government service query."""
 
             # Add conversation history if available
             if conversation_history:
-                messages.extend(conversation_history[-5:])  # Last 5 messages for context
+                messages.extend(
+                    conversation_history[-5:]
+                )  # Last 5 messages for context
 
             # Add current user message
             messages.append({"role": "user", "content": user_message})
@@ -169,7 +187,7 @@ Please provide guidance for this government service query."""
                 "response": assistant_response,
                 "usage": response.get("usage", {}),
                 "model": response.get("model", "deepseek-chat"),
-                "context_documents_used": len(context_documents)
+                "context_documents_used": len(context_documents),
             }
 
         except Exception as e:
@@ -198,10 +216,8 @@ Provide a clear, concise explanation that would help someone understand what thi
             raise
 
     def generate_navigation_suggestions(
-        self,
-        current_context: str,
-        available_services: List[str]
-    ) -> List[Dict[str, str]]:
+        self, current_context: str, available_services: list[str]
+    ) -> list[dict[str, str]]:
         """Generate contextual navigation suggestions"""
         try:
             system_prompt = """You are a navigation assistant for government services. Suggest relevant next steps or related services based on the current conversation context. Provide suggestions in a clear, actionable format."""
@@ -220,18 +236,19 @@ Suggest 3-5 relevant navigation options that would help the user continue their 
 
             # Simple parsing - in practice, you might want more sophisticated parsing
             suggestions = []
-            lines = suggestions_text.split('\n')
+            lines = suggestions_text.split("\n")
 
             for line in lines:
                 line = line.strip()
-                if line and (line.startswith('-') or line.startswith('•') or line[0].isdigit()):
+                if line and (
+                    line.startswith("-") or line.startswith("•") or line[0].isdigit()
+                ):
                     # Remove bullet points or numbers
-                    clean_line = line.lstrip('-• ').lstrip('1234567890. ')
+                    clean_line = line.lstrip("-• ").lstrip("1234567890. ")
                     if clean_line:
-                        suggestions.append({
-                            "label": clean_line,
-                            "action_type": "related"
-                        })
+                        suggestions.append(
+                            {"label": clean_line, "action_type": "related"}
+                        )
 
             return suggestions[:5]  # Return max 5 suggestions
 
@@ -239,7 +256,9 @@ Suggest 3-5 relevant navigation options that would help the user continue their 
             logger.error(f"Failed to generate navigation suggestions: {e}")
             raise
 
-    def validate_response_quality(self, user_query: str, assistant_response: str) -> Dict[str, Any]:
+    def validate_response_quality(
+        self, user_query: str, assistant_response: str
+    ) -> dict[str, Any]:
         """Validate the quality of the assistant's response"""
         try:
             system_prompt = """You are a quality assurance expert for government service responses. Evaluate the quality of the assistant's response based on accuracy, completeness, clarity, and helpfulness."""
@@ -271,29 +290,42 @@ Feedback: [your feedback]"""
 
             # Simple parsing - in practice, you might want more sophisticated parsing
             scores = {}
-            lines = evaluation_text.split('\n')
+            lines = evaluation_text.split("\n")
 
             for line in lines:
-                if ':' in line:
-                    key, value = line.split(':', 1)
+                if ":" in line:
+                    key, value = line.split(":", 1)
                     key = key.strip().lower()
                     value = value.strip()
 
-                    if key in ['accuracy', 'completeness', 'clarity', 'helpfulness']:
+                    if key in ["accuracy", "completeness", "clarity", "helpfulness"]:
                         try:
                             # Extract numeric score
                             score = int(value.split()[0])
                             scores[key] = min(max(score, 1), 5)
                         except (ValueError, IndexError):
                             scores[key] = 3  # Default score if parsing fails
-                    elif key == 'feedback':
-                        scores['feedback'] = value
+                    elif key == "feedback":
+                        scores["feedback"] = value
 
             # Calculate overall score
             if len(scores) >= 4:
-                scores['overall'] = sum([scores.get(k, 3) for k in ['accuracy', 'completeness', 'clarity', 'helpfulness']]) / 4
+                scores["overall"] = (
+                    sum(
+                        [
+                            scores.get(k, 3)
+                            for k in [
+                                "accuracy",
+                                "completeness",
+                                "clarity",
+                                "helpfulness",
+                            ]
+                        ]
+                    )
+                    / 4
+                )
             else:
-                scores['overall'] = 3
+                scores["overall"] = 3
 
             return scores
 

@@ -2,9 +2,7 @@
 Accessibility tests for Chainlit interface components
 """
 
-import pytest
-import unittest.mock as mock
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 
 class TestChainlitAccessibility:
@@ -25,7 +23,9 @@ class TestChainlitAccessibility:
         mock_submit_button.click = Mock()
 
         # Test tab navigation
-        with patch('src.chainlit.components.chat_interface.get_focusable_elements') as mock_focus:
+        with patch(
+            "src.chainlit.components.chat_interface.get_focusable_elements"
+        ) as mock_focus:
             mock_focus.return_value = [mock_input, mock_submit_button]
 
             # Simulate tab key press
@@ -33,7 +33,9 @@ class TestChainlitAccessibility:
             pass
 
         # Test enter key for message submission
-        with patch('src.chainlit.components.chat_interface.handle_enter_key') as mock_enter:
+        with patch(
+            "src.chainlit.components.chat_interface.handle_enter_key"
+        ) as mock_enter:
             mock_enter.return_value = True
 
             # Simulate enter key press in input field
@@ -41,7 +43,9 @@ class TestChainlitAccessibility:
             pass
 
         # Test escape key for canceling actions
-        with patch('src.chainlit.components.chat_interface.handle_escape_key') as mock_escape:
+        with patch(
+            "src.chainlit.components.chat_interface.handle_escape_key"
+        ) as mock_escape:
             mock_escape.return_value = True
 
             # Simulate escape key press
@@ -61,7 +65,9 @@ class TestChainlitAccessibility:
         mock_nav_element.get_attribute = Mock(return_value="Service navigation menu")
 
         # Test aria-label presence
-        with patch('src.chainlit.components.service_navigation.get_navigation_elements') as mock_nav:
+        with patch(
+            "src.chainlit.components.service_navigation.get_navigation_elements"
+        ) as mock_nav:
             mock_nav.return_value = [mock_nav_element]
 
             # Check that aria-label is present and meaningful
@@ -82,7 +88,9 @@ class TestChainlitAccessibility:
         mock_message_area.get_attribute = Mock(return_value="polite")
 
         # Test aria-live regions
-        with patch('src.chainlit.components.chat_interface.get_aria_live_regions') as mock_live:
+        with patch(
+            "src.chainlit.components.chat_interface.get_aria_live_regions"
+        ) as mock_live:
             mock_live.return_value = [mock_message_area]
 
             # Check that aria-live is set appropriately
@@ -121,7 +129,9 @@ class TestChainlitAccessibility:
         mock_button.focus_contrast_ratio = Mock(return_value=4.8)
 
         # Test focus indicator presence
-        with patch('src.chainlit.components.service_navigation.get_focusable_elements') as mock_focusable:
+        with patch(
+            "src.chainlit.components.service_navigation.get_focusable_elements"
+        ) as mock_focusable:
             mock_focusable.return_value = [mock_button]
 
             # Check focus indicator
@@ -147,7 +157,9 @@ class TestChainlitAccessibility:
         mock_decorative_image.get_attribute = Mock(return_value="")
 
         # Test alt text presence
-        with patch('src.chainlit.components.chat_interface.get_image_elements') as mock_images:
+        with patch(
+            "src.chainlit.components.chat_interface.get_image_elements"
+        ) as mock_images:
             mock_images.return_value = [mock_icon, mock_decorative_image]
 
             # Check informative image alt text
@@ -174,7 +186,9 @@ class TestChainlitAccessibility:
         mock_label.get_attribute = Mock(return_value="user-message")
 
         # Test label association
-        with patch('src.chainlit.components.chat_interface.get_form_elements') as mock_forms:
+        with patch(
+            "src.chainlit.components.chat_interface.get_form_elements"
+        ) as mock_forms:
             mock_forms.return_value = [mock_input]
 
             # Check that input has associated label
@@ -196,7 +210,9 @@ class TestChainlitAccessibility:
         mock_error.text = "Please enter a valid message"
 
         # Test error announcement
-        with patch('src.chainlit.components.chat_interface.get_error_elements') as mock_errors:
+        with patch(
+            "src.chainlit.components.chat_interface.get_error_elements"
+        ) as mock_errors:
             mock_errors.return_value = [mock_error]
 
             # Check aria-live attribute
@@ -221,7 +237,9 @@ class TestChainlitAccessibility:
         mock_touch_target.size = {"width": 44, "height": 44}
 
         # Test touch target size
-        with patch('src.chainlit.components.service_navigation.get_touch_targets') as mock_targets:
+        with patch(
+            "src.chainlit.components.service_navigation.get_touch_targets"
+        ) as mock_targets:
             mock_targets.return_value = [mock_touch_target]
 
             # Check minimum touch target size
@@ -242,7 +260,7 @@ class TestChainlitAccessibility:
         mock_skip_link.get_attribute = Mock(return_value="main-content")
 
         # Test skip link functionality
-        with patch('src.chainlit.components.chat_interface.get_skip_link') as mock_skip:
+        with patch("src.chainlit.components.chat_interface.get_skip_link") as mock_skip:
             mock_skip.return_value = mock_skip_link
 
             # Check skip link visibility

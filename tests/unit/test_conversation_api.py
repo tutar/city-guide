@@ -2,10 +2,12 @@
 Unit tests for conversation API endpoints
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from fastapi.testclient import TestClient
 import uuid
+from datetime import UTC
+from unittest.mock import Mock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 from src.api.conversation import router
 from src.models.conversation import ConversationContext, Message
@@ -15,6 +17,7 @@ from src.models.conversation import ConversationContext, Message
 def test_client():
     """Create test client for conversation API"""
     from fastapi import FastAPI
+
     app = FastAPI()
     app.include_router(router)
     return TestClient(app)
@@ -32,12 +35,16 @@ class TestConversationAPI:
         mock_conversation_context.navigation_options = []
         mock_conversation_context.current_service_category_id = None
 
-        with patch('src.api.conversation.DataService') as mock_data_service:
-            with patch('src.api.conversation.SearchService') as mock_search_service:
-                with patch('src.api.conversation.AIService') as mock_ai_service:
-                    mock_data_instance = mock_data_service.return_value.__enter__.return_value
+        with patch("src.api.conversation.DataService") as mock_data_service:
+            with patch("src.api.conversation.SearchService") as mock_search_service:
+                with patch("src.api.conversation.AIService") as mock_ai_service:
+                    mock_data_instance = (
+                        mock_data_service.return_value.__enter__.return_value
+                    )
                     mock_data_instance.get_conversation_context.return_value = None
-                    mock_data_instance.create_conversation_context.return_value = mock_conversation_context
+                    mock_data_instance.create_conversation_context.return_value = (
+                        mock_conversation_context
+                    )
 
                     mock_search_instance = mock_search_service.return_value
                     mock_search_instance.search_documents.return_value = []
@@ -47,7 +54,7 @@ class TestConversationAPI:
                         "response": "Test response",
                         "usage": {"total_tokens": 100},
                         "model": "deepseek-chat",
-                        "context_documents_used": 0
+                        "context_documents_used": 0,
                     }
 
                     # When starting conversation
@@ -55,8 +62,8 @@ class TestConversationAPI:
                         "/api/conversation/start",
                         json={
                             "user_session_id": "test-session-123",
-                            "initial_message": "Hello, I need help with passport"
-                        }
+                            "initial_message": "Hello, I need help with passport",
+                        },
                     )
 
                     # Then should return success
@@ -76,11 +83,15 @@ class TestConversationAPI:
         mock_conversation_context.navigation_options = [{"label": "Test Option"}]
         mock_conversation_context.current_service_category_id = None
 
-        with patch('src.api.conversation.DataService') as mock_data_service:
-            with patch('src.api.conversation.SearchService') as mock_search_service:
-                with patch('src.api.conversation.AIService') as mock_ai_service:
-                    mock_data_instance = mock_data_service.return_value.__enter__.return_value
-                    mock_data_instance.get_conversation_context.return_value = mock_conversation_context
+        with patch("src.api.conversation.DataService") as mock_data_service:
+            with patch("src.api.conversation.SearchService") as mock_search_service:
+                with patch("src.api.conversation.AIService") as mock_ai_service:
+                    mock_data_instance = (
+                        mock_data_service.return_value.__enter__.return_value
+                    )
+                    mock_data_instance.get_conversation_context.return_value = (
+                        mock_conversation_context
+                    )
 
                     mock_search_instance = mock_search_service.return_value
                     mock_ai_instance = mock_ai_service.return_value
@@ -88,7 +99,7 @@ class TestConversationAPI:
                     # When starting conversation with existing session
                     response = test_client.post(
                         "/api/conversation/start",
-                        json={"user_session_id": "existing-session"}
+                        json={"user_session_id": "existing-session"},
                     )
 
                     # Then should return existing session
@@ -114,16 +125,27 @@ class TestConversationAPI:
         ]
         mock_conversation_context.current_service_category_id = mock_service_category.id
 
-        with patch('src.api.conversation.DataService') as mock_data_service:
-            with patch('src.api.conversation.SearchService') as mock_search_service:
-                with patch('src.api.conversation.AIService') as mock_ai_service:
-                    mock_data_instance = mock_data_service.return_value.__enter__.return_value
+        with patch("src.api.conversation.DataService") as mock_data_service:
+            with patch("src.api.conversation.SearchService") as mock_search_service:
+                with patch("src.api.conversation.AIService") as mock_ai_service:
+                    mock_data_instance = (
+                        mock_data_service.return_value.__enter__.return_value
+                    )
                     mock_data_instance.get_conversation_context.return_value = None
-                    mock_data_instance.get_service_category.return_value = mock_service_category
+                    mock_data_instance.get_service_category.return_value = (
+                        mock_service_category
+                    )
                     mock_data_instance.get_navigation_options_by_category.return_value = [
-                        Mock(label="Requirements", action_type="info", target_url=None, description="Requirements")
+                        Mock(
+                            label="Requirements",
+                            action_type="info",
+                            target_url=None,
+                            description="Requirements",
+                        )
                     ]
-                    mock_data_instance.create_conversation_context.return_value = mock_conversation_context
+                    mock_data_instance.create_conversation_context.return_value = (
+                        mock_conversation_context
+                    )
 
                     mock_search_instance = mock_search_service.return_value
                     mock_ai_instance = mock_ai_service.return_value
@@ -133,8 +155,8 @@ class TestConversationAPI:
                         "/api/conversation/start",
                         json={
                             "user_session_id": "service-session",
-                            "service_category_id": str(mock_service_category.id)
-                        }
+                            "service_category_id": str(mock_service_category.id),
+                        },
                     )
 
                     # Then should return service context
@@ -142,7 +164,9 @@ class TestConversationAPI:
                     data = response.json()
                     assert data["session_id"] == "service-session"
                     assert data["service_context"] is not None
-                    assert data["navigation_options"] == [{"label": "Requirements", "action_type": "info"}]
+                    assert data["navigation_options"] == [
+                        {"label": "Requirements", "action_type": "info"}
+                    ]
 
     def test_send_message_success(self, test_client):
         """Test successful message sending"""
@@ -158,45 +182,59 @@ class TestConversationAPI:
         # Mock AI service response
         mock_ai_response = {
             "response": "Here's how to apply for a passport...",
-            "navigation_suggestions": [{"label": "Make appointment", "action_type": "appointment"}],
-            "usage": {"total_tokens": 100}
+            "navigation_suggestions": [
+                {"label": "Make appointment", "action_type": "appointment"}
+            ],
+            "usage": {"total_tokens": 100},
         }
 
-        with patch('src.api.conversation.DataService') as mock_data_service:
-            with patch('src.api.conversation.SearchService') as mock_search_service:
-                with patch('src.api.conversation.AIService') as mock_ai_service:
-                    mock_data_instance = mock_data_service.return_value.__enter__.return_value
-                    mock_data_instance.get_conversation_context.return_value = mock_conversation_context
-                    mock_data_instance.update_conversation_context.return_value = mock_conversation_context
+        with patch("src.api.conversation.DataService") as mock_data_service:
+            with patch("src.api.conversation.SearchService") as mock_search_service:
+                with patch("src.api.conversation.AIService") as mock_ai_service:
+                    mock_data_instance = (
+                        mock_data_service.return_value.__enter__.return_value
+                    )
+                    mock_data_instance.get_conversation_context.return_value = (
+                        mock_conversation_context
+                    )
+                    mock_data_instance.update_conversation_context.return_value = (
+                        mock_conversation_context
+                    )
 
                     mock_search_instance = mock_search_service.return_value
                     mock_search_instance.search_documents.return_value = []
 
                     mock_ai_instance = mock_ai_service.return_value
-                    mock_ai_instance.generate_government_guidance.return_value = mock_ai_response
+                    mock_ai_instance.generate_government_guidance.return_value = (
+                        mock_ai_response
+                    )
 
                     # When sending message
                     response = test_client.post(
                         "/api/conversation/message",
                         json={
                             "session_id": "test-session",
-                            "message": "How do I apply for a passport?"
-                        }
+                            "message": "How do I apply for a passport?",
+                        },
                     )
 
                     # Then should return success
                     assert response.status_code == 200
                     data = response.json()
                     assert data["response"] == "Here's how to apply for a passport..."
-                    assert data["navigation_options"] == [{"label": "Make appointment", "action_type": "appointment"}]
+                    assert data["navigation_options"] == [
+                        {"label": "Make appointment", "action_type": "appointment"}
+                    ]
                     assert data["usage"]["total_tokens"] == 100
 
     def test_send_message_conversation_not_found(self, test_client):
         """Test sending message to non-existent conversation"""
-        with patch('src.api.conversation.DataService') as mock_data_service:
-            with patch('src.api.conversation.SearchService') as mock_search_service:
-                with patch('src.api.conversation.AIService') as mock_ai_service:
-                    mock_data_instance = mock_data_service.return_value.__enter__.return_value
+        with patch("src.api.conversation.DataService") as mock_data_service:
+            with patch("src.api.conversation.SearchService") as mock_search_service:
+                with patch("src.api.conversation.AIService") as mock_ai_service:
+                    mock_data_instance = (
+                        mock_data_service.return_value.__enter__.return_value
+                    )
                     mock_data_instance.get_conversation_context.return_value = None
 
                     mock_search_instance = mock_search_service.return_value
@@ -205,10 +243,7 @@ class TestConversationAPI:
                     # When sending message to non-existent conversation
                     response = test_client.post(
                         "/api/conversation/message",
-                        json={
-                            "session_id": "non-existent-session",
-                            "message": "Hello"
-                        }
+                        json={"session_id": "non-existent-session", "message": "Hello"},
                     )
 
                     # Then should return 404
@@ -225,22 +260,24 @@ class TestConversationAPI:
         mock_conversation_context.current_service_category_id = None
 
         # Create actual Message objects
-        from datetime import datetime, timezone
-        test_timestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        from datetime import datetime
+
+        test_timestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         mock_message = Message(
-            role="user",
-            content="Test message",
-            timestamp=test_timestamp,
-            metadata={}
+            role="user", content="Test message", timestamp=test_timestamp, metadata={}
         )
 
         mock_conversation_context.conversation_history = [mock_message]
 
-        with patch('src.api.conversation.DataService') as mock_data_service:
-            with patch('src.api.conversation.SearchService') as mock_search_service:
-                with patch('src.api.conversation.AIService') as mock_ai_service:
-                    mock_data_instance = mock_data_service.return_value.__enter__.return_value
-                    mock_data_instance.get_conversation_context.return_value = mock_conversation_context
+        with patch("src.api.conversation.DataService") as mock_data_service:
+            with patch("src.api.conversation.SearchService") as mock_search_service:
+                with patch("src.api.conversation.AIService") as mock_ai_service:
+                    mock_data_instance = (
+                        mock_data_service.return_value.__enter__.return_value
+                    )
+                    mock_data_instance.get_conversation_context.return_value = (
+                        mock_conversation_context
+                    )
 
                     mock_search_instance = mock_search_service.return_value
                     mock_ai_instance = mock_ai_service.return_value
@@ -257,7 +294,7 @@ class TestConversationAPI:
 
     def test_get_conversation_history_not_found(self, test_client):
         """Test conversation history retrieval for non-existent conversation"""
-        with patch('src.api.conversation.DataService') as mock_data_service:
+        with patch("src.api.conversation.DataService") as mock_data_service:
             mock_instance = mock_data_service.return_value.__enter__.return_value
             mock_instance.get_conversation_context.return_value = None
 

@@ -2,23 +2,20 @@
 Simplified unit tests for AI service and Deepseek API integration
 """
 
-import pytest
 from unittest.mock import Mock, patch
-import requests
-import torch
 
 
-@patch('src.services.ai_service.settings')
-@patch('src.services.ai_service.AutoTokenizer.from_pretrained')
-@patch('src.services.ai_service.AutoModel.from_pretrained')
+@patch("src.services.ai_service.settings")
+@patch("src.services.ai_service.AutoTokenizer.from_pretrained")
+@patch("src.services.ai_service.AutoModel.from_pretrained")
 def test_ai_service_initialization(mock_model, mock_tokenizer, mock_settings):
     """Test AIService initialization with configuration"""
     # Mock settings
-    mock_settings.ai.deepseek_api_key = 'test-api-key'
-    mock_settings.ai.deepseek_base_url = 'https://api.deepseek.com'
+    mock_settings.ai.deepseek_api_key = "test-api-key"
+    mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
     mock_settings.ai.max_tokens = 1000
     mock_settings.ai.temperature = 0.7
-    mock_settings.ai.embedding_model = 'Qwen/Qwen3-Embedding-0.6B'
+    mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
     # Mock tokenizer and model
     mock_tokenizer.return_value = Mock()
@@ -38,18 +35,18 @@ def test_ai_service_initialization(mock_model, mock_tokenizer, mock_settings):
     assert ai_service.embedding_model_name == "Qwen/Qwen3-Embedding-0.6B"
 
 
-@patch('src.services.ai_service.settings')
-@patch('src.services.ai_service.AutoTokenizer.from_pretrained')
-@patch('src.services.ai_service.AutoModel.from_pretrained')
-@patch('src.services.ai_service.requests.post')
+@patch("src.services.ai_service.settings")
+@patch("src.services.ai_service.AutoTokenizer.from_pretrained")
+@patch("src.services.ai_service.AutoModel.from_pretrained")
+@patch("src.services.ai_service.requests.post")
 def test_chat_completion_success(mock_post, mock_model, mock_tokenizer, mock_settings):
     """Test successful chat completion"""
     # Mock settings
-    mock_settings.ai.deepseek_api_key = 'test-api-key'
-    mock_settings.ai.deepseek_base_url = 'https://api.deepseek.com'
+    mock_settings.ai.deepseek_api_key = "test-api-key"
+    mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
     mock_settings.ai.max_tokens = 1000
     mock_settings.ai.temperature = 0.7
-    mock_settings.ai.embedding_model = 'Qwen/Qwen3-Embedding-0.6B'
+    mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
     # Mock tokenizer and model
     mock_tokenizer.return_value = Mock()
@@ -61,7 +58,7 @@ def test_chat_completion_success(mock_post, mock_model, mock_tokenizer, mock_set
     mock_response.json.return_value = {
         "choices": [{"message": {"content": "Test response"}}],
         "usage": {"total_tokens": 50},
-        "model": "deepseek-chat"
+        "model": "deepseek-chat",
     }
     mock_post.return_value = mock_response
 
@@ -78,17 +75,17 @@ def test_chat_completion_success(mock_post, mock_model, mock_tokenizer, mock_set
     assert result["usage"]["total_tokens"] == 50
 
 
-@patch('src.services.ai_service.settings')
-@patch('src.services.ai_service.AutoTokenizer.from_pretrained')
-@patch('src.services.ai_service.AutoModel.from_pretrained')
+@patch("src.services.ai_service.settings")
+@patch("src.services.ai_service.AutoTokenizer.from_pretrained")
+@patch("src.services.ai_service.AutoModel.from_pretrained")
 def test_generate_government_guidance(mock_model, mock_tokenizer, mock_settings):
     """Test government guidance generation"""
     # Mock settings
-    mock_settings.ai.deepseek_api_key = 'test-api-key'
-    mock_settings.ai.deepseek_base_url = 'https://api.deepseek.com'
+    mock_settings.ai.deepseek_api_key = "test-api-key"
+    mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
     mock_settings.ai.max_tokens = 1000
     mock_settings.ai.temperature = 0.7
-    mock_settings.ai.embedding_model = 'Qwen/Qwen3-Embedding-0.6B'
+    mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
     # Mock tokenizer and model
     mock_tokenizer.return_value = Mock()
@@ -101,20 +98,26 @@ def test_generate_government_guidance(mock_model, mock_tokenizer, mock_settings)
     mock_response = {
         "choices": [{"message": {"content": "Government guidance response"}}],
         "usage": {"total_tokens": 100},
-        "model": "deepseek-chat"
+        "model": "deepseek-chat",
     }
 
     ai_service = AIService()
-    with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+    with patch.object(ai_service, "chat_completion", return_value=mock_response):
         # When generating government guidance
         user_query = "How to apply for passport?"
         context_documents = [
-            {"document_title": "Passport Requirements", "document_content": "Requirements content..."},
-            {"document_title": "Application Process", "document_content": "Process content..."}
+            {
+                "document_title": "Passport Requirements",
+                "document_content": "Requirements content...",
+            },
+            {
+                "document_title": "Application Process",
+                "document_content": "Process content...",
+            },
         ]
         conversation_history = [
             {"role": "user", "content": "Previous question"},
-            {"role": "assistant", "content": "Previous answer"}
+            {"role": "assistant", "content": "Previous answer"},
         ]
 
         result = ai_service.generate_government_guidance(
@@ -128,17 +131,17 @@ def test_generate_government_guidance(mock_model, mock_tokenizer, mock_settings)
         assert result["context_documents_used"] == 2
 
 
-@patch('src.services.ai_service.settings')
-@patch('src.services.ai_service.AutoTokenizer.from_pretrained')
-@patch('src.services.ai_service.AutoModel.from_pretrained')
+@patch("src.services.ai_service.settings")
+@patch("src.services.ai_service.AutoTokenizer.from_pretrained")
+@patch("src.services.ai_service.AutoModel.from_pretrained")
 def test_explain_technical_term(mock_model, mock_tokenizer, mock_settings):
     """Test technical term explanation"""
     # Mock settings
-    mock_settings.ai.deepseek_api_key = 'test-api-key'
-    mock_settings.ai.deepseek_base_url = 'https://api.deepseek.com'
+    mock_settings.ai.deepseek_api_key = "test-api-key"
+    mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
     mock_settings.ai.max_tokens = 1000
     mock_settings.ai.temperature = 0.7
-    mock_settings.ai.embedding_model = 'Qwen/Qwen3-Embedding-0.6B'
+    mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
     # Mock tokenizer and model
     mock_tokenizer.return_value = Mock()
@@ -153,7 +156,7 @@ def test_explain_technical_term(mock_model, mock_tokenizer, mock_settings):
     }
 
     ai_service = AIService()
-    with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+    with patch.object(ai_service, "chat_completion", return_value=mock_response):
         # When explaining technical term
         term = "Visa Application"
         context = "Applying for travel document"

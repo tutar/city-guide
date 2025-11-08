@@ -3,16 +3,22 @@ Embedding service for City Guide Smart Assistant using Milvus vector database
 """
 
 import logging
-from typing import List, Optional, Dict, Any
-from pymilvus import (
-    connections, FieldSchema, CollectionSchema, DataType,
-    Collection, utility
-)
 import uuid
 from datetime import datetime
+from typing import Any, Optional
 
+from pymilvus import (
+    Collection,
+    CollectionSchema,
+    DataType,
+    FieldSchema,
+    connections,
+    utility,
+)
+
+from src.models.document_embeddings import DocumentEmbedding
+from src.models.search_queries import SearchQuery
 from src.utils.config import settings
-from src.models.embeddings import DocumentEmbedding, SearchQuery
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -31,11 +37,11 @@ class EmbeddingService:
         """Connect to Milvus server"""
         try:
             connections.connect(
-                alias="default",
-                host=settings.milvus.host,
-                port=settings.milvus.port
+                alias="default", host=settings.milvus.host, port=settings.milvus.port
             )
-            logger.info(f"Connected to Milvus at {settings.milvus.host}:{settings.milvus.port}")
+            logger.info(
+                f"Connected to Milvus at {settings.milvus.host}:{settings.milvus.port}"
+            )
         except Exception as e:
             logger.error(f"Failed to connect to Milvus: {e}")
             raise
@@ -58,24 +64,38 @@ class EmbeddingService:
         try:
             # Define schema
             fields = [
-                FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=36),
+                FieldSchema(
+                    name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=36
+                ),
                 FieldSchema(name="source_id", dtype=DataType.VARCHAR, max_length=36),
-                FieldSchema(name="document_url", dtype=DataType.VARCHAR, max_length=500),
-                FieldSchema(name="document_title", dtype=DataType.VARCHAR, max_length=500),
+                FieldSchema(
+                    name="document_url", dtype=DataType.VARCHAR, max_length=500
+                ),
+                FieldSchema(
+                    name="document_title", dtype=DataType.VARCHAR, max_length=500
+                ),
                 FieldSchema(name="chunk_index", dtype=DataType.INT64),
-                FieldSchema(name="embedding_vector", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dimension),
-                FieldSchema(name="embedding_model", dtype=DataType.VARCHAR, max_length=100),
+                FieldSchema(
+                    name="embedding_vector",
+                    dtype=DataType.FLOAT_VECTOR,
+                    dim=self.embedding_dimension,
+                ),
+                FieldSchema(
+                    name="embedding_model", dtype=DataType.VARCHAR, max_length=100
+                ),
                 FieldSchema(name="created_at", dtype=DataType.INT64),
             ]
 
-            schema = CollectionSchema(fields, description="Document embeddings for government services")
+            schema = CollectionSchema(
+                fields, description="Document embeddings for government services"
+            )
             self.collection = Collection(self.collection_name, schema)
 
             # Create index for vector search
             index_params = {
                 "index_type": "IVF_FLAT",
                 "metric_type": "L2",
-                "params": {"nlist": 1024}
+                "params": {"nlist": 1024},
             }
             self.collection.create_index("embedding_vector", index_params)
 
@@ -113,20 +133,17 @@ class EmbeddingService:
 
     def search_similar_documents(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         limit: int = 10,
-        filter_expression: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        filter_expression: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
         """Search for similar documents using vector similarity"""
         try:
             # Load collection for search
             self.collection.load()
 
             # Search parameters
-            search_params = {
-                "metric_type": "L2",
-                "params": {"nprobe": 10}
-            }
+            search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
 
             # Execute search
             results = self.collection.search(
@@ -135,7 +152,13 @@ class EmbeddingService:
                 param=search_params,
                 limit=limit,
                 expr=filter_expression,
-                output_fields=["id", "source_id", "document_url", "document_title", "chunk_index"]
+                output_fields=[
+                    "id",
+                    "source_id",
+                    "document_url",
+                    "document_title",
+                    "chunk_index",
+                ],
             )
 
             # Format results
@@ -147,8 +170,9 @@ class EmbeddingService:
                     "document_url": hit.entity.get("document_url"),
                     "document_title": hit.entity.get("document_title"),
                     "chunk_index": hit.entity.get("chunk_index"),
-                    "similarity_score": 1 - hit.distance,  # Convert distance to similarity
-                    "metadata": {}
+                    "similarity_score": 1
+                    - hit.distance,  # Convert distance to similarity
+                    "metadata": {},
                 }
                 search_results.append(result)
 
@@ -159,7 +183,7 @@ class EmbeddingService:
             logger.error(f"Failed to search similar documents: {e}")
             raise
 
-    def get_document_by_id(self, document_id: str) -> Optional[Dict[str, Any]]:
+    def get_document_by_id(self, document_id: str) -> Optional[dict[str, Any]]:
         """Get document embedding by ID"""
         try:
             self.collection.load()
@@ -167,7 +191,15 @@ class EmbeddingService:
             # Query by primary key
             result = self.collection.query(
                 expr=f"id == '{document_id}'",
-                output_fields=["id", "source_id", "document_url", "document_title", "chunk_index", "embedding_model", "created_at"]
+                output_fields=[
+                    "id",
+                    "source_id",
+                    "document_url",
+                    "document_title",
+                    "chunk_index",
+                    "embedding_model",
+                    "created_at",
+                ],
             )
 
             if result:
@@ -179,7 +211,7 @@ class EmbeddingService:
                     "document_title": document["document_title"],
                     "chunk_index": document["chunk_index"],
                     "embedding_model": document["embedding_model"],
-                    "created_at": datetime.fromtimestamp(document["created_at"])
+                    "created_at": datetime.fromtimestamp(document["created_at"]),
                 }
 
             return None
@@ -201,7 +233,7 @@ class EmbeddingService:
             logger.error(f"Failed to delete document embedding: {e}")
             raise
 
-    def get_collection_stats(self) -> Dict[str, Any]:
+    def get_collection_stats(self) -> dict[str, Any]:
         """Get collection statistics"""
         try:
             stats = self.collection.describe()
@@ -211,7 +243,7 @@ class EmbeddingService:
                 "collection_name": stats.collection_name,
                 "num_entities": num_entities,
                 "description": stats.description,
-                "fields": [field.name for field in stats.fields]
+                "fields": [field.name for field in stats.fields],
             }
 
         except Exception as e:
@@ -226,29 +258,50 @@ class EmbeddingService:
             if not utility.has_collection(search_query_collection_name):
                 # Define schema for search queries
                 fields = [
-                    FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=36),
-                    FieldSchema(name="session_id", dtype=DataType.VARCHAR, max_length=255),
-                    FieldSchema(name="query_text", dtype=DataType.VARCHAR, max_length=1000),
-                    FieldSchema(name="query_embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dimension),
+                    FieldSchema(
+                        name="id",
+                        dtype=DataType.VARCHAR,
+                        is_primary=True,
+                        max_length=36,
+                    ),
+                    FieldSchema(
+                        name="session_id", dtype=DataType.VARCHAR, max_length=255
+                    ),
+                    FieldSchema(
+                        name="query_text", dtype=DataType.VARCHAR, max_length=1000
+                    ),
+                    FieldSchema(
+                        name="query_embedding",
+                        dtype=DataType.FLOAT_VECTOR,
+                        dim=self.embedding_dimension,
+                    ),
                     FieldSchema(name="response_quality", dtype=DataType.INT64),
                     FieldSchema(name="created_at", dtype=DataType.INT64),
                 ]
 
                 schema = CollectionSchema(fields, description="Search query analytics")
-                self.search_query_collection = Collection(search_query_collection_name, schema)
+                self.search_query_collection = Collection(
+                    search_query_collection_name, schema
+                )
 
                 # Create index for query embeddings
                 index_params = {
                     "index_type": "IVF_FLAT",
                     "metric_type": "L2",
-                    "params": {"nlist": 1024}
+                    "params": {"nlist": 1024},
                 }
-                self.search_query_collection.create_index("query_embedding", index_params)
+                self.search_query_collection.create_index(
+                    "query_embedding", index_params
+                )
 
-                logger.info(f"Created search query collection: {search_query_collection_name}")
+                logger.info(
+                    f"Created search query collection: {search_query_collection_name}"
+                )
             else:
                 self.search_query_collection = Collection(search_query_collection_name)
-                logger.info(f"Using existing search query collection: {search_query_collection_name}")
+                logger.info(
+                    f"Using existing search query collection: {search_query_collection_name}"
+                )
 
         except Exception as e:
             logger.error(f"Failed to create search query collection: {e}")
@@ -257,7 +310,7 @@ class EmbeddingService:
     def store_search_query(self, search_query: SearchQuery) -> str:
         """Store a search query for analytics"""
         try:
-            if not hasattr(self, 'search_query_collection'):
+            if not hasattr(self, "search_query_collection"):
                 self.create_search_query_collection()
 
             # Prepare data for insertion
@@ -266,7 +319,11 @@ class EmbeddingService:
                 [search_query.session_id],  # session_id
                 [search_query.query_text],  # query_text
                 [search_query.query_embedding],  # query_embedding
-                [search_query.response_quality if search_query.response_quality else -1],  # response_quality
+                [
+                    search_query.response_quality
+                    if search_query.response_quality
+                    else -1
+                ],  # response_quality
                 [int(datetime.utcnow().timestamp())],  # created_at
             ]
 

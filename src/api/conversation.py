@@ -3,14 +3,15 @@ Conversation API endpoints for City Guide Smart Assistant
 """
 
 import uuid
-from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Any, Optional
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from src.models.conversation import ConversationContext, Message
+from src.models.conversation import ConversationContext
+from src.services.ai_service import AIService
 from src.services.data_service import DataService
 from src.services.search_service import SearchService
-from src.services.ai_service import AIService
 
 router = APIRouter(prefix="/api/conversation", tags=["conversation"])
 
@@ -20,19 +21,16 @@ class StartConversationRequest(BaseModel):
 
     user_session_id: Optional[str] = Field(
         default_factory=lambda: str(uuid.uuid4()),
-        description="Anonymous session identifier. Auto-generated if not provided"
+        description="Anonymous session identifier. Auto-generated if not provided",
     )
     initial_message: Optional[str] = Field(
-        None,
-        description="Optional initial message to start the conversation"
+        None, description="Optional initial message to start the conversation"
     )
     service_category_id: Optional[str] = Field(
-        None,
-        description="Optional service category ID to start with specific context"
+        None, description="Optional service category ID to start with specific context"
     )
-    user_preferences: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="User preferences for personalization"
+    user_preferences: dict[str, Any] = Field(
+        default_factory=dict, description="User preferences for personalization"
     )
 
 
@@ -43,9 +41,8 @@ class StartConversationResponse(BaseModel):
     conversation_id: str = Field(..., description="Unique conversation identifier")
     welcome_message: str = Field(..., description="Welcome message from the assistant")
     navigation_options: list = Field(..., description="Initial navigation options")
-    service_context: Optional[Dict[str, Any]] = Field(
-        None,
-        description="Service context if starting with specific service"
+    service_context: Optional[dict[str, Any]] = Field(
+        None, description="Service context if starting with specific service"
     )
 
 
@@ -62,9 +59,8 @@ class SendMessageResponse(BaseModel):
     response: str = Field(..., description="Assistant response")
     navigation_options: list = Field(..., description="Updated navigation options")
     conversation_history: list = Field(..., description="Updated conversation history")
-    usage: Optional[Dict[str, Any]] = Field(
-        None,
-        description="API usage information if available"
+    usage: Optional[dict[str, Any]] = Field(
+        None, description="API usage information if available"
     )
 
 
@@ -83,7 +79,9 @@ async def start_conversation(request: StartConversationRequest):
             ai_service = AIService()
 
             # Check if session already exists
-            existing_context = data_service.get_conversation_context(request.user_session_id)
+            existing_context = data_service.get_conversation_context(
+                request.user_session_id
+            )
             if existing_context:
                 # Return existing session
                 return StartConversationResponse(
@@ -92,32 +90,42 @@ async def start_conversation(request: StartConversationRequest):
                     welcome_message="Welcome back! How can I help you today?",
                     navigation_options=existing_context.navigation_options,
                     service_context={
-                        "service_category_id": str(existing_context.current_service_category_id)
-                    } if existing_context.current_service_category_id else None
+                        "service_category_id": str(
+                            existing_context.current_service_category_id
+                        )
+                    }
+                    if existing_context.current_service_category_id
+                    else None,
                 )
 
             # Create new conversation context
             conversation_context = ConversationContext(
                 user_session_id=request.user_session_id,
-                user_preferences=request.user_preferences
+                user_preferences=request.user_preferences,
             )
 
             # Set service context if provided
             if request.service_category_id:
                 try:
                     service_category_id = uuid.UUID(request.service_category_id)
-                    service_category = data_service.get_service_category(service_category_id)
+                    service_category = data_service.get_service_category(
+                        service_category_id
+                    )
                     if service_category:
-                        conversation_context.current_service_category_id = service_category_id
+                        conversation_context.current_service_category_id = (
+                            service_category_id
+                        )
 
                         # Get navigation options for this service
-                        nav_options = data_service.get_navigation_options_by_category(service_category_id)
+                        nav_options = data_service.get_navigation_options_by_category(
+                            service_category_id
+                        )
                         conversation_context.navigation_options = [
                             {
                                 "label": option.label,
                                 "action_type": option.action_type,
                                 "target_url": option.target_url,
-                                "description": option.description
+                                "description": option.description,
                             }
                             for option in nav_options
                         ]
@@ -125,7 +133,7 @@ async def start_conversation(request: StartConversationRequest):
                         service_context = {
                             "service_category_id": str(service_category_id),
                             "service_name": service_category.name,
-                            "service_description": service_category.description
+                            "service_description": service_category.description,
                         }
                     else:
                         service_context = None
@@ -151,28 +159,34 @@ async def start_conversation(request: StartConversationRequest):
                 response = ai_service.generate_government_guidance(
                     user_query=request.initial_message,
                     context_documents=[],  # Will be populated by search service
-                    conversation_history=conversation_context.get_recent_messages()
+                    conversation_history=conversation_context.get_recent_messages(),
                 )
 
                 conversation_context.add_message("assistant", response["response"])
 
                 # Update navigation options based on response
                 if response.get("navigation_suggestions"):
-                    conversation_context.navigation_options.extend(response["navigation_suggestions"])
+                    conversation_context.navigation_options.extend(
+                        response["navigation_suggestions"]
+                    )
 
             # Save conversation context
-            saved_context = data_service.create_conversation_context(conversation_context)
+            saved_context = data_service.create_conversation_context(
+                conversation_context
+            )
 
             return StartConversationResponse(
                 session_id=saved_context.user_session_id,
                 conversation_id=str(saved_context.id),
                 welcome_message=welcome_message,
                 navigation_options=saved_context.navigation_options,
-                service_context=service_context
+                service_context=service_context,
             )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to start conversation: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to start conversation: {str(e)}"
+        )
 
 
 @router.post("/message", response_model=SendMessageResponse)
@@ -189,7 +203,9 @@ async def send_message(request: SendMessageRequest):
             ai_service = AIService()
 
             # Get existing conversation context
-            conversation_context = data_service.get_conversation_context(request.session_id)
+            conversation_context = data_service.get_conversation_context(
+                request.session_id
+            )
             if not conversation_context:
                 raise HTTPException(status_code=404, detail="Conversation not found")
 
@@ -199,14 +215,14 @@ async def send_message(request: SendMessageRequest):
             # Search for relevant documents
             search_results = search_service.search_documents(
                 query=request.message,
-                service_category_id=conversation_context.current_service_category_id
+                service_category_id=conversation_context.current_service_category_id,
             )
 
             # Generate AI response
             response = ai_service.generate_government_guidance(
                 user_query=request.message,
                 context_documents=search_results,
-                conversation_history=conversation_context.get_recent_messages()
+                conversation_history=conversation_context.get_recent_messages(),
             )
 
             # Add assistant response to conversation
@@ -214,7 +230,9 @@ async def send_message(request: SendMessageRequest):
 
             # Update navigation options
             if response.get("navigation_suggestions"):
-                conversation_context.navigation_options = response["navigation_suggestions"]
+                conversation_context.navigation_options = response[
+                    "navigation_suggestions"
+                ]
 
             # Save updated conversation context
             updated_context = data_service.update_conversation_context(
@@ -228,17 +246,19 @@ async def send_message(request: SendMessageRequest):
                     {
                         "role": msg.role,
                         "content": msg.content,
-                        "timestamp": msg.timestamp.isoformat()
+                        "timestamp": msg.timestamp.isoformat(),
                     }
                     for msg in updated_context.conversation_history
                 ],
-                usage=response.get("usage")
+                usage=response.get("usage"),
             )
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process message: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process message: {str(e)}"
+        )
 
 
 @router.get("/{session_id}/history")
@@ -262,15 +282,21 @@ async def get_conversation_history(session_id: str):
                         "role": msg.role,
                         "content": msg.content,
                         "timestamp": msg.timestamp.isoformat(),
-                        "metadata": msg.metadata
+                        "metadata": msg.metadata,
                     }
                     for msg in conversation_context.conversation_history
                 ],
-                "current_service_category_id": str(conversation_context.current_service_category_id) if conversation_context.current_service_category_id else None,
-                "navigation_options": conversation_context.navigation_options
+                "current_service_category_id": str(
+                    conversation_context.current_service_category_id
+                )
+                if conversation_context.current_service_category_id
+                else None,
+                "navigation_options": conversation_context.navigation_options,
             }
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get conversation history: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get conversation history: {str(e)}"
+        )

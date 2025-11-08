@@ -7,12 +7,14 @@ Populates the database with Hong Kong/Macau passport service data
 import asyncio
 import logging
 import uuid
-from datetime import datetime, timezone
-from src.services.data_service import DataService
-from src.models.services import ServiceCategory, NavigationOption
-from src.services.embedding_service import EmbeddingService
-from src.models.embeddings import DocumentEmbedding
+from datetime import UTC, datetime
+
 from pydantic import HttpUrl
+
+from src.models.embeddings import DocumentEmbedding
+from src.models.services import NavigationOption, ServiceCategory
+from src.services.data_service import DataService
+from src.services.embedding_service import EmbeddingService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +29,9 @@ async def create_passport_service_category():
     with DataService() as data_service:
         # Check if passport service already exists
         existing_categories = data_service.get_active_service_categories()
-        passport_exists = any("passport" in category.name.lower() for category in existing_categories)
+        passport_exists = any(
+            "passport" in category.name.lower() for category in existing_categories
+        )
 
         if passport_exists:
             logger.info("Passport service category already exists, skipping creation")
@@ -37,9 +41,11 @@ async def create_passport_service_category():
         passport_service = ServiceCategory(
             name="Hong Kong and Macau Passport Services",
             description="Passport application, renewal, and related services for Hong Kong and Macau residents",
-            official_source_url=HttpUrl("https://www.gov.hk/en/residents/immigration/traveldoc/"),
-            last_verified=datetime.now(timezone.utc),
-            is_active=True
+            official_source_url=HttpUrl(
+                "https://www.gov.hk/en/residents/immigration/traveldoc/"
+            ),
+            last_verified=datetime.now(UTC),
+            is_active=True,
         )
 
         created_service = data_service.create_service_category(passport_service)
@@ -62,16 +68,18 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="requirements",
                 description="View required documents and eligibility criteria for passport applications",
                 priority=1,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
                 label="Make Appointment",
                 action_type="appointment",
-                target_url=HttpUrl("https://www.gov.hk/en/residents/immigration/traveldoc/hksarpassport/applyhkpassport.htm"),
+                target_url=HttpUrl(
+                    "https://www.gov.hk/en/residents/immigration/traveldoc/hksarpassport/applyhkpassport.htm"
+                ),
                 description="Schedule an appointment for passport application or renewal",
                 priority=2,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
@@ -79,16 +87,18 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="requirements",
                 description="Checklist of documents and materials needed for passport application",
                 priority=3,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
                 label="Service Locations",
                 action_type="location",
-                target_url=HttpUrl("https://www.immd.gov.hk/eng/contactus/office_hour.html"),
+                target_url=HttpUrl(
+                    "https://www.immd.gov.hk/eng/contactus/office_hour.html"
+                ),
                 description="Find nearby Immigration Department offices for passport services",
                 priority=4,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
@@ -96,7 +106,7 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="explain",
                 description="Step-by-step guide for passport renewal process",
                 priority=5,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
@@ -104,7 +114,7 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="explain",
                 description="Procedures for reporting and replacing lost or stolen passports",
                 priority=6,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
@@ -112,7 +122,7 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="explain",
                 description="Current passport application fees and payment methods",
                 priority=7,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
@@ -120,7 +130,7 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="explain",
                 description="Estimated processing times for passport applications",
                 priority=8,
-                is_active=True
+                is_active=True,
             ),
             NavigationOption(
                 service_category_id=service_category_id,
@@ -128,8 +138,8 @@ async def create_passport_navigation_options(service_category_id):
                 action_type="related",
                 description="Other immigration and travel document services",
                 priority=9,
-                is_active=True
-            )
+                is_active=True,
+            ),
         ]
 
         created_options = []
@@ -158,8 +168,8 @@ async def create_sample_passport_documents():
                     "document_type": "requirements",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -170,8 +180,8 @@ async def create_sample_passport_documents():
                     "document_type": "requirements",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -182,8 +192,8 @@ async def create_sample_passport_documents():
                     "document_type": "fees",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -194,8 +204,8 @@ async def create_sample_passport_documents():
                     "document_type": "processing_time",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -206,8 +216,8 @@ async def create_sample_passport_documents():
                     "document_type": "requirements",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -218,8 +228,8 @@ async def create_sample_passport_documents():
                     "document_type": "renewal",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -230,8 +240,8 @@ async def create_sample_passport_documents():
                     "document_type": "lost_passport",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -242,8 +252,8 @@ async def create_sample_passport_documents():
                     "document_type": "locations",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -254,8 +264,8 @@ async def create_sample_passport_documents():
                     "document_type": "requirements",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             },
             {
                 "source_id": uuid.uuid4(),
@@ -266,9 +276,9 @@ async def create_sample_passport_documents():
                     "document_type": "requirements",
                     "service_category": "passport",
                     "source": "official",
-                    "language": "en"
-                }
-            }
+                    "language": "en",
+                },
+            },
         ]
 
         # Add documents to vector database
@@ -282,13 +292,19 @@ async def create_sample_passport_documents():
                 metadata=doc["metadata"],
                 # Note: In a real implementation, we would generate embeddings here
                 # For now, we'll use placeholder embeddings
-                embedding_vector=[0.0] * 1024  # Placeholder for Qwen3-Embedding-0.6B
+                embedding_vector=[0.0] * 1024,  # Placeholder for Qwen3-Embedding-0.6B
             )
 
-            embedding_id = embedding_service.store_document_embedding(document_embedding)
-            logger.info(f"Added passport document to vector database: {doc['document_title']}")
+            embedding_id = embedding_service.store_document_embedding(
+                document_embedding
+            )
+            logger.info(
+                f"Added passport document to vector database: {doc['document_title']}"
+            )
 
-        logger.info(f"Successfully added {len(passport_documents)} passport documents to vector database")
+        logger.info(
+            f"Successfully added {len(passport_documents)} passport documents to vector database"
+        )
         return len(passport_documents)
 
 
@@ -306,12 +322,14 @@ async def main():
             return
 
         # Step 2: Create navigation options
-        navigation_options = await create_passport_navigation_options(passport_service.id)
+        navigation_options = await create_passport_navigation_options(
+            passport_service.id
+        )
 
         # Step 3: Create sample document embeddings
         document_count = await create_sample_passport_documents()
 
-        logger.info(f"Data ingestion completed successfully!")
+        logger.info("Data ingestion completed successfully!")
         logger.info(f"- Created service category: {passport_service.name}")
         logger.info(f"- Created navigation options: {len(navigation_options)}")
         logger.info(f"- Added document embeddings: {document_count}")

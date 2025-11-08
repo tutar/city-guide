@@ -2,13 +2,12 @@
 Unit tests for Chainlit components
 """
 
-import pytest
-import pytest_asyncio
-from unittest.mock import Mock, AsyncMock, patch
-from typing import List, Dict, Any
+from unittest.mock import AsyncMock, patch
 
-from src.chainlit.components.search_results import SearchResultsComponent
+import pytest
+
 from src.chainlit.components.chat_interface import AccessibleChatInterface
+from src.chainlit.components.search_results import SearchResultsComponent
 
 
 class TestSearchResultsComponent:
@@ -21,12 +20,12 @@ class TestSearchResultsComponent:
     def test_format_source_attribution_government_source(self):
         """Test formatting source attribution for government sources"""
         result = {
-            'source_url': 'https://immd.gov.hk/passport',
-            'metadata': {
-                'source_type': 'government',
-                'is_verified': True,
-                'last_updated': '2024-01-15'
-            }
+            "source_url": "https://immd.gov.hk/passport",
+            "metadata": {
+                "source_type": "government",
+                "is_verified": True,
+                "last_updated": "2024-01-15",
+            },
         }
 
         attribution = self.search_component._format_source_attribution(result)
@@ -38,11 +37,8 @@ class TestSearchResultsComponent:
     def test_format_source_attribution_unverified_source(self):
         """Test formatting source attribution for unverified sources"""
         result = {
-            'source_url': 'https://example.com/info',
-            'metadata': {
-                'source_type': 'information',
-                'is_verified': False
-            }
+            "source_url": "https://example.com/info",
+            "metadata": {"source_type": "information", "is_verified": False},
         }
 
         attribution = self.search_component._format_source_attribution(result)
@@ -86,37 +82,39 @@ class TestSearchResultsComponent:
         assert domain == "not-a-valid-url"
 
     @pytest.mark.asyncio
-    @patch('src.chainlit.components.search_results.cl.Message')
+    @patch("src.chainlit.components.search_results.cl.Message")
     async def test_display_step_by_step_guidance(self, mock_message):
         """Test displaying step-by-step guidance"""
         steps = [
             {
-                'title': 'Check Eligibility',
-                'description': 'Verify you meet the basic requirements for passport application.',
-                'requirements': ['Valid identification', 'Proof of address'],
-                'estimated_time': '5 minutes',
-                'cost': 'Free',
-                'source_url': 'https://immd.gov.hk/eligibility'
+                "title": "Check Eligibility",
+                "description": "Verify you meet the basic requirements for passport application.",
+                "requirements": ["Valid identification", "Proof of address"],
+                "estimated_time": "5 minutes",
+                "cost": "Free",
+                "source_url": "https://immd.gov.hk/eligibility",
             },
             {
-                'title': 'Gather Documents',
-                'description': 'Collect all required documents for the application.',
-                'requirements': ['Passport photos', 'Application form'],
-                'estimated_time': '30 minutes',
-                'cost': 'HK$370',
-                'source_url': 'https://immd.gov.hk/documents'
-            }
+                "title": "Gather Documents",
+                "description": "Collect all required documents for the application.",
+                "requirements": ["Passport photos", "Application form"],
+                "estimated_time": "30 minutes",
+                "cost": "HK$370",
+                "source_url": "https://immd.gov.hk/documents",
+            },
         ]
 
         # Mock the async send method
         mock_message_instance = AsyncMock()
         mock_message.return_value = mock_message_instance
 
-        await self.search_component.display_step_by_step_guidance(steps, "Hong Kong Passport")
+        await self.search_component.display_step_by_step_guidance(
+            steps, "Hong Kong Passport"
+        )
 
         # Verify message was created
         assert mock_message.called
-        message_content = mock_message.call_args[1]['content']
+        message_content = mock_message.call_args[1]["content"]
 
         assert "Step-by-Step Guide: Hong Kong Passport" in message_content
         assert "Check Eligibility" in message_content
@@ -137,7 +135,7 @@ class TestSearchResultsComponent:
         self.search_component.search_history = [
             {"query": "passport", "result_count": 5},
             {"query": "visa", "result_count": 3},
-            {"query": "unknown", "result_count": 0}
+            {"query": "unknown", "result_count": 0},
         ]
 
         analytics = self.search_component.get_search_analytics()
@@ -160,7 +158,9 @@ class TestAccessibleChatInterface:
         content = "Hello, how can I help you?"
         author = "Assistant"
 
-        formatted = self.chat_interface._format_content_for_accessibility(content, author)
+        formatted = self.chat_interface._format_content_for_accessibility(
+            content, author
+        )
 
         assert formatted == "**Assistant:** Hello, how can I help you?"
 
@@ -169,7 +169,9 @@ class TestAccessibleChatInterface:
         content = "This is a very long message that contains multiple lines of text and should be formatted with proper structure for better screen reader experience."
         author = "Assistant"
 
-        formatted = self.chat_interface._format_content_for_accessibility(content, author)
+        formatted = self.chat_interface._format_content_for_accessibility(
+            content, author
+        )
 
         assert formatted.startswith("**Assistant:**\n\n")
         assert content in formatted
@@ -180,7 +182,7 @@ class TestAccessibleChatInterface:
         self.chat_interface.message_history = [
             {"content": "Hello", "author": "User", "type": "info"},
             {"content": "Hi there", "author": "Assistant", "type": "info"},
-            {"content": "Error occurred", "author": "System", "type": "error"}
+            {"content": "Error occurred", "author": "System", "type": "error"},
         ]
 
         report = self.chat_interface.get_accessibility_report()
@@ -191,19 +193,21 @@ class TestAccessibleChatInterface:
         assert "Screen reader announcements" in report["accessibility_features"]
 
     @pytest.mark.asyncio
-    @patch('src.chainlit.components.chat_interface.search_results')
+    @patch("src.chainlit.components.chat_interface.search_results")
     async def test_display_step_by_step_guidance(self, mock_search_results):
         """Test displaying step-by-step guidance through chat interface"""
         steps = [
             {
-                'title': 'Test Step',
-                'description': 'Test description',
-                'source_url': 'https://example.com'
+                "title": "Test Step",
+                "description": "Test description",
+                "source_url": "https://example.com",
             }
         ]
 
         mock_message = AsyncMock()
-        mock_search_results.display_step_by_step_guidance = AsyncMock(return_value=mock_message)
+        mock_search_results.display_step_by_step_guidance = AsyncMock(
+            return_value=mock_message
+        )
 
         result = await self.chat_interface.display_step_by_step_guidance(
             steps, "Test Service"
@@ -216,20 +220,24 @@ class TestAccessibleChatInterface:
         assert result == mock_message
 
     @pytest.mark.asyncio
-    @patch('src.chainlit.components.chat_interface.search_results')
-    @patch('src.chainlit.components.chat_interface.AccessibleChatInterface.update_aria_live_region')
+    @patch("src.chainlit.components.chat_interface.search_results")
+    @patch(
+        "src.chainlit.components.chat_interface.AccessibleChatInterface.update_aria_live_region"
+    )
     async def test_display_search_results(self, mock_update_aria, mock_search_results):
         """Test displaying search results through chat interface"""
         results = [
             {
-                'document_title': 'Test Result',
-                'document_content': 'Test content',
-                'source_url': 'https://example.com'
+                "document_title": "Test Result",
+                "document_content": "Test content",
+                "source_url": "https://example.com",
             }
         ]
 
         mock_message = AsyncMock()
-        mock_search_results.display_search_results = AsyncMock(return_value=mock_message)
+        mock_search_results.display_search_results = AsyncMock(
+            return_value=mock_message
+        )
 
         result = await self.chat_interface.display_search_results(
             results, "test query", True

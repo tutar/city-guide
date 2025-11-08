@@ -2,12 +2,11 @@
 Unit tests for validation utilities
 """
 
-import pytest
 from src.utils.validation import (
-    URLValidator,
     NavigationOptionValidator,
     ServiceCategoryValidator,
-    validate_and_sanitize_input
+    URLValidator,
+    validate_and_sanitize_input,
 )
 
 
@@ -94,7 +93,7 @@ class TestNavigationOptionValidator:
             "label": "Check Requirements",
             "action_type": "explain",
             "target_url": "https://immd.gov.hk/requirements",
-            "priority": 1
+            "priority": 1,
         }
         result = NavigationOptionValidator.validate_navigation_option(option)
 
@@ -103,9 +102,7 @@ class TestNavigationOptionValidator:
 
     def test_validate_navigation_option_missing_required_fields(self):
         """Test validation of navigation option with missing required fields"""
-        option = {
-            "target_url": "https://example.com"
-        }
+        option = {"target_url": "https://example.com"}
         result = NavigationOptionValidator.validate_navigation_option(option)
 
         assert result["valid"] == False
@@ -117,7 +114,7 @@ class TestNavigationOptionValidator:
         option = {
             "label": "Test Option",
             "action_type": "invalid_action",
-            "priority": 5
+            "priority": 5,
         }
         result = NavigationOptionValidator.validate_navigation_option(option)
 
@@ -130,7 +127,7 @@ class TestNavigationOptionValidator:
             "label": "Test Option",
             "action_type": "external",
             "target_url": "invalid-url",
-            "priority": 5
+            "priority": 5,
         }
         result = NavigationOptionValidator.validate_navigation_option(option)
 
@@ -140,11 +137,7 @@ class TestNavigationOptionValidator:
     def test_validate_navigation_option_long_label_warning(self):
         """Test warning for very long label"""
         long_label = "A" * 150
-        option = {
-            "label": long_label,
-            "action_type": "explain",
-            "priority": 5
-        }
+        option = {"label": long_label, "action_type": "explain", "priority": 5}
         result = NavigationOptionValidator.validate_navigation_option(option)
 
         assert result["valid"] == True
@@ -152,11 +145,7 @@ class TestNavigationOptionValidator:
 
     def test_validate_navigation_option_invalid_priority(self):
         """Test warning for invalid priority value"""
-        option = {
-            "label": "Test Option",
-            "action_type": "explain",
-            "priority": 15
-        }
+        option = {"label": "Test Option", "action_type": "explain", "priority": 15}
         result = NavigationOptionValidator.validate_navigation_option(option)
 
         assert result["valid"] == True
@@ -171,7 +160,7 @@ class TestServiceCategoryValidator:
         category = {
             "name": "Hong Kong Passport Services",
             "description": "Information about Hong Kong passport applications and renewals",
-            "official_source_url": "https://immd.gov.hk/passport"
+            "official_source_url": "https://immd.gov.hk/passport",
         }
         result = ServiceCategoryValidator.validate_service_category(category)
 
@@ -182,7 +171,7 @@ class TestServiceCategoryValidator:
         """Test validation of service category with missing name"""
         category = {
             "description": "Some description",
-            "official_source_url": "https://example.com"
+            "official_source_url": "https://example.com",
         }
         result = ServiceCategoryValidator.validate_service_category(category)
 
@@ -191,10 +180,7 @@ class TestServiceCategoryValidator:
 
     def test_validate_service_category_empty_name(self):
         """Test validation of service category with empty name"""
-        category = {
-            "name": "",
-            "description": "Some description"
-        }
+        category = {"name": "", "description": "Some description"}
         result = ServiceCategoryValidator.validate_service_category(category)
 
         assert result["valid"] == False
@@ -203,10 +189,7 @@ class TestServiceCategoryValidator:
     def test_validate_service_category_long_name(self):
         """Test validation of service category with very long name"""
         long_name = "A" * 300
-        category = {
-            "name": long_name,
-            "description": "Some description"
-        }
+        category = {"name": long_name, "description": "Some description"}
         result = ServiceCategoryValidator.validate_service_category(category)
 
         assert result["valid"] == False
@@ -216,7 +199,7 @@ class TestServiceCategoryValidator:
         """Test warning for non-government official source URL"""
         category = {
             "name": "Test Category",
-            "official_source_url": "https://example.com/info"
+            "official_source_url": "https://example.com/info",
         }
         result = ServiceCategoryValidator.validate_service_category(category)
 
@@ -226,10 +209,7 @@ class TestServiceCategoryValidator:
     def test_validate_service_category_long_description_warning(self):
         """Test warning for very long description"""
         long_description = "A" * 1200
-        category = {
-            "name": "Test Category",
-            "description": long_description
-        }
+        category = {"name": "Test Category", "description": long_description}
         result = ServiceCategoryValidator.validate_service_category(category)
 
         assert result["valid"] == True

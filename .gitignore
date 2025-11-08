@@ -53,10 +53,14 @@ htmlcov/
 
 # Milvus data
 milvus_data/
+etcd_data/
+minio_data/
 
 # Database files
 *.db
 *.sqlite
+postgres_data/
+redis_data/
 
 # Temporary files
 *.tmp

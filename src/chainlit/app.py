@@ -2,11 +2,16 @@
 Chainlit application for City Guide Smart Assistant
 """
 
-import chainlit as cl
-from typing import Optional, Dict, Any
 import uuid
 
-from src.api.conversation import start_conversation, send_message, StartConversationRequest, SendMessageRequest
+import chainlit as cl
+
+from src.api.conversation import (
+    SendMessageRequest,
+    StartConversationRequest,
+    send_message,
+    start_conversation,
+)
 
 
 @cl.on_chat_start
@@ -21,17 +26,14 @@ async def on_chat_start():
     # Start conversation with API
     request = StartConversationRequest(
         user_session_id=session_id,
-        user_preferences={"language": "zh-CN"}  # Default to Chinese
+        user_preferences={"language": "zh-CN"},  # Default to Chinese
     )
 
     try:
         response = await start_conversation(request)
 
         # Send welcome message
-        await cl.Message(
-            content=response.welcome_message,
-            author="Assistant"
-        ).send()
+        await cl.Message(content=response.welcome_message, author="Assistant").send()
 
         # Store conversation context
         cl.user_session.set("conversation_id", response.conversation_id)
@@ -41,10 +43,10 @@ async def on_chat_start():
         if response.navigation_options:
             await display_navigation_options(response.navigation_options)
 
-    except Exception as e:
+    except Exception:
         await cl.Message(
             content="Sorry, I encountered an error while starting our conversation. Please try again.",
-            author="Assistant"
+            author="Assistant",
         ).send()
 
 
@@ -56,34 +58,28 @@ async def on_message(message: cl.Message):
     if not session_id:
         await cl.Message(
             content="Session not found. Please refresh the page and try again.",
-            author="Assistant"
+            author="Assistant",
         ).send()
         return
 
     try:
         # Send message to API
-        request = SendMessageRequest(
-            session_id=session_id,
-            message=message.content
-        )
+        request = SendMessageRequest(session_id=session_id, message=message.content)
 
         response = await send_message(request)
 
         # Send assistant response
-        await cl.Message(
-            content=response.response,
-            author="Assistant"
-        ).send()
+        await cl.Message(content=response.response, author="Assistant").send()
 
         # Update navigation options
         if response.navigation_options:
             await display_navigation_options(response.navigation_options)
             cl.user_session.set("navigation_options", response.navigation_options)
 
-    except Exception as e:
+    except Exception:
         await cl.Message(
             content="Sorry, I encountered an error while processing your message. Please try again.",
-            author="Assistant"
+            author="Assistant",
         ).send()
 
 
@@ -100,16 +96,14 @@ async def display_navigation_options(navigation_options: list):
             name=option.get("label", "Unknown"),
             value=option.get("label", ""),
             description=option.get("description", ""),
-            label=option.get("label", "Unknown")
+            label=option.get("label", "Unknown"),
         )
         actions.append(action)
 
     # Send navigation options
     if actions:
         await cl.Message(
-            content="You can also:",
-            actions=actions,
-            author="Navigation"
+            content="You can also:", actions=actions, author="Navigation"
         ).send()
 
 
@@ -117,10 +111,7 @@ async def display_navigation_options(navigation_options: list):
 async def on_action(action: cl.Action):
     """Handle navigation option selections"""
     # Treat action selection as a user message
-    await cl.Message(
-        content=action.value,
-        author="User"
-    ).send()
+    await cl.Message(content=action.value, author="User").send()
 
     # Process the navigation option as a user message
     await on_message(cl.Message(content=action.value))

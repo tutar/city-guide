@@ -2,8 +2,9 @@
 Search results component with source attribution for official government information
 """
 
+from typing import Any
+
 import chainlit as cl
-from typing import List, Dict, Any, Optional
 
 
 class SearchResultsComponent:
@@ -14,9 +15,9 @@ class SearchResultsComponent:
 
     async def display_search_results(
         self,
-        results: List[Dict[str, Any]],
+        results: list[dict[str, Any]],
         query: str,
-        show_source_attribution: bool = True
+        show_source_attribution: bool = True,
     ) -> cl.Message:
         """Display search results with source attribution"""
         if not results:
@@ -30,32 +31,29 @@ class SearchResultsComponent:
             "role": "search-results",
             "query": query,
             "result_count": len(results),
-            "has_source_attribution": show_source_attribution
+            "has_source_attribution": show_source_attribution,
         }
 
         message = cl.Message(
-            content=content,
-            author="Search",
-            metadata=message_metadata
+            content=content, author="Search", metadata=message_metadata
         )
 
         await message.send()
 
         # Store in search history
-        self.search_history.append({
-            "query": query,
-            "results": results,
-            "timestamp": cl.Message.timestamp,
-            "result_count": len(results)
-        })
+        self.search_history.append(
+            {
+                "query": query,
+                "results": results,
+                "timestamp": cl.Message.timestamp,
+                "result_count": len(results),
+            }
+        )
 
         return message
 
     def _format_search_results(
-        self,
-        results: List[Dict[str, Any]],
-        query: str,
-        show_source_attribution: bool
+        self, results: list[dict[str, Any]], query: str, show_source_attribution: bool
     ) -> str:
         """Format search results with source attribution"""
         content = f"## Search Results for: '{query}'\n\n"
@@ -64,8 +62,8 @@ class SearchResultsComponent:
             content += f"### {i}. {result.get('document_title', 'Unknown')}\n\n"
 
             # Add document content snippet
-            if result.get('document_content'):
-                snippet = self._extract_snippet(result['document_content'], query)
+            if result.get("document_content"):
+                snippet = self._extract_snippet(result["document_content"], query)
                 content += f"{snippet}\n\n"
 
             # Add source attribution
@@ -74,8 +72,8 @@ class SearchResultsComponent:
                 content += f"{source_info}\n\n"
 
             # Add relevance score if available
-            if result.get('similarity_score'):
-                score_percent = int(result['similarity_score'] * 100)
+            if result.get("similarity_score"):
+                score_percent = int(result["similarity_score"] * 100)
                 content += f"**Relevance:** {score_percent}%\n\n"
 
             content += "---\n\n"
@@ -112,31 +110,31 @@ class SearchResultsComponent:
 
         return snippet
 
-    def _format_source_attribution(self, result: Dict[str, Any]) -> str:
+    def _format_source_attribution(self, result: dict[str, Any]) -> str:
         """Format source attribution information"""
-        source_url = result.get('source_url', '')
-        metadata = result.get('metadata', {})
+        source_url = result.get("source_url", "")
+        metadata = result.get("metadata", {})
 
         attribution_parts = []
 
         # Add source type
-        source_type = metadata.get('source_type', 'government')
-        if source_type == 'government':
+        source_type = metadata.get("source_type", "government")
+        if source_type == "government":
             attribution_parts.append("**Source:** Official Government Website")
-        elif source_type == 'documentation':
+        elif source_type == "documentation":
             attribution_parts.append("**Source:** Official Documentation")
         else:
             attribution_parts.append("**Source:** Information Portal")
 
         # Add verification status
-        is_verified = metadata.get('is_verified', False)
+        is_verified = metadata.get("is_verified", False)
         if is_verified:
             attribution_parts.append("**Status:** ✅ Verified")
         else:
             attribution_parts.append("**Status:** ⚠️ Unverified")
 
         # Add last updated date if available
-        last_updated = metadata.get('last_updated')
+        last_updated = metadata.get("last_updated")
         if last_updated:
             attribution_parts.append(f"**Last Updated:** {last_updated}")
 
@@ -153,6 +151,7 @@ class SearchResultsComponent:
         """Extract domain from URL"""
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
             return parsed.netloc if parsed.netloc else url
         except:
@@ -175,18 +174,13 @@ I couldn't find any information about "{query}" in our government service databa
 - [Macau Government Services](https://www.gov.mo)
 """
 
-        message = cl.Message(
-            content=content,
-            author="Search"
-        )
+        message = cl.Message(content=content, author="Search")
 
         await message.send()
         return message
 
     async def display_step_by_step_guidance(
-        self,
-        steps: List[Dict[str, Any]],
-        service_name: str
+        self, steps: list[dict[str, Any]], service_name: str
     ) -> cl.Message:
         """Display step-by-step guidance for government services"""
         content = f"## Step-by-Step Guide: {service_name}\n\n"
@@ -195,26 +189,26 @@ I couldn't find any information about "{query}" in our government service databa
             content += f"### Step {i}: {step.get('title', 'Unknown')}\n\n"
 
             # Add description
-            if step.get('description'):
+            if step.get("description"):
                 content += f"{step['description']}\n\n"
 
             # Add requirements if available
-            if step.get('requirements'):
+            if step.get("requirements"):
                 content += "**Requirements:**\n"
-                for req in step['requirements']:
+                for req in step["requirements"]:
                     content += f"- {req}\n"
                 content += "\n"
 
             # Add estimated time if available
-            if step.get('estimated_time'):
+            if step.get("estimated_time"):
                 content += f"**Estimated Time:** {step['estimated_time']}\n\n"
 
             # Add cost if available
-            if step.get('cost'):
+            if step.get("cost"):
                 content += f"**Cost:** {step['cost']}\n\n"
 
             # Add source attribution for the step
-            if step.get('source_url'):
+            if step.get("source_url"):
                 source_info = self._format_source_attribution(step)
                 content += f"{source_info}\n\n"
 
@@ -226,36 +220,35 @@ I couldn't find any information about "{query}" in our government service databa
         content += "- Check official websites for the most current information\n"
         content += "- Contact the relevant department if you have questions\n"
 
-        message = cl.Message(
-            content=content,
-            author="Guidance"
-        )
+        message = cl.Message(content=content, author="Guidance")
 
         await message.send()
         return message
 
-    def get_search_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_search_history(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent search history"""
         return self.search_history[-limit:]
 
-    def get_search_analytics(self) -> Dict[str, Any]:
+    def get_search_analytics(self) -> dict[str, Any]:
         """Get search analytics"""
         if not self.search_history:
-            return {
-                "total_searches": 0,
-                "average_results": 0,
-                "success_rate": 0
-            }
+            return {"total_searches": 0, "average_results": 0, "success_rate": 0}
 
         total_searches = len(self.search_history)
         total_results = sum(search["result_count"] for search in self.search_history)
-        successful_searches = sum(1 for search in self.search_history if search["result_count"] > 0)
+        successful_searches = sum(
+            1 for search in self.search_history if search["result_count"] > 0
+        )
 
         return {
             "total_searches": total_searches,
-            "average_results": total_results / total_searches if total_searches > 0 else 0,
-            "success_rate": (successful_searches / total_searches) * 100 if total_searches > 0 else 0,
-            "recent_queries": [search["query"] for search in self.search_history[-5:]]
+            "average_results": total_results / total_searches
+            if total_searches > 0
+            else 0,
+            "success_rate": (successful_searches / total_searches) * 100
+            if total_searches > 0
+            else 0,
+            "recent_queries": [search["query"] for search in self.search_history[-5:]],
         }
 
 

@@ -2,12 +2,13 @@
 Integration tests for conversation context management
 """
 
-import pytest
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
+import pytest
 from pydantic import ValidationError
 
-from src.models.conversation import ConversationContext, Message, ConversationState
+from src.models.conversation import ConversationContext, ConversationState, Message
 from src.models.services import ServiceCategory
 
 
@@ -22,8 +23,7 @@ class TestConversationContextIntegration:
 
         # When creating a conversation context
         conversation = ConversationContext(
-            user_session_id=session_id,
-            current_service_category_id=service_category_id
+            user_session_id=session_id, current_service_category_id=service_category_id
         )
 
         # Then it should be created successfully
@@ -51,7 +51,10 @@ class TestConversationContextIntegration:
         # Then conversation history should contain all messages
         assert len(conversation.conversation_history) == 4
         assert conversation.conversation_history[0].role == "user"
-        assert conversation.conversation_history[0].content == "How do I get a Hong Kong passport?"
+        assert (
+            conversation.conversation_history[0].content
+            == "How do I get a Hong Kong passport?"
+        )
         assert conversation.conversation_history[1].role == "assistant"
         assert conversation.conversation_history[3].role == "assistant"
 
@@ -87,7 +90,7 @@ class TestConversationContextIntegration:
         conversation = ConversationContext(user_session_id="test-session-archiving")
 
         # When conversation is active and recently active
-        conversation.last_activity = datetime.now(timezone.utc) - timedelta(minutes=10)
+        conversation.last_activity = datetime.now(UTC) - timedelta(minutes=10)
         assert conversation.should_archive() == False
 
         # When conversation is inactive
@@ -96,7 +99,7 @@ class TestConversationContextIntegration:
 
         # When conversation is active but inactive for too long
         conversation.is_active = True
-        conversation.last_activity = datetime.now(timezone.utc) - timedelta(minutes=35)
+        conversation.last_activity = datetime.now(UTC) - timedelta(minutes=35)
         assert conversation.should_archive() == True
 
     def test_conversation_completion(self):
@@ -134,13 +137,13 @@ class TestConversationContextIntegration:
         # Given a service category
         service_category = ServiceCategory(
             name="Hong Kong Passport Services",
-            description="Passport application and renewal services"
+            description="Passport application and renewal services",
         )
 
         # When creating conversation context with service category
         conversation = ConversationContext(
             user_session_id="test-session-service",
-            current_service_category_id=service_category.id
+            current_service_category_id=service_category.id,
         )
 
         # Then should reference the service category
@@ -166,8 +169,8 @@ class TestConversationContextIntegration:
             metadata={
                 "intent": "requirements_query",
                 "confidence": 0.95,
-                "source": "user_input"
-            }
+                "source": "user_input",
+            },
         )
 
         conversation.add_message(
@@ -175,13 +178,19 @@ class TestConversationContextIntegration:
             "The requirements include...",
             metadata={
                 "sources_used": ["official_website", "government_guidelines"],
-                "response_type": "step_by_step_guidance"
-            }
+                "response_type": "step_by_step_guidance",
+            },
         )
 
         # Then metadata should be preserved
-        assert conversation.conversation_history[0].metadata["intent"] == "requirements_query"
-        assert conversation.conversation_history[1].metadata["response_type"] == "step_by_step_guidance"
+        assert (
+            conversation.conversation_history[0].metadata["intent"]
+            == "requirements_query"
+        )
+        assert (
+            conversation.conversation_history[1].metadata["response_type"]
+            == "step_by_step_guidance"
+        )
 
     def test_navigation_options_integration(self):
         """Test navigation options in conversation context"""
@@ -193,18 +202,14 @@ class TestConversationContextIntegration:
             {
                 "label": "Material Requirements",
                 "action_type": "requirements",
-                "priority": 1
+                "priority": 1,
             },
             {
                 "label": "Online Appointment",
                 "action_type": "appointment",
-                "priority": 2
+                "priority": 2,
             },
-            {
-                "label": "Service Locations",
-                "action_type": "location",
-                "priority": 3
-            }
+            {"label": "Service Locations", "action_type": "location", "priority": 3},
         ]
 
         conversation.navigation_options = navigation_options
@@ -263,10 +268,7 @@ class TestConversationContextIntegration:
             navigation_options=[
                 {"label": "Requirements", "action_type": "requirements", "priority": 1}
             ],
-            user_preferences={
-                "language": "en",
-                "preferred_format": "step_by_step"
-            }
+            user_preferences={"language": "en", "preferred_format": "step_by_step"},
         )
 
         # Add conversation history
@@ -278,7 +280,10 @@ class TestConversationContextIntegration:
 
         # Then all data should be preserved
         assert conversation_dict["user_session_id"] == "test-session-persistence"
-        assert conversation_dict["current_service_category_id"] == conversation.current_service_category_id
+        assert (
+            conversation_dict["current_service_category_id"]
+            == conversation.current_service_category_id
+        )
         assert len(conversation_dict["conversation_history"]) == 2
         assert len(conversation_dict["navigation_options"]) == 1
         assert conversation_dict["user_preferences"]["language"] == "en"
@@ -289,7 +294,9 @@ class TestConversationContextIntegration:
         # Then should have same data
         assert restored_conversation.user_session_id == conversation.user_session_id
         assert len(restored_conversation.conversation_history) == 2
-        assert restored_conversation.conversation_history[0].content == "How do I apply?"
+        assert (
+            restored_conversation.conversation_history[0].content == "How do I apply?"
+        )
 
     def test_conversation_context_error_handling(self):
         """Test error handling in conversation context"""

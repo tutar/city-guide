@@ -2,13 +2,12 @@
 Unit tests for AI service and Deepseek API integration
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import unittest.mock as mock
-from unittest.mock import Mock, patch, MagicMock
 import requests
 import torch
-from transformers import AutoTokenizer, AutoModel
-import os
+from transformers import AutoModel, AutoTokenizer
 
 
 class TestAIService:
@@ -17,12 +16,12 @@ class TestAIService:
     @pytest.fixture(autouse=True)
     def mock_settings(self):
         """Mock settings for all tests"""
-        with patch('src.services.ai_service.settings') as mock_settings:
-            mock_settings.ai.deepseek_api_key = 'test-api-key'
-            mock_settings.ai.deepseek_base_url = 'https://api.deepseek.com'
+        with patch("src.services.ai_service.settings") as mock_settings:
+            mock_settings.ai.deepseek_api_key = "test-api-key"
+            mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
             mock_settings.ai.max_tokens = 1000
             mock_settings.ai.temperature = 0.7
-            mock_settings.ai.embedding_model = 'Qwen/Qwen3-Embedding-0.6B'
+            mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
             yield mock_settings
 
     def test_ai_service_initialization(self, mock_settings):
@@ -31,7 +30,7 @@ class TestAIService:
         from src.services.ai_service import AIService
 
         # When initializing AIService
-        with patch.object(AIService, '_setup_embedding_model') as mock_setup:
+        with patch.object(AIService, "_setup_embedding_model") as mock_setup:
             ai_service = AIService()
 
             # Then service should be initialized with correct configuration
@@ -52,8 +51,14 @@ class TestAIService:
         mock_model = Mock(spec=AutoModel)
         mock_model.eval = Mock()
 
-        with patch('src.services.ai_service.AutoTokenizer.from_pretrained', return_value=mock_tokenizer):
-            with patch('src.services.ai_service.AutoModel.from_pretrained', return_value=mock_model):
+        with patch(
+            "src.services.ai_service.AutoTokenizer.from_pretrained",
+            return_value=mock_tokenizer,
+        ):
+            with patch(
+                "src.services.ai_service.AutoModel.from_pretrained",
+                return_value=mock_model,
+            ):
                 # When setting up embedding model
                 ai_service = AIService()
 
@@ -67,11 +72,14 @@ class TestAIService:
         # Given invalid model configuration
         from src.services.ai_service import AIService
 
-        with patch('src.services.ai_service.settings') as mock_settings:
+        with patch("src.services.ai_service.settings") as mock_settings:
             mock_settings.ai.embedding_model = "invalid-model"
 
             # Mock model loading failure
-            with patch('src.services.ai_service.AutoTokenizer.from_pretrained', side_effect=Exception("Model not found")):
+            with patch(
+                "src.services.ai_service.AutoTokenizer.from_pretrained",
+                side_effect=Exception("Model not found"),
+            ):
                 # When setting up embedding model fails
                 with pytest.raises(Exception) as exc_info:
                     AIService()
@@ -95,14 +103,22 @@ class TestAIService:
         mock_model.return_value = mock_outputs
         mock_outputs.last_hidden_state = Mock()
         mock_outputs.last_hidden_state.mean.return_value = Mock()
-        mock_outputs.last_hidden_state.mean.return_value.squeeze.return_value = torch.tensor([0.1, 0.2, 0.3])
+        mock_outputs.last_hidden_state.mean.return_value.squeeze.return_value = (
+            torch.tensor([0.1, 0.2, 0.3])
+        )
 
         # Mock the tokenizer to return a proper dictionary
         mock_inputs = {"input_ids": Mock(), "attention_mask": Mock()}
         mock_tokenizer.return_value = mock_inputs
 
-        with patch('src.services.ai_service.AutoTokenizer.from_pretrained', return_value=mock_tokenizer):
-            with patch('src.services.ai_service.AutoModel.from_pretrained', return_value=mock_model):
+        with patch(
+            "src.services.ai_service.AutoTokenizer.from_pretrained",
+            return_value=mock_tokenizer,
+        ):
+            with patch(
+                "src.services.ai_service.AutoModel.from_pretrained",
+                return_value=mock_model,
+            ):
                 ai_service = AIService()
 
                 # When generating embedding
@@ -122,7 +138,7 @@ class TestAIService:
         # Given AIService with mocked embedding model
         from src.services.ai_service import AIService
 
-        with patch('src.services.ai_service.settings') as mock_settings:
+        with patch("src.services.ai_service.settings") as mock_settings:
             mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
             # Mock tokenizer and model
@@ -130,8 +146,14 @@ class TestAIService:
             mock_model = Mock(spec=AutoModel)
             mock_model.eval = Mock()
 
-            with patch('src.services.ai_service.AutoTokenizer.from_pretrained', return_value=mock_tokenizer):
-                with patch('src.services.ai_service.AutoModel.from_pretrained', return_value=mock_model):
+            with patch(
+                "src.services.ai_service.AutoTokenizer.from_pretrained",
+                return_value=mock_tokenizer,
+            ):
+                with patch(
+                    "src.services.ai_service.AutoModel.from_pretrained",
+                    return_value=mock_model,
+                ):
                     ai_service = AIService()
 
                     # Mock embedding generation failure
@@ -144,20 +166,20 @@ class TestAIService:
                     # Then should raise exception
                     assert "Tokenization failed" in str(exc_info.value)
 
-    @patch('src.services.ai_service.requests.post')
+    @patch("src.services.ai_service.requests.post")
     def test_chat_completion_success(self, mock_post):
         """Test successful chat completion"""
         # Given AIService with configuration
         from src.services.ai_service import AIService
 
-        with patch('src.services.ai_service.settings') as mock_settings:
+        with patch("src.services.ai_service.settings") as mock_settings:
             mock_settings.ai.deepseek_api_key = "test-api-key"
             mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
             mock_settings.ai.max_tokens = 1000
             mock_settings.ai.temperature = 0.7
             mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
-            with patch.object(AIService, '_setup_embedding_model'):
+            with patch.object(AIService, "_setup_embedding_model"):
                 ai_service = AIService()
 
                 # Mock successful API response
@@ -166,7 +188,7 @@ class TestAIService:
                 mock_response.json.return_value = {
                     "choices": [{"message": {"content": "Test response"}}],
                     "usage": {"total_tokens": 50},
-                    "model": "deepseek-chat"
+                    "model": "deepseek-chat",
                 }
                 mock_post.return_value = mock_response
 
@@ -186,29 +208,29 @@ class TestAIService:
                         "messages": messages,
                         "max_tokens": 1000,
                         "temperature": 0.7,
-                        "stream": False
+                        "stream": False,
                     },
                     headers={
                         "Authorization": "Bearer test-api-key",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
-                    timeout=30
+                    timeout=30,
                 )
 
-    @patch('src.services.ai_service.requests.post')
+    @patch("src.services.ai_service.requests.post")
     def test_chat_completion_with_system_prompt(self, mock_post):
         """Test chat completion with system prompt"""
         # Given AIService with configuration
         from src.services.ai_service import AIService
 
-        with patch('src.services.ai_service.settings') as mock_settings:
+        with patch("src.services.ai_service.settings") as mock_settings:
             mock_settings.ai.deepseek_api_key = "test-api-key"
             mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
             mock_settings.ai.max_tokens = 1000
             mock_settings.ai.temperature = 0.7
             mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
-            with patch.object(AIService, '_setup_embedding_model'):
+            with patch.object(AIService, "_setup_embedding_model"):
                 ai_service = AIService()
 
                 # Mock successful API response
@@ -216,7 +238,7 @@ class TestAIService:
                 mock_response.status_code = 200
                 mock_response.json.return_value = {
                     "choices": [{"message": {"content": "Test response"}}],
-                    "usage": {"total_tokens": 50}
+                    "usage": {"total_tokens": 50},
                 }
                 mock_post.return_value = mock_response
 
@@ -228,26 +250,26 @@ class TestAIService:
                 # Then system prompt should be added to messages
                 expected_messages = [
                     {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": "Hello"}
+                    {"role": "user", "content": "Hello"},
                 ]
 
                 call_args = mock_post.call_args
-                assert call_args[1]['json']['messages'] == expected_messages
+                assert call_args[1]["json"]["messages"] == expected_messages
 
-    @patch('src.services.ai_service.requests.post')
+    @patch("src.services.ai_service.requests.post")
     def test_chat_completion_api_error(self, mock_post):
         """Test chat completion with API error"""
         # Given AIService with configuration
         from src.services.ai_service import AIService
 
-        with patch('src.services.ai_service.settings') as mock_settings:
+        with patch("src.services.ai_service.settings") as mock_settings:
             mock_settings.ai.deepseek_api_key = "test-api-key"
             mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
             mock_settings.ai.max_tokens = 1000
             mock_settings.ai.temperature = 0.7
             mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
-            with patch.object(AIService, '_setup_embedding_model'):
+            with patch.object(AIService, "_setup_embedding_model"):
                 ai_service = AIService()
 
                 # Mock API error response
@@ -264,20 +286,20 @@ class TestAIService:
                 # Then should raise exception
                 assert "API request failed: 400" in str(exc_info.value)
 
-    @patch('src.services.ai_service.requests.post')
+    @patch("src.services.ai_service.requests.post")
     def test_chat_completion_timeout(self, mock_post):
         """Test chat completion timeout"""
         # Given AIService with configuration
         from src.services.ai_service import AIService
 
-        with patch('src.services.ai_service.settings') as mock_settings:
+        with patch("src.services.ai_service.settings") as mock_settings:
             mock_settings.ai.deepseek_api_key = "test-api-key"
             mock_settings.ai.deepseek_base_url = "https://api.deepseek.com"
             mock_settings.ai.max_tokens = 1000
             mock_settings.ai.temperature = 0.7
             mock_settings.ai.embedding_model = "Qwen/Qwen3-Embedding-0.6B"
 
-            with patch.object(AIService, '_setup_embedding_model'):
+            with patch.object(AIService, "_setup_embedding_model"):
                 ai_service = AIService()
 
                 # Mock timeout
@@ -296,26 +318,34 @@ class TestAIService:
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion response
             mock_response = {
                 "choices": [{"message": {"content": "Government guidance response"}}],
                 "usage": {"total_tokens": 100},
-                "model": "deepseek-chat"
+                "model": "deepseek-chat",
             }
 
-            with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+            with patch.object(
+                ai_service, "chat_completion", return_value=mock_response
+            ):
                 # When generating government guidance
                 user_query = "How to apply for passport?"
                 context_documents = [
-                    {"document_title": "Passport Requirements", "document_content": "Requirements content..."},
-                    {"document_title": "Application Process", "document_content": "Process content..."}
+                    {
+                        "document_title": "Passport Requirements",
+                        "document_content": "Requirements content...",
+                    },
+                    {
+                        "document_title": "Application Process",
+                        "document_content": "Process content...",
+                    },
                 ]
                 conversation_history = [
                     {"role": "user", "content": "Previous question"},
-                    {"role": "assistant", "content": "Previous answer"}
+                    {"role": "assistant", "content": "Previous answer"},
                 ]
 
                 result = ai_service.generate_government_guidance(
@@ -333,7 +363,7 @@ class TestAIService:
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion response
@@ -341,7 +371,9 @@ class TestAIService:
                 "choices": [{"message": {"content": "Technical term explanation"}}]
             }
 
-            with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+            with patch.object(
+                ai_service, "chat_completion", return_value=mock_response
+            ):
                 # When explaining technical term
                 term = "Visa Application"
                 context = "Applying for travel document"
@@ -355,20 +387,28 @@ class TestAIService:
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion response with bullet points
             mock_response = {
-                "choices": [{"message": {"content": """
+                "choices": [
+                    {
+                        "message": {
+                            "content": """
 - Check passport requirements
 - Make online appointment
 - Visit service location
 - Submit required documents
-                """}}]
+                """
+                        }
+                    }
+                ]
             }
 
-            with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+            with patch.object(
+                ai_service, "chat_completion", return_value=mock_response
+            ):
                 # When generating navigation suggestions
                 current_context = "User wants to apply for passport"
                 available_services = ["Passport", "Visa", "ID Card"]
@@ -387,19 +427,27 @@ class TestAIService:
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion response with numbered list
             mock_response = {
-                "choices": [{"message": {"content": """
+                "choices": [
+                    {
+                        "message": {
+                            "content": """
 1. Check passport requirements
 2. Make online appointment
 3. Visit service location
-                """}}]
+                """
+                        }
+                    }
+                ]
             }
 
-            with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+            with patch.object(
+                ai_service, "chat_completion", return_value=mock_response
+            ):
                 # When generating navigation suggestions
                 suggestions = ai_service.generate_navigation_suggestions(
                     "test context", ["test service"]
@@ -415,25 +463,35 @@ class TestAIService:
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion response with scores
             mock_response = {
-                "choices": [{"message": {"content": """
+                "choices": [
+                    {
+                        "message": {
+                            "content": """
 Accuracy: 4
 Completeness: 5
 Clarity: 4
 Helpfulness: 5
 Feedback: Good response overall
-                """}}]
+                """
+                        }
+                    }
+                ]
             }
 
-            with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+            with patch.object(
+                ai_service, "chat_completion", return_value=mock_response
+            ):
                 # When validating response quality
                 user_query = "How to apply for passport?"
                 assistant_response = "Step by step guidance..."
-                scores = ai_service.validate_response_quality(user_query, assistant_response)
+                scores = ai_service.validate_response_quality(
+                    user_query, assistant_response
+                )
 
                 # Then should return parsed scores
                 assert scores["accuracy"] == 4
@@ -448,7 +506,7 @@ Feedback: Good response overall
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion response with invalid format
@@ -456,9 +514,13 @@ Feedback: Good response overall
                 "choices": [{"message": {"content": "Invalid format response"}}]
             }
 
-            with patch.object(ai_service, 'chat_completion', return_value=mock_response):
+            with patch.object(
+                ai_service, "chat_completion", return_value=mock_response
+            ):
                 # When validating response quality with invalid format
-                scores = ai_service.validate_response_quality("test query", "test response")
+                scores = ai_service.validate_response_quality(
+                    "test query", "test response"
+                )
 
                 # Then should return default scores
                 assert scores["overall"] == 3
@@ -468,26 +530,30 @@ Feedback: Good response overall
         # Given AIService with mocked chat completion
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock chat completion failure
-            with patch.object(ai_service, 'chat_completion', side_effect=Exception("API error")):
+            with patch.object(
+                ai_service, "chat_completion", side_effect=Exception("API error")
+            ):
                 # When validating response quality fails
-                scores = ai_service.validate_response_quality("test query", "test response")
+                scores = ai_service.validate_response_quality(
+                    "test query", "test response"
+                )
 
                 # Then should return default scores with error
                 assert scores["overall"] == 3
                 assert "error" in scores
                 assert "API error" in scores["error"]
 
-    @patch('src.services.ai_service.requests.post')
+    @patch("src.services.ai_service.requests.post")
     def test_chat_completion_with_custom_parameters(self, mock_post, mock_settings):
         """Test chat completion with custom max_tokens and temperature"""
         # Given AIService with configuration
         from src.services.ai_service import AIService
 
-        with patch.object(AIService, '_setup_embedding_model'):
+        with patch.object(AIService, "_setup_embedding_model"):
             ai_service = AIService()
 
             # Mock successful API response
@@ -495,19 +561,17 @@ Feedback: Good response overall
             mock_response.status_code = 200
             mock_response.json.return_value = {
                 "choices": [{"message": {"content": "Test response"}}],
-                "usage": {"total_tokens": 50}
+                "usage": {"total_tokens": 50},
             }
             mock_post.return_value = mock_response
 
             # When calling chat completion with custom parameters
             messages = [{"role": "user", "content": "Hello"}]
             result = ai_service.chat_completion(
-                messages,
-                max_tokens=500,
-                temperature=0.5
+                messages, max_tokens=500, temperature=0.5
             )
 
             # Then custom parameters should be used
             call_args = mock_post.call_args
-            assert call_args[1]['json']['max_tokens'] == 500
-            assert call_args[1]['json']['temperature'] == 0.5
+            assert call_args[1]["json"]["max_tokens"] == 500
+            assert call_args[1]["json"]["temperature"] == 0.5

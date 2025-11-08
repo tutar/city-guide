@@ -2,8 +2,6 @@
 Configuration management for City Guide Smart Assistant
 """
 
-import os
-from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,9 +13,9 @@ class DatabaseSettings(BaseSettings):
 
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
-    db: str = Field(default="city_guide")
-    user: str = Field(default="postgres")
-    password: str = Field(default="password")
+    db: str = Field(default="cityguide")
+    user: str = Field(default="cityguide_user")
+    password: str = Field(default="cityguide_password")
 
     @property
     def database_url(self) -> str:
@@ -44,12 +42,16 @@ class AISettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="")
 
     deepseek_api_key: str = Field(default="test-api-key", alias="DEEPSEEK_API_KEY")
-    deepseek_base_url: str = Field(default="https://api.deepseek.com", alias="DEEPSEEK_BASE_URL")
+    deepseek_base_url: str = Field(
+        default="https://api.deepseek.com", alias="DEEPSEEK_BASE_URL"
+    )
     max_tokens: int = Field(default=1000, alias="MAX_TOKENS")
     temperature: float = Field(default=0.7, alias="TEMPERATURE")
 
     # Embedding model settings
-    embedding_model: str = Field(default="Qwen/Qwen3-Embedding-0.6B", alias="EMBEDDING_MODEL")
+    embedding_model: str = Field(
+        default="Qwen/Qwen3-Embedding-0.6B", alias="EMBEDDING_MODEL"
+    )
     embedding_dimension: int = Field(default=1024, alias="EMBEDDING_DIMENSION")
 
 
@@ -79,7 +81,9 @@ class Settings(BaseSettings):
 
     # Performance settings
     search_timeout: int = Field(default=5, alias="SEARCH_TIMEOUT")
-    conversation_timeout: int = Field(default=1800, alias="CONVERSATION_TIMEOUT")  # 30 minutes
+    conversation_timeout: int = Field(
+        default=1800, alias="CONVERSATION_TIMEOUT"
+    )  # 30 minutes
 
 
 # Global settings instance

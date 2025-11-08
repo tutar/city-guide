@@ -5,7 +5,9 @@ Database setup script for City Guide Smart Assistant
 
 import asyncio
 import logging
+
 from sqlalchemy import create_engine, text
+
 from src.utils.config import settings
 
 # Configure logging
@@ -18,8 +20,8 @@ async def create_database():
 
     # First connect to postgres database to create our target database
     admin_url = (
-        f"postgresql://{settings.database.postgres_user}:{settings.database.postgres_password}"
-        f"@{settings.database.postgres_host}:{settings.database.postgres_port}/postgres"
+        f"postgresql://{settings.database.user}:{settings.database.password}"
+        f"@{settings.database.host}:{settings.database.port}/postgres"
     )
 
     try:
@@ -28,15 +30,15 @@ async def create_database():
             # Check if database exists
             result = conn.execute(
                 text("SELECT 1 FROM pg_database WHERE datname = :db_name"),
-                {"db_name": settings.database.postgres_db}
+                {"db_name": settings.database.db},
             )
 
             if not result.fetchone():
                 # Create database
-                conn.execute(text(f"CREATE DATABASE {settings.database.postgres_db}"))
-                logger.info(f"Created database: {settings.database.postgres_db}")
+                conn.execute(text(f"CREATE DATABASE {settings.database.db}"))
+                logger.info(f"Created database: {settings.database.db}")
             else:
-                logger.info(f"Database already exists: {settings.database.postgres_db}")
+                logger.info(f"Database already exists: {settings.database.db}")
 
     except Exception as e:
         logger.error(f"Failed to create database: {e}")
@@ -46,11 +48,21 @@ async def create_database():
 async def create_tables():
     """Create database tables"""
 
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy import Column, String, Integer, Boolean, DateTime, JSON, ForeignKey, Text
-    from sqlalchemy.dialects.postgresql import UUID
     import uuid
     from datetime import datetime
+
+    from sqlalchemy import (
+        JSON,
+        Boolean,
+        Column,
+        DateTime,
+        ForeignKey,
+        Integer,
+        String,
+        Text,
+    )
+    from sqlalchemy.dialects.postgresql import UUID
+    from sqlalchemy.ext.declarative import declarative_base
 
     Base = declarative_base()
 
@@ -71,7 +83,9 @@ async def create_tables():
 
         id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
         user_session_id = Column(String(255), nullable=False)
-        current_service_category_id = Column(UUID(as_uuid=True), ForeignKey('service_categories.id'))
+        current_service_category_id = Column(
+            UUID(as_uuid=True), ForeignKey("service_categories.id")
+        )
         conversation_history = Column(JSON)
         navigation_options = Column(JSON)
         user_preferences = Column(JSON)
@@ -83,9 +97,13 @@ async def create_tables():
         __tablename__ = "navigation_options"
 
         id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-        service_category_id = Column(UUID(as_uuid=True), ForeignKey('service_categories.id'), nullable=False)
+        service_category_id = Column(
+            UUID(as_uuid=True), ForeignKey("service_categories.id"), nullable=False
+        )
         label = Column(String(255), nullable=False)
-        action_type = Column(String(50), nullable=False)  # explain, requirements, appointment, location, related
+        action_type = Column(
+            String(50), nullable=False
+        )  # explain, requirements, appointment, location, related
         target_url = Column(String(500))
         description = Column(Text)
         priority = Column(Integer, default=5)

@@ -4,8 +4,8 @@ BM25 keyword search service for City Guide Smart Assistant
 
 import logging
 import math
-from typing import List, Dict, Any, Optional
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+from typing import Any
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class BM25Service:
         self.doc_freqs = defaultdict(int)
         self.vocab = set()
 
-    def index_documents(self, documents: List[Dict[str, Any]]):
+    def index_documents(self, documents: list[dict[str, Any]]):
         """Index documents for BM25 search"""
         try:
             self.documents = documents
@@ -36,7 +36,9 @@ class BM25Service:
             # Process each document
             for doc in documents:
                 # Tokenize document content
-                content = f"{doc.get('document_title', '')} {doc.get('document_content', '')}"
+                content = (
+                    f"{doc.get('document_title', '')} {doc.get('document_content', '')}"
+                )
                 tokens = self._tokenize_chinese(content)
 
                 # Calculate document length
@@ -56,13 +58,15 @@ class BM25Service:
             if self.doc_lengths:
                 self.avg_doc_length = sum(self.doc_lengths) / len(self.doc_lengths)
 
-            logger.info(f"Indexed {len(documents)} documents with {len(self.vocab)} unique terms")
+            logger.info(
+                f"Indexed {len(documents)} documents with {len(self.vocab)} unique terms"
+            )
 
         except Exception as e:
             logger.error(f"Failed to index documents: {e}")
             raise
 
-    def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def search(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         """Search documents using BM25"""
         try:
             if not self.documents:
@@ -86,7 +90,7 @@ class BM25Service:
 
             # Add BM25 scores to results
             for i, (score, doc) in enumerate(scores[:limit]):
-                results[i]['bm25_score'] = score
+                results[i]["bm25_score"] = score
 
             logger.debug(f"BM25 search found {len(results)} results")
             return results
@@ -96,10 +100,7 @@ class BM25Service:
             return []
 
     def _calculate_bm25_score(
-        self,
-        query_term_freq: Counter,
-        doc_index: int,
-        total_docs: int
+        self, query_term_freq: Counter, doc_index: int, total_docs: int
     ) -> float:
         """Calculate BM25 score for a document"""
         score = 0.0
@@ -121,7 +122,9 @@ class BM25Service:
 
             # BM25 term score
             numerator = tf * (self.k1 + 1)
-            denominator = tf + self.k1 * (1 - self.b + self.b * doc_length / self.avg_doc_length)
+            denominator = tf + self.k1 * (
+                1 - self.b + self.b * doc_length / self.avg_doc_length
+            )
             term_score = idf * (numerator / denominator)
 
             # Multiply by query term frequency
@@ -129,14 +132,15 @@ class BM25Service:
 
         return score
 
-    def _tokenize_chinese(self, text: str) -> List[str]:
+    def _tokenize_chinese(self, text: str) -> list[str]:
         """Basic Chinese text tokenization"""
         # This is a simple character-based tokenization
         # In production, you would use jieba or other Chinese tokenizers
 
         # Remove punctuation and convert to lowercase
         import string
-        text = text.translate(str.maketrans('', '', string.punctuation))
+
+        text = text.translate(str.maketrans("", "", string.punctuation))
         text = text.lower()
 
         # Character-based tokenization for Chinese
@@ -147,20 +151,17 @@ class BM25Service:
 
         return tokens
 
-    def get_index_stats(self) -> Dict[str, Any]:
+    def get_index_stats(self) -> dict[str, Any]:
         """Get BM25 index statistics"""
         return {
             "num_documents": len(self.documents),
             "vocabulary_size": len(self.vocab),
             "avg_document_length": self.avg_doc_length,
             "total_terms": sum(self.doc_lengths),
-            "parameters": {
-                "k1": self.k1,
-                "b": self.b
-            }
+            "parameters": {"k1": self.k1, "b": self.b},
         }
 
-    def add_document(self, document: Dict[str, Any]):
+    def add_document(self, document: dict[str, Any]):
         """Add a single document to the index"""
         try:
             self.documents.append(document)
@@ -185,7 +186,9 @@ class BM25Service:
             # Recalculate average document length
             self.avg_doc_length = sum(self.doc_lengths) / len(self.doc_lengths)
 
-            logger.debug(f"Added document to BM25 index: {document.get('document_title', 'Unknown')}")
+            logger.debug(
+                f"Added document to BM25 index: {document.get('document_title', 'Unknown')}"
+            )
 
         except Exception as e:
             logger.error(f"Failed to add document to BM25 index: {e}")
@@ -197,7 +200,7 @@ class BM25Service:
             # Find document index
             doc_index = None
             for i, doc in enumerate(self.documents):
-                if doc.get('id') == document_id:
+                if doc.get("id") == document_id:
                     doc_index = i
                     break
 
@@ -223,7 +226,9 @@ class BM25Service:
             else:
                 self.avg_doc_length = 0
 
-            logger.debug(f"Removed document from BM25 index: {removed_doc.get('document_title', 'Unknown')}")
+            logger.debug(
+                f"Removed document from BM25 index: {removed_doc.get('document_title', 'Unknown')}"
+            )
 
         except Exception as e:
             logger.error(f"Failed to remove document from BM25 index: {e}")

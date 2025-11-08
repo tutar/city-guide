@@ -2,12 +2,17 @@
 Unit tests for service-related models and validation
 """
 
-import pytest
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
+import pytest
 from pydantic import ValidationError
 
-from src.models.services import ServiceCategory, NavigationOption, OfficialInformationSource
+from src.models.services import (
+    NavigationOption,
+    OfficialInformationSource,
+    ServiceCategory,
+)
 
 
 class TestServiceCategory:
@@ -20,7 +25,7 @@ class TestServiceCategory:
             "name": "Hong Kong Passport Services",
             "description": "Passport application and renewal services for Hong Kong residents",
             "official_source_url": "https://www.gov.hk/en/residents/",
-            "is_active": True
+            "is_active": True,
         }
 
         # When creating a service category
@@ -28,7 +33,10 @@ class TestServiceCategory:
 
         # Then it should be created successfully
         assert service.name == "Hong Kong Passport Services"
-        assert service.description == "Passport application and renewal services for Hong Kong residents"
+        assert (
+            service.description
+            == "Passport application and renewal services for Hong Kong residents"
+        )
         assert str(service.official_source_url) == "https://www.gov.hk/en/residents/"
         assert service.is_active == True
         assert isinstance(service.id, uuid.UUID)
@@ -67,27 +75,26 @@ class TestServiceCategory:
     def test_last_verified_validation(self):
         """Test last_verified date validation"""
         # Given a date more than 30 days old
-        old_date = datetime.now(timezone.utc) - timedelta(days=31)
+        old_date = datetime.now(UTC) - timedelta(days=31)
         with pytest.raises(ValidationError) as exc_info:
             ServiceCategory(name="Test Service", last_verified=old_date)
-        assert "Service information must be verified within last 30 days" in str(exc_info.value)
+        assert "Service information must be verified within last 30 days" in str(
+            exc_info.value
+        )
 
         # Given a date within 30 days
-        recent_date = datetime.now(timezone.utc) - timedelta(days=29)
+        recent_date = datetime.now(UTC) - timedelta(days=29)
         service = ServiceCategory(name="Test Service", last_verified=recent_date)
         assert service.last_verified == recent_date
 
         # Given current date (default)
         service = ServiceCategory(name="Test Service")
-        assert (datetime.now(timezone.utc) - service.last_verified).days <= 1
+        assert (datetime.now(UTC) - service.last_verified).days <= 1
 
     def test_service_category_json_serialization(self):
         """Test JSON serialization of service category"""
         # Given a service category
-        service = ServiceCategory(
-            name="Test Service",
-            description="Test description"
-        )
+        service = ServiceCategory(name="Test Service", description="Test description")
 
         # When converting to dict
         service_dict = service.model_dump()
@@ -101,6 +108,7 @@ class TestServiceCategory:
         # When converting to JSON
         service_json = service.model_dump_json()
         import json
+
         service_data = json.loads(service_json)
 
         # Then UUID should be converted to string
@@ -127,7 +135,7 @@ class TestNavigationOption:
             "label": "Material Requirements",
             "action_type": "requirements",
             "description": "View required documents and materials",
-            "priority": 1
+            "priority": 1,
         }
 
         # When creating a navigation option
@@ -151,17 +159,23 @@ class TestNavigationOption:
             NavigationOption(
                 service_category_id=service_category_id,
                 label="Test Option",
-                action_type="invalid_action"
+                action_type="invalid_action",
             )
         assert "Action type must be one of" in str(exc_info.value)
 
         # Given valid action types
-        valid_actions = ["explain", "requirements", "appointment", "location", "related"]
+        valid_actions = [
+            "explain",
+            "requirements",
+            "appointment",
+            "location",
+            "related",
+        ]
         for action_type in valid_actions:
             option = NavigationOption(
                 service_category_id=service_category_id,
                 label="Test Option",
-                action_type=action_type
+                action_type=action_type,
             )
             assert option.action_type == action_type
 
@@ -172,9 +186,7 @@ class TestNavigationOption:
         # Given empty label
         with pytest.raises(ValidationError) as exc_info:
             NavigationOption(
-                service_category_id=service_category_id,
-                label="",
-                action_type="explain"
+                service_category_id=service_category_id, label="", action_type="explain"
             )
         assert "String should have at least 1 character" in str(exc_info.value)
 
@@ -183,7 +195,7 @@ class TestNavigationOption:
             NavigationOption(
                 service_category_id=service_category_id,
                 label="   ",
-                action_type="explain"
+                action_type="explain",
             )
         assert "Label must be clear and actionable" in str(exc_info.value)
 
@@ -191,7 +203,7 @@ class TestNavigationOption:
         option = NavigationOption(
             service_category_id=service_category_id,
             label="  Material Requirements  ",
-            action_type="requirements"
+            action_type="requirements",
         )
         assert option.label == "Material Requirements"  # Should be stripped
 
@@ -205,7 +217,7 @@ class TestNavigationOption:
                 service_category_id=service_category_id,
                 label="Test Option",
                 action_type="explain",
-                priority=0
+                priority=0,
             )
         assert "Input should be greater than or equal to 1" in str(exc_info.value)
 
@@ -215,7 +227,7 @@ class TestNavigationOption:
                 service_category_id=service_category_id,
                 label="Test Option",
                 action_type="explain",
-                priority=11
+                priority=11,
             )
         assert "Input should be less than or equal to 10" in str(exc_info.value)
 
@@ -225,7 +237,7 @@ class TestNavigationOption:
                 service_category_id=service_category_id,
                 label="Test Option",
                 action_type="explain",
-                priority=priority
+                priority=priority,
             )
             assert option.priority == priority
 
@@ -238,7 +250,7 @@ class TestNavigationOption:
             service_category_id=service_category_id,
             label="Make Appointment",
             action_type="appointment",
-            target_url="https://www.gov.hk/appointment"
+            target_url="https://www.gov.hk/appointment",
         )
         assert str(option.target_url) == "https://www.gov.hk/appointment"
 
@@ -258,7 +270,7 @@ class TestOfficialInformationSource:
             "base_url": "https://www.gov.hk",
             "api_endpoint": "/api/services",
             "update_frequency": "weekly",
-            "status": "active"
+            "status": "active",
         }
 
         # When creating an information source
@@ -282,7 +294,7 @@ class TestOfficialInformationSource:
             OfficialInformationSource(
                 name="Test Source",
                 base_url="https://example.com",
-                update_frequency="invalid_frequency"
+                update_frequency="invalid_frequency",
             )
         assert "Update frequency must be one of" in str(exc_info.value)
 
@@ -292,7 +304,7 @@ class TestOfficialInformationSource:
             source = OfficialInformationSource(
                 name="Test Source",
                 base_url="https://example.com",
-                update_frequency=frequency
+                update_frequency=frequency,
             )
             assert source.update_frequency == frequency
 
@@ -303,7 +315,7 @@ class TestOfficialInformationSource:
             OfficialInformationSource(
                 name="Test Source",
                 base_url="https://example.com",
-                status="invalid_status"
+                status="invalid_status",
             )
         assert "Status must be one of" in str(exc_info.value)
 
@@ -311,9 +323,7 @@ class TestOfficialInformationSource:
         valid_statuses = ["active", "inactive", "error"]
         for status in valid_statuses:
             source = OfficialInformationSource(
-                name="Test Source",
-                base_url="https://example.com",
-                status=status
+                name="Test Source", base_url="https://example.com", status=status
             )
             assert source.status == status
 
@@ -321,8 +331,7 @@ class TestOfficialInformationSource:
         """Test JSON serialization of information source"""
         # Given an information source
         source = OfficialInformationSource(
-            name="Test Source",
-            base_url="https://example.com"
+            name="Test Source", base_url="https://example.com"
         )
 
         # When converting to dict
@@ -336,6 +345,7 @@ class TestOfficialInformationSource:
         # When converting to JSON
         source_json = source.model_dump_json()
         import json
+
         source_data = json.loads(source_json)
 
         # Then UUID should be converted to string

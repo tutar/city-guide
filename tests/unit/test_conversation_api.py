@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api.conversation import router
-from src.models.conversation import ConversationContext, Message
+from src.models.conversation_model import ConversationContext, Message
 
 
 @pytest.fixture

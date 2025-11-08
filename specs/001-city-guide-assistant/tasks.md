@@ -81,8 +81,8 @@ Phase 6: Polish
 - [X] T002 Create pyproject.toml with Poetry configuration for dependency management
 - [X] T003 Create docker-compose.yml with PostgreSQL, Milvus, and Redis services
 - [X] T004 Create .env.example template with all required environment variables
-- [ ] T005 Create Makefile with common development commands
-- [ ] T006 Set up virtual environment and install development dependencies
+- [X] T005 Create Makefile with common development commands
+- [X] T006 Set up virtual environment and install development dependencies
 - [X] T007 Initialize git repository with proper .gitignore for Python project
 - [X] T008 Set up pre-commit hooks for code quality (ruff, black, mypy)
 
@@ -92,7 +92,7 @@ Phase 6: Polish
 
 - [X] T009 Set up PostgreSQL database with connection configuration in src/utils/config.py
 - [X] T010 Create database setup script in scripts/setup_database.py
-- [ ] T011 Create vector database setup script in scripts/setup_vector_db.py
+- [X] T011 Create vector database setup script in scripts/setup_vector_db.py
 - [X] T012 Create database migration system with Alembic
 
 ### Core Data Models
@@ -100,9 +100,9 @@ Phase 6: Polish
 - [X] T013 Create ServiceCategory model with validation rules in src/models/services.py
 - [X] T014 Create ConversationContext model with state transitions in src/models/conversation_model.py
 - [X] T015 Create NavigationOption model with action types in src/models/services.py
-- [ ] T016 Create OfficialInformationSource model in src/models/official_sources.py
-- [ ] T017 Create DocumentEmbedding model in src/models/document_embeddings.py
-- [ ] T018 Create SearchQuery model in src/models/search_queries.py
+- [X] T016 Create OfficialInformationSource model in src/models/official_sources.py
+- [X] T017 Create DocumentEmbedding model in src/models/document_embeddings.py
+- [X] T018 Create SearchQuery model in src/models/search_queries.py
 
 ### Database Services
 
@@ -112,9 +112,9 @@ Phase 6: Polish
 
 ### Vector Database Setup
 
-- [ ] T022 Set up Milvus vector database connection in src/services/embedding_service.py
-- [ ] T023 Create DocumentEmbedding collection with vector index in src/services/embedding_service.py
-- [ ] T024 Create SearchQuery collection for analytics in src/services/embedding_service.py
+- [X] T022 Set up Milvus vector database connection in src/services/embedding_service.py
+- [X] T023 Create DocumentEmbedding collection with vector index in src/services/embedding_service.py
+- [X] T024 Create SearchQuery collection for analytics in src/services/embedding_service.py
 
 ### AI Integration
 
@@ -123,13 +123,13 @@ Phase 6: Polish
 
 ### Search Infrastructure
 
-- [ ] T027 Implement hybrid search service with RRF fusion in src/services/search_service.py
-- [ ] T028 Set up BM25 keyword search for sparse retrieval in src/services/search_service.py
+- [X] T027 Implement hybrid search service with RRF fusion in src/services/search_service.py
+- [X] T028 Set up BM25 keyword search for sparse retrieval in src/services/search_service.py
 
 ### Infrastructure Services
 
 - [X] T029 Implement configuration management in src/utils/config.py
-- [ ] T030 Implement health check endpoints in src/api/health.py
+- [X] T030 Implement health check endpoints in src/api/health.py
 
 ## Phase 3: User Story 1 - Get Hong Kong/Macau Passport Guidance (P1)
 
@@ -145,12 +145,12 @@ Phase 6: Polish
 
 - [X] T034 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/load_initial_data.py
 - [X] T035 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/load_initial_data.py
-- [ ] T036 [P] [US1] Create sample passport document embeddings for search in scripts/generate_embeddings.py
+- [X] T036 [P] [US1] Create sample passport document embeddings for search in scripts/generate_embeddings.py
 
 ### Conversation Flow
 
 - [X] T037 [US1] Create unit tests for Deepseek API integration in tests/unit/test_ai_service.py
-- [ ] T038 [US1] Implement conversation start endpoint with service context in src/api/conversations.py
+- [X] T038 [US1] Implement conversation start endpoint with service context in src/api/conversations.py
 - [X] T039 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
 - [X] T040 [US1] Implement conversation history management in src/services/conversation_service.py
 
@@ -158,20 +158,20 @@ Phase 6: Polish
 
 - [X] T041 [US1] Create dynamic navigation option generation based on conversation context in src/services/navigation_generator.py
 - [X] T042 [US1] Implement navigation option filtering by service category in src/services/navigation_service.py
-- [ ] T043 [US1] Add external URL handling for appointment systems in src/utils/validation.py
+- [X] T043 [US1] Add external URL handling for appointment systems in src/utils/validation.py
 
 ### Integration
 
-- [ ] T044 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
-- [ ] T045 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
-- [ ] T046 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
+- [X] T044 [US1] Create Chainlit interface for passport guidance conversation in src/chainlit/app.py
+- [X] T045 [US1] Implement step-by-step guidance display in Chainlit components in src/chainlit/components/chat_interface.py
+- [X] T046 [US1] Add source attribution for official government information in src/chainlit/components/search_results.py
 - [X] T047 [US1] Create integration tests for passport guidance flow in tests/integration/test_passport_guidance.py
 
 ### External Service Integration (FR-005)
 
-- [ ] T047a [US1] Implement external URL validation and security checks in src/utils/validation.py
-- [ ] T047b [US1] Create appointment system integration with official government portals in src/services/external_service.py
-- [ ] T047c [US1] Add external service health monitoring and fallback mechanisms in src/services/external_service.py
+- [X] T047a [US1] Implement external URL validation and security checks in src/utils/validation.py
+- [X] T047b [US1] Create appointment system integration with official government portals in src/services/external_service.py
+- [X] T047c [US1] Add external service health monitoring and fallback mechanisms in src/services/external_service.py
 
 ## Phase 4: User Story 2 - Navigate Complex Government Services (P2)
 

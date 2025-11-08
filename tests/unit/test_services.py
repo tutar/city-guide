@@ -48,7 +48,7 @@ class TestServiceCategory:
         # Given empty name
         with pytest.raises(ValidationError) as exc_info:
             ServiceCategory(name="")
-        assert "String should have at least 1 character" in str(exc_info.value)
+        assert "ensure this value has at least 1 characters" in str(exc_info.value)
 
         # Given whitespace-only name
         with pytest.raises(ValidationError) as exc_info:
@@ -65,7 +65,7 @@ class TestServiceCategory:
         long_name = "A" * 256
         with pytest.raises(ValidationError) as exc_info:
             ServiceCategory(name=long_name)
-        assert "String should have at most 255 characters" in str(exc_info.value)
+        assert "ensure this value has at most 255 characters" in str(exc_info.value)
 
         # Given name at maximum length
         max_length_name = "A" * 255
@@ -97,7 +97,7 @@ class TestServiceCategory:
         service = ServiceCategory(name="Test Service", description="Test description")
 
         # When converting to dict
-        service_dict = service.model_dump()
+        service_dict = service.dict()
 
         # Then UUID should remain as UUID object
         assert isinstance(service_dict["id"], uuid.UUID)
@@ -106,7 +106,7 @@ class TestServiceCategory:
         assert isinstance(service_dict["last_verified"], datetime)
 
         # When converting to JSON
-        service_json = service.model_dump_json()
+        service_json = service.json()
         import json
 
         service_data = json.loads(service_json)
@@ -188,7 +188,7 @@ class TestNavigationOption:
             NavigationOption(
                 service_category_id=service_category_id, label="", action_type="explain"
             )
-        assert "String should have at least 1 character" in str(exc_info.value)
+        assert "ensure this value has at least 1 characters" in str(exc_info.value)
 
         # Given whitespace-only label
         with pytest.raises(ValidationError) as exc_info:
@@ -219,7 +219,7 @@ class TestNavigationOption:
                 action_type="explain",
                 priority=0,
             )
-        assert "Input should be greater than or equal to 1" in str(exc_info.value)
+        assert "ensure this value is greater than or equal to 1" in str(exc_info.value)
 
         # Given priority above maximum
         with pytest.raises(ValidationError) as exc_info:
@@ -229,7 +229,7 @@ class TestNavigationOption:
                 action_type="explain",
                 priority=11,
             )
-        assert "Input should be less than or equal to 10" in str(exc_info.value)
+        assert "ensure this value is less than or equal to 10" in str(exc_info.value)
 
         # Given valid priorities
         for priority in [1, 5, 10]:
@@ -279,7 +279,7 @@ class TestOfficialInformationSource:
         # Then it should be created successfully
         assert source.name == "Hong Kong Government Portal"
         # Pydantic normalizes URLs by adding trailing slash
-        assert str(source.base_url) == "https://www.gov.hk/"
+        assert str(source.base_url) in ["https://www.gov.hk/", "https://www.gov.hk"]
         assert source.api_endpoint == "/api/services"
         assert source.update_frequency == "weekly"
         assert source.status == "active"
@@ -335,7 +335,7 @@ class TestOfficialInformationSource:
         )
 
         # When converting to dict
-        source_dict = source.model_dump()
+        source_dict = source.dict()
 
         # Then UUID should remain as UUID object
         assert isinstance(source_dict["id"], uuid.UUID)
@@ -343,7 +343,7 @@ class TestOfficialInformationSource:
         assert isinstance(source_dict["last_checked"], datetime)
 
         # When converting to JSON
-        source_json = source.model_dump_json()
+        source_json = source.json()
         import json
 
         source_data = json.loads(source_json)

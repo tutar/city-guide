@@ -209,5 +209,6 @@ async def on_action(action: cl.Action):
 @cl.on_chat_end
 def on_chat_end():
     """Clean up when chat ends"""
-    # Clear user session data
-    cl.user_session.clear()
+    # In Chainlit 2.x, user session data is automatically managed
+    # No need to manually clear session data
+    pass

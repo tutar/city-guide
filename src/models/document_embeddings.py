@@ -38,7 +38,23 @@ class DocumentEmbedding(BaseModel):
     @validator("document_type")
     @classmethod
     def validate_document_type(cls, v):
-        valid_types = ["requirements", "procedures", "locations", "faqs"]
+        # Support both English and Chinese document types
+        valid_types = [
+            # English types
+            "requirements",
+            "procedures",
+            "locations",
+            "faqs",
+            # Chinese types
+            "办理对象",
+            "办理材料",
+            "办理流程",
+            "办理地点",
+            "办理时间",
+            "费用标准",
+            "常见问题",
+            "其他事项",
+        ]
         if v not in valid_types:
             raise ValueError(f"Document type must be one of: {valid_types}")
         return v

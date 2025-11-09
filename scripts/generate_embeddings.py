@@ -5,7 +5,10 @@ Generate document embeddings for City Guide Smart Assistant
 
 import logging
 import uuid
+import os
+import re
 from datetime import UTC, datetime
+from pathlib import Path
 
 from src.models.document_embeddings import DocumentEmbedding
 from src.services.ai_service import AIService
@@ -145,6 +148,357 @@ Digital photos must be in JPEG format.""",
     return documents
 
 
+def classify_document_type(content: str, title: str) -> str:
+    """
+    Classify document type based on content and title
+    """
+    content_lower = content.lower()
+    title_lower = title.lower()
+
+    # Check for 办理对象 patterns
+    object_patterns = [
+        r"办理对象",
+        r"申请对象",
+        r"适用对象",
+        r"服务对象",
+        r"哪些人可以",
+        r"谁可以办理",
+        r"适用人群",
+        r"对象",
+    ]
+    for pattern in object_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "办理对象"
+
+    # Check for 办理材料 patterns
+    material_patterns = [
+        r"办理材料",
+        r"所需材料",
+        r"材料要求",
+        r"申请材料",
+        r"需要准备",
+        r"准备材料",
+        r"材料清单",
+        r"材料",
+    ]
+    for pattern in material_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "办理材料"
+
+    # Check for 办理流程 patterns
+    process_patterns = [
+        r"办理流程",
+        r"办理步骤",
+        r"申请流程",
+        r"申请步骤",
+        r"操作流程",
+        r"操作步骤",
+        r"流程",
+        r"步骤",
+        r"第一步",
+        r"第二步",
+        r"第三步",
+        r"第四步",
+        r"如何办理",
+        r"怎么办理",
+    ]
+    for pattern in process_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "办理流程"
+
+    # Check for 办理地点 patterns
+    location_patterns = [
+        r"办理地点",
+        r"服务地点",
+        r"办公地点",
+        r"地址",
+        r"地点",
+        r"位置",
+        r"在哪里办理",
+        r"办理窗口",
+    ]
+    for pattern in location_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "办理地点"
+
+    # Check for 办理时间 patterns
+    time_patterns = [
+        r"办理时间",
+        r"办理时限",
+        r"处理时间",
+        r"审批时间",
+        r"多久办好",
+        r"需要多长时间",
+        r"工作日",
+        r"自然日",
+        r"时限",
+        r"时间",
+    ]
+    for pattern in time_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "办理时间"
+
+    # Check for 费用标准 patterns
+    fee_patterns = [r"费用", r"收费标准", r"办理费用", r"申请费用", r"多少钱", r"收费", r"价格", r"费用标准"]
+    for pattern in fee_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "费用标准"
+
+    # Check for 常见问题 patterns
+    faq_patterns = [
+        r"常见问题",
+        r"faq",
+        r"q&a",
+        r"问答",
+        r"办理须知",
+        r"^q:",
+        r"^a:",
+        r"^问:",
+        r"^答:",
+        r"^问题",
+        r"注意事项",
+        r"注意",
+    ]
+    for pattern in faq_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "常见问题"
+
+    # Check for 其他事项 patterns
+    other_patterns = [r"其他事项", r"其他说明", r"补充说明", r"其他", r"特别说明", r"说明事项"]
+    for pattern in other_patterns:
+        if re.search(pattern, content_lower) or re.search(pattern, title_lower):
+            return "其他事项"
+
+    # Default to 办理对象 if no clear match
+    return "办理对象"
+
+
+def extract_title_from_content(content: str) -> str:
+    """
+    Extract title from markdown content
+    """
+    # Look for markdown headers
+    header_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
+    if header_match:
+        return header_match.group(1).strip()
+
+    # Look for the first line that might be a title
+    first_line = content.split("\n")[0].strip()
+    if first_line and len(first_line) < 100:  # Reasonable title length
+        return first_line
+
+    return "Untitled Document"
+
+
+def split_document_by_sections(content: str, title: str) -> list:
+    """
+    Split a document into sections based on markdown headers
+    """
+    sections = []
+
+    # Split by markdown headers (##, ###)
+    header_pattern = r"(^#{2,3}\s+.+$)"
+    parts = re.split(header_pattern, content, flags=re.MULTILINE)
+
+    current_section_title = title
+    current_section_content = ""
+
+    for i, part in enumerate(parts):
+        if i == 0 and not part.strip():
+            continue
+
+        if re.match(r"^#{2,3}\s+", part):
+            # This is a header, save previous section if any
+            if current_section_content.strip():
+                sections.append(
+                    {
+                        "title": current_section_title,
+                        "content": current_section_content.strip(),
+                    }
+                )
+
+            # Start new section
+            current_section_title = re.sub(r"^#{2,3}\s+", "", part).strip()
+            current_section_content = ""
+        else:
+            current_section_content += part
+
+    # Add the last section
+    if current_section_content.strip():
+        sections.append(
+            {"title": current_section_title, "content": current_section_content.strip()}
+        )
+
+    # If no sections were created, use the whole document as one section
+    if not sections:
+        sections.append({"title": title, "content": content.strip()})
+
+    return sections
+
+
+def create_faq_from_progress_query(content: str, title: str) -> list:
+    """
+    Create FAQ documents from progress query content
+    """
+    faq_documents = []
+
+    # Check if this is a progress query document
+    progress_keywords = ["办理进度", "进度查询", "查询进度", "查看进度"]
+    is_progress_query = any(
+        keyword in title or keyword in content for keyword in progress_keywords
+    )
+
+    if not is_progress_query:
+        return []
+
+    # Create FAQ question
+    faq_question = "如何查看港澳通行证办理进度？"
+
+    # Extract the main answer from content
+    lines = content.split("\n")
+    answer_lines = []
+
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith("#") and not line.startswith("办理入口"):
+            # Clean up the line
+            line = re.sub(r"^\d+、", "", line)  # Remove numbered lists
+            line = re.sub(r"^\s*[-•]\s*", "", line)  # Remove bullet points
+            if line:
+                answer_lines.append(line)
+
+    if answer_lines:
+        # Clean and structure the answer
+        clean_answer_lines = []
+
+        for line in answer_lines:
+            # Skip empty lines and redundant information
+            if line and not any(keyword in line for keyword in ["办理入口", "点击这里查询"]):
+                clean_answer_lines.append(line)
+
+        faq_answer = "\n".join(clean_answer_lines)
+
+        # Add entry point information if available
+        entry_match = re.search(r"办理入口：\[([^\]]+)\]\(([^)]+)\)", content)
+        if entry_match:
+            entry_text = entry_match.group(1)
+            entry_url = entry_match.group(2)
+            faq_answer += f"\n\n办理入口：{entry_text} ({entry_url})"
+
+        # Add processing time information if available in the document
+        time_match = re.search(r"(广东省[内外]户籍.*?\d+[个]?[工作日自然日]+)", content)
+        if time_match:
+            faq_answer += f"\n\n{time_match.group(1)}"
+
+        # Add fee information if available
+        fee_match = re.search(r"(港澳通行证.*?\d+元)", content)
+        if fee_match:
+            faq_answer += f"\n\n{fee_match.group(1)}"
+
+        faq_document = {
+            "title": faq_question,
+            "content": faq_answer,
+            "document_type": "常见问题",
+            "metadata": {
+                "source": "progress_query_faq",
+                "language": "zh",
+                "last_updated": datetime.now(UTC).strftime("%Y-%m-%d"),
+                "faq_type": "办理进度查询",
+            },
+        }
+
+        faq_documents.append(faq_document)
+
+    return faq_documents
+
+
+def load_documents_from_external_dir(service_category_id: uuid.UUID) -> list:
+    """
+    Load and process documents from docs-external directory
+    """
+    docs_external_dir = Path("docs-external")
+    documents = []
+
+    if not docs_external_dir.exists():
+        logger.warning(f"docs-external directory not found: {docs_external_dir}")
+        return documents
+
+    # Supported file extensions
+    supported_extensions = [".md", ".txt"]
+
+    for file_path in docs_external_dir.glob("*"):
+        if file_path.suffix.lower() in supported_extensions:
+            try:
+                # Read file content
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+
+                if not content:
+                    logger.warning(f"Empty file: {file_path}")
+                    continue
+
+                # Extract title
+                title = extract_title_from_content(content)
+
+                # Try to create FAQ from progress query content
+                faq_documents = create_faq_from_progress_query(content, title)
+
+                if faq_documents:
+                    # Add FAQ documents
+                    for faq_doc in faq_documents:
+                        faq_doc["service_category_id"] = service_category_id
+                        documents.append(faq_doc)
+                        logger.info(
+                            f"Created FAQ from {file_path.name}: {faq_doc['title']}"
+                        )
+
+                # Also process as regular sections
+                sections = split_document_by_sections(content, title)
+
+                for i, section in enumerate(sections):
+                    section_title = section["title"]
+                    section_content = section["content"]
+
+                    # Classify document type
+                    document_type = classify_document_type(
+                        section_content, section_title
+                    )
+
+                    # Create document entry
+                    document = {
+                        "title": section_title,
+                        "content": section_content,
+                        "document_type": document_type,
+                        "metadata": {
+                            "source": file_path.name,
+                            "language": "zh",
+                            "last_updated": datetime.now(UTC).strftime("%Y-%m-%d"),
+                            "section_index": i,
+                            "total_sections": len(sections),
+                        },
+                        "service_category_id": service_category_id,
+                    }
+
+                    documents.append(document)
+
+                    logger.info(
+                        f"Processed section {i+1}/{len(sections)} from {file_path.name}: "
+                        f"{section_title} ({document_type})"
+                    )
+
+                logger.info(
+                    f"Successfully processed {file_path.name}: {len(sections)} sections"
+                )
+
+            except Exception as e:
+                logger.error(f"Failed to process {file_path}: {e}")
+
+    logger.info(
+        f"Loaded {len(documents)} document sections from docs-external directory"
+    )
+    return documents
+
+
 def generate_document_embeddings(
     documents: list, ai_service: AIService, embedding_service: EmbeddingService
 ):
@@ -196,8 +550,13 @@ def generate_sample_embeddings():
         # In production, this would come from the actual database
         sample_service_id = uuid.uuid4()
 
-        # Create sample documents
-        documents = create_sample_passport_documents(sample_service_id)
+        # Create sample documents from external directory
+        documents = load_documents_from_external_dir(sample_service_id)
+
+        # If no external documents found, fall back to sample documents
+        if not documents:
+            logger.info("No external documents found, using sample documents")
+            documents = create_sample_passport_documents(sample_service_id)
 
         # Generate embeddings
         start_time = datetime.now(UTC)

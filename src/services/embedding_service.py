@@ -108,15 +108,19 @@ class EmbeddingService:
     def store_document_embedding(self, document_embedding: DocumentEmbedding) -> str:
         """Store a document embedding in Milvus"""
         try:
-            # Prepare data for insertion
+            # Prepare data for insertion - adapt to Milvus schema
             data = [
                 [str(document_embedding.id)],  # id
-                [str(document_embedding.source_id)],  # source_id
-                [document_embedding.document_url],  # document_url
-                [document_embedding.document_title],  # document_title
-                [document_embedding.chunk_index],  # chunk_index
-                [document_embedding.embedding_vector],  # embedding_vector
-                [document_embedding.embedding_model],  # embedding_model
+                [
+                    str(document_embedding.service_category_id)
+                ],  # source_id (use service_category_id)
+                [
+                    document_embedding.metadata.get("source", "")
+                ],  # document_url (use source from metadata)
+                [document_embedding.title],  # document_title
+                [document_embedding.metadata.get("section_index", 0)],  # chunk_index
+                [document_embedding.embedding],  # embedding_vector
+                ["Qwen/Qwen3-Embedding-0.6B"],  # embedding_model
                 [int(datetime.utcnow().timestamp())],  # created_at
             ]
 
@@ -240,10 +244,10 @@ class EmbeddingService:
             num_entities = self.collection.num_entities
 
             return {
-                "collection_name": stats.collection_name,
+                "collection_name": stats.get("collection_name", "unknown"),
                 "num_entities": num_entities,
-                "description": stats.description,
-                "fields": [field.name for field in stats.fields],
+                "description": stats.get("description", ""),
+                "fields": [field.get("name", "") for field in stats.get("fields", [])],
             }
 
         except Exception as e:

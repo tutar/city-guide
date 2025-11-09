@@ -10,10 +10,14 @@ from pydantic import BaseModel, Field
 
 from src.models.conversation_model import ConversationContext
 from src.services.data_service import DataService
-
-# from src.services.ai_service import AIService
-from src.services.mock_ai_service import MockAIService as AIService
 from src.services.search_service import SearchService
+from src.utils.config import settings
+
+# Choose AI service based on configuration
+if getattr(settings.ai, "use_mock_service", False) or settings.app_env == "test":
+    from src.services.mock_ai_service import MockAIService as AIService
+else:
+    from src.services.ai_service import AIService
 
 router = APIRouter(prefix="/api/conversation", tags=["conversation"])
 

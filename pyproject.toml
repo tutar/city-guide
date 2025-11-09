@@ -27,6 +27,7 @@ qdrant-client = "^1.7.0"
 # Optional dependencies for enhanced functionality
 # langchain-openai = "^0.0.2"  # Commented out due to version conflict
 # langchain-milvus = "^0.1.0"  # Commented out due to version conflict
+asyncpg = "^0.30.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

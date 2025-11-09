@@ -193,7 +193,7 @@ GOVERNMENT_API_KEY=your_government_key
 
 # Chainlit Configuration
 CHAINLIT_HOST=0.0.0.0
-CHAINLIT_PORT=8000
+CHAINLIT_PORT=8001
 ```
 
 ## Testing

@@ -279,7 +279,11 @@ class DataService:
                 self.db.query(ConversationContext)
                 .filter(
                     ConversationContext.user_session_id == session_id,
-                    ConversationContext.is_active is True,
+                    # 在 filter() 中：
+                    # - ConversationContext.is_active is True 立即求值
+                    # - 如果 is_active 是 Boolean 列，这个表达式总是 False
+                    # - 所以最终条件变成了 WHERE false
+                    ConversationContext.is_active == True,
                 )
                 .first()
             )
@@ -317,7 +321,7 @@ class DataService:
                 self.db.query(ConversationContext)
                 .filter(
                     ConversationContext.user_session_id == session_id,
-                    ConversationContext.is_active is True,
+                    ConversationContext.is_active == True,
                 )
                 .first()
             )

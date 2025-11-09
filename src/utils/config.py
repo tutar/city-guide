@@ -65,7 +65,7 @@ class ChainlitSettings(BaseSettings):
         env_prefix = "CHAINLIT_"
 
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8000)
+    port: int = Field(default=8001)
     debug_mode: bool = Field(default=False)
 
 

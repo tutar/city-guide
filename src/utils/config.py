@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # Ignore extra fields in .env file
 
     app_name: str = "City Guide Smart Assistant"
     app_version: str = "1.0.0"

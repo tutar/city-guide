@@ -94,7 +94,7 @@ class EmbeddingService:
             # Create index for vector search
             index_params = {
                 "index_type": "IVF_FLAT",
-                "metric_type": "L2",
+                "metric_type": "COSINE",
                 "params": {"nlist": 1024},
             }
             self.collection.create_index("embedding_vector", index_params)
@@ -147,7 +147,7 @@ class EmbeddingService:
             self.collection.load()
 
             # Search parameters
-            search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
+            search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
 
             # Execute search
             results = self.collection.search(
@@ -168,14 +168,18 @@ class EmbeddingService:
             # Format results
             search_results = []
             for hit in results[0]:
+                # For COSINE metric_type, distance is negative similarity
+                # COSINE similarity ranges from -1 to 1, we need to map to 0-1
+                # similarity_score = (1 + (-hit.distance)) / 2
+                similarity_score = (1 + (-hit.distance)) / 2
+
                 result = {
                     "document_id": uuid.UUID(hit.entity.get("id")),
                     "source_id": uuid.UUID(hit.entity.get("source_id")),
                     "document_url": hit.entity.get("document_url"),
                     "document_title": hit.entity.get("document_title"),
                     "chunk_index": hit.entity.get("chunk_index"),
-                    "similarity_score": 1
-                    - hit.distance,  # Convert distance to similarity
+                    "similarity_score": similarity_score,
                     "metadata": {},
                 }
                 search_results.append(result)
@@ -291,7 +295,7 @@ class EmbeddingService:
                 # Create index for query embeddings
                 index_params = {
                     "index_type": "IVF_FLAT",
-                    "metric_type": "L2",
+                    "metric_type": "COSINE",
                     "params": {"nlist": 1024},
                 }
                 self.search_query_collection.create_index(

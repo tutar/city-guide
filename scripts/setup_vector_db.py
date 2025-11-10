@@ -68,7 +68,7 @@ def create_collection():
     # Create index for vector search
     index_params = {
         "index_type": "IVF_FLAT",
-        "metric_type": "L2",
+        "metric_type": "COSINE",
         "params": {"nlist": 128},
     }
 

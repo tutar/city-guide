@@ -22,6 +22,46 @@ class SearchService:
         self.embedding_service = EmbeddingService()
         self.ai_service = AIService()
         self.bm25_service = BM25Service()
+        self._initialize_bm25_index()
+
+    def _initialize_bm25_index(self):
+        """Initialize BM25 index with documents from vector database"""
+        try:
+            # Load collection
+            self.embedding_service.collection.load()
+
+            # Query all documents
+            results = self.embedding_service.collection.query(
+                expr="",
+                limit=1000,
+                output_fields=["id", "document_title", "document_url", "chunk_index"],
+            )
+
+            # Prepare documents for BM25 indexing
+            documents_for_bm25 = []
+            for doc in results:
+                document = {
+                    "id": doc["id"],
+                    "document_title": doc.get("document_title", "Unknown"),
+                    "document_content": doc.get(
+                        "document_title", ""
+                    ),  # Use title as content
+                    "source_url": doc.get("document_url", ""),
+                    "chunk_index": doc.get("chunk_index", 0),
+                }
+                documents_for_bm25.append(document)
+
+            # Index documents in BM25
+            self.bm25_service.index_documents(documents_for_bm25)
+
+            logger.info(
+                f"BM25 index initialized with {len(documents_for_bm25)} documents, "
+                f"vocabulary size: {len(self.bm25_service.vocab)}"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to initialize BM25 index: {e}")
+            # Continue without BM25 - semantic search will still work
 
     def hybrid_search(self, search_request: HybridSearchRequest) -> list[SearchResult]:
         """Perform hybrid search with RRF fusion"""
@@ -106,17 +146,32 @@ class SearchService:
 
             # Convert to SearchResult format
             keyword_results = []
-            for result in bm25_results:
-                search_result = SearchResult(
-                    document_id=result.get("id", "unknown"),
-                    document_title=result.get("document_title", "Unknown"),
-                    document_content=result.get("document_content", ""),
-                    source_url=result.get("source_url", ""),
-                    similarity_score=result.get("bm25_score", 0),
-                    keyword_score=result.get("bm25_score", 0),
-                    metadata=result.get("metadata", {}),
-                )
-                keyword_results.append(search_result)
+            if bm25_results:
+                # Normalize BM25 scores to 0-1 range
+                bm25_scores = [result.get("bm25_score", 0) for result in bm25_results]
+                max_score = max(bm25_scores) if bm25_scores else 1
+                min_score = min(bm25_scores) if bm25_scores else 0
+
+                # Avoid division by zero
+                score_range = max_score - min_score
+                if score_range == 0:
+                    score_range = 1
+
+                for result in bm25_results:
+                    bm25_score = result.get("bm25_score", 0)
+                    # Normalize to 0-1 range
+                    normalized_score = (bm25_score - min_score) / score_range
+
+                    search_result = SearchResult(
+                        document_id=result.get("id", "unknown"),
+                        document_title=result.get("document_title", "Unknown"),
+                        document_content=result.get("document_content", ""),
+                        source_url=result.get("source_url", ""),
+                        similarity_score=normalized_score,
+                        keyword_score=bm25_score,  # Keep original BM25 score
+                        metadata=result.get("metadata", {}),
+                    )
+                    keyword_results.append(search_result)
 
             logger.debug(f"BM25 keyword search found {len(keyword_results)} results")
             return keyword_results

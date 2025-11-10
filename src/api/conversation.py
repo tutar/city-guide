@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from src.models.conversation_model import ConversationContext
 from src.services.data_service import DataService
 from src.services.search_service import SearchService
+from src.services.navigation_service import NavigationService
 from src.utils.config import settings
 
 # Choose AI service based on configuration
@@ -207,6 +208,7 @@ async def send_message(request: SendMessageRequest):
         with DataService() as data_service:
             search_service = SearchService()
             ai_service = AIService()
+            navigation_service = NavigationService()
 
             # Get existing conversation context
             conversation_context = data_service.get_conversation_context(
@@ -244,7 +246,10 @@ async def send_message(request: SendMessageRequest):
             conversation_context.add_message("assistant", response["response"])
 
             # Update navigation options
-            if response.get("navigation_suggestions"):
+            navigation_response = navigation_service.get_navigation_options_by_category(
+                service_category_id=conversation_context.current_service_category_id,
+            )
+            if navigation_response.get("navigation_suggestions"):
                 conversation_context.navigation_options = response[
                     "navigation_suggestions"
                 ]

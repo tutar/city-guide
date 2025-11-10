@@ -3,7 +3,6 @@ AI service for City Guide Smart Assistant using Deepseek API
 """
 
 import logging
-import os
 from typing import Any
 
 import requests

@@ -80,7 +80,7 @@ async def search_government_services(query: str, category: str = None):
 
     # Build search parameters
     search_params = {
-        "metric_type": "IP",  # Inner Product for BGE-M3
+        "metric_type": "COSINE",  # Inner Product for BGE-M3
         "params": {"nprobe": 10}
     }
 
@@ -110,7 +110,7 @@ async def search_government_services(query: str, category: str = None):
 # IVF index for optimal performance
 index_params = {
     "index_type": "IVF_FLAT",
-    "metric_type": "IP",  # Inner Product for BGE-M3
+    "metric_type": "COSINE",  # Inner Product for BGE-M3
     "params": {"nlist": 1024}  # Adjust based on dataset size
 }
 
@@ -243,7 +243,7 @@ class GovernmentDataManager:
         official_results = self.collection.search(
             data=[query_embedding],
             anns_field="embedding",
-            param={"metric_type": "IP", "params": {"nprobe": 10}},
+            param={"metric_type": "COSINE", "params": {"nprobe": 10}},
             limit=top_k,
             expr="source_priority == 1 && is_active == true",
             output_fields=["document_title", "content", "source_url"]
@@ -255,7 +255,7 @@ class GovernmentDataManager:
             auxiliary_results = self.collection.search(
                 data=[query_embedding],
                 anns_field="embedding",
-                param={"metric_type": "IP", "params": {"nprobe": 10}},
+                param={"metric_type": "COSINE", "params": {"nprobe": 10}},
                 limit=remaining,
                 expr="source_priority == 2 && is_active == true",
                 output_fields=["document_title", "content", "source_url"]

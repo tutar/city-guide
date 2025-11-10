@@ -159,7 +159,7 @@ class MilvusClient:
         """Create IVF index for optimal performance"""
         index_params = {
             "index_type": "IVF_FLAT",
-            "metric_type": "IP",  # Inner Product for BGE-M3
+            "metric_type": "COSINE",  # Inner Product for BGE-M3
             "params": {"nlist": 1024}
         }
 
@@ -202,7 +202,7 @@ class MilvusClient:
             expr += f" && service_category == '{category}'"
 
         search_params = {
-            "metric_type": "IP",
+            "metric_type": "COSINE",
             "params": {"nprobe": 10}
         }
 
@@ -456,7 +456,7 @@ MILVUS_CONFIG = {
         "collection_name": "government_documents_dev",
         "index_params": {
             "index_type": "IVF_FLAT",
-            "metric_type": "IP",
+            "metric_type": "COSINE",
             "params": {"nlist": 512}
         }
     },
@@ -466,7 +466,7 @@ MILVUS_CONFIG = {
         "collection_name": "government_documents",
         "index_params": {
             "index_type": "IVF_FLAT",
-            "metric_type": "IP",
+            "metric_type": "COSINE",
             "params": {"nlist": 2048}
         }
     }

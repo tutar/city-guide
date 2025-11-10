@@ -28,65 +28,19 @@ class AIService:
         self.embedding_model_name = settings.ai.embedding_model
         self._setup_embedding_model()
 
-    def _check_local_model_cache(self, model_name: str) -> bool:
-        """Check if model exists in local cache"""
-        try:
-            from transformers.utils.hub import cached_file
-
-            # Try to get a cached file to check if model exists locally
-            config_path = cached_file(
-                model_name,
-                "config.json",
-                local_files_only=True,
-                force_download=False,
-            )
-
-            # If we get here without exception, the model exists locally
-            logger.info(f"Model {model_name} found in local cache: {config_path}")
-            return True
-
-        except Exception:
-            logger.info(f"Model {model_name} not found in local cache, will download")
-            return False
-
     def _setup_embedding_model(self):
         """Setup the embedding model for Chinese text with local cache priority"""
         try:
             logger.info(f"Loading embedding model: {self.embedding_model_name}")
 
-            # Check if model exists in local cache
-            model_in_cache = self._check_local_model_cache(self.embedding_model_name)
-
-            if model_in_cache:
-                # Load from local cache only
-                logger.info("Loading model from local cache")
-                self.tokenizer = AutoTokenizer.from_pretrained(
-                    self.embedding_model_name,
-                    trust_remote_code=True,
-                    local_files_only=True,  # Only use local files
-                    force_download=False,
-                )
-                self.embedding_model = AutoModel.from_pretrained(
-                    self.embedding_model_name,
-                    trust_remote_code=True,
-                    local_files_only=True,  # Only use local files
-                    force_download=False,
-                )
-            else:
-                # Download from remote
-                logger.info("Downloading model from remote")
-                self.tokenizer = AutoTokenizer.from_pretrained(
-                    self.embedding_model_name,
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    force_download=True,
-                )
-                self.embedding_model = AutoModel.from_pretrained(
-                    self.embedding_model_name,
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    force_download=True,
-                )
+            # Load from local cache only
+            logger.info("Loading model from local cache")
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.embedding_model_name,
+            )
+            self.embedding_model = AutoModel.from_pretrained(
+                self.embedding_model_name,
+            )
 
             # Set model to evaluation mode
             self.embedding_model.eval()

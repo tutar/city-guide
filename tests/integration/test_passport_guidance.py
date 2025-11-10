@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from src.models.conversation import ConversationContext
+from src.models.conversation_model import ConversationContext
 from src.models.services import ServiceCategory
 from src.services.ai_service import AIService
 from src.services.search_service import SearchService

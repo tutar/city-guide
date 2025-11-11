@@ -53,7 +53,6 @@ class StartConversationResponse(BaseModel):
 
     session_id: str = Field(..., description="Session identifier for this conversation")
     conversation_id: str = Field(..., description="Unique conversation identifier")
-    welcome_message: str = Field(..., description="Welcome message from the assistant")
     navigation_options: list = Field(..., description="Initial navigation options")
     service_context: dict[str, Any] | None = Field(
         None, description="Service context if starting with specific service"
@@ -100,7 +99,6 @@ async def start_conversation(request: StartConversationRequest):
                 return StartConversationResponse(
                     session_id=existing_context.user_session_id,
                     conversation_id=str(existing_context.id),
-                    welcome_message="Welcome back! How can I help you today?",
                     navigation_options=existing_context.navigation_options,
                     service_context={
                         "service_category_id": str(
@@ -129,20 +127,6 @@ async def start_conversation(request: StartConversationRequest):
                             service_category_id
                         )
 
-                        # Get navigation options for this service
-                        nav_options = data_service.get_navigation_options_by_category(
-                            service_category_id
-                        )
-                        conversation_context.navigation_options = [
-                            {
-                                "label": option.label,
-                                "action_type": option.action_type,
-                                "target_url": option.target_url,
-                                "description": option.description,
-                            }
-                            for option in nav_options
-                        ]
-
                         service_context = {
                             "service_category_id": str(service_category_id),
                             "service_name": service_category.name,
@@ -155,34 +139,6 @@ async def start_conversation(request: StartConversationRequest):
             else:
                 service_context = None
 
-            # Generate welcome message based on context
-            if service_context:
-                welcome_message = f"Welcome! I can help you with {service_context['service_name']}. What would you like to know?"
-            else:
-                welcome_message = "Welcome to the City Guide Smart Assistant! I can help you navigate government services. What would you like to know about?"
-
-            # Add welcome message to conversation
-            conversation_context.add_message("assistant", welcome_message)
-
-            # If initial message provided, process it
-            if request.initial_message:
-                conversation_context.add_message("user", request.initial_message)
-
-                # Process the message with AI service
-                response = ai_service.generate_government_guidance(
-                    user_query=request.initial_message,
-                    context_documents=[],  # Will be populated by search service
-                    conversation_history=conversation_context.get_recent_messages(),
-                )
-
-                conversation_context.add_message("assistant", response["response"])
-
-                # Update navigation options based on response
-                if response.get("navigation_suggestions"):
-                    conversation_context.navigation_options.extend(
-                        response["navigation_suggestions"]
-                    )
-
             # Save conversation context
             saved_context = data_service.create_conversation_context(
                 conversation_context
@@ -191,7 +147,6 @@ async def start_conversation(request: StartConversationRequest):
             return StartConversationResponse(
                 session_id=saved_context.user_session_id,
                 conversation_id=str(saved_context.id),
-                welcome_message=welcome_message,
                 navigation_options=saved_context.navigation_options,
                 service_context=service_context,
             )

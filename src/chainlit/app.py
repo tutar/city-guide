@@ -41,6 +41,23 @@ async def send_message_http(request: SendMessageRequest):
         return response.json()
 
 
+@cl.set_starters
+async def set_starters():
+    """suggestions to help user get started with this assistant."""
+    return [
+        cl.Starter(label="🏢办事指南", message="请提供本市最新的办事指南，包括户籍办理、社保转移等政务流程"),
+        cl.Starter(label="🚦交通", message="查询本市实时交通状况，主要拥堵路段及绕行建议"),
+        cl.Starter(label="🚇地铁", message="获取本市地铁线路图、运营时间表及换乘指南"),
+        cl.Starter(label="🎓教育", message="推荐本市优质中小学及最新教育政策解读"),
+        cl.Starter(label="👨‍👩‍👧亲子", message="寻找适合3-12岁儿童的周末活动场所和亲子项目"),
+        cl.Starter(label="🌴旅游", message="推荐本市必游景点及隐藏打卡地，避开人流高峰时段"),
+        cl.Starter(label="🗺️攻略", message="生成一份三日游详细攻略，包含住宿、美食、交通一体化方案"),
+        cl.Starter(label="💼招聘", message="查找本市科技/金融行业最新招聘信息及薪资范围"),
+        cl.Starter(label="💰特惠", message="汇总今日餐饮、购物、娱乐特惠活动，含独家折扣码"),
+        cl.Starter(label="🏠生活指南", message="提供水电维修、社区服务、便民设施等生活实用信息"),
+    ]
+
+
 @cl.on_chat_start
 async def on_chat_start():
     """Initialize conversation when chat starts"""
@@ -59,28 +76,9 @@ async def on_chat_start():
     try:
         response = await start_conversation_http(request)
 
-        # Send enhanced welcome message with context
-        welcome_content = f"""{response.get("welcome_message")}
-
-**💡 How I can help you:**
-- **Government Services**: Passport applications, business registration, visa services
-- **Document Requirements**: Complete checklists and required materials
-- **Application Process**: Step-by-step guidance for various services
-- **Service Locations**: Find nearest government service centers
-- **Status Tracking**: Check application progress and processing times
-
-Feel free to ask me anything about government services!"""
-
-        await cl.Message(content=welcome_content, author="Assistant").send()
-
         # Store conversation context
         cl.user_session.set("conversation_id", response.get("conversation_id"))
-        cl.user_session.set("navigation_options", response.get("navigation_options"))
-
-        # Display initial navigation options
-        navigation_options = response.get("navigation_options", [])
-        if navigation_options:
-            await display_navigation_options(navigation_options)
+        # Do not init navigation options because no content yet
 
     except Exception:
         await cl.Message(

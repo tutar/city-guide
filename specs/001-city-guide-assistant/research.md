@@ -377,7 +377,7 @@ Based on codebase analysis, the following infrastructure components are missing:
 ### Required Dependencies
 
 **Core Framework**:
-- `fastapi>=0.104.0`, `chainlit>=1.0.0`, `uvicorn>=0.24.0`
+- `fastapi>=0.104.0`, `chainlit>=2.0.0`, `uvicorn>=0.24.0`
 - `sqlalchemy>=2.0.0`, `psycopg2-binary>=2.9.0`
 - `pymilvus>=2.3.0`, `redis>=5.0.0`
 

@@ -2,15 +2,14 @@
 Configuration management for City Guide Smart Assistant
 """
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):
     """Database configuration settings"""
 
-    class Config:
-        env_prefix = "POSTGRES_"
+    model_config = ConfigDict(env_prefix="POSTGRES_")
 
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
@@ -34,8 +33,7 @@ class DatabaseSettings(BaseSettings):
 class MilvusSettings(BaseSettings):
     """Milvus vector database configuration"""
 
-    class Config:
-        env_prefix = "MILVUS_"
+    model_config = ConfigDict(env_prefix="MILVUS_")
 
     host: str = Field(default="localhost")
     port: int = Field(default=19530)
@@ -49,8 +47,7 @@ class MilvusSettings(BaseSettings):
 class AISettings(BaseSettings):
     """AI service configuration"""
 
-    class Config:
-        env_prefix = ""
+    model_config = ConfigDict(env_prefix="")
 
     deepseek_api_key: str = Field(default="test-api-key", alias="DEEPSEEK_API_KEY")
     deepseek_base_url: str = Field(
@@ -74,8 +71,7 @@ class AISettings(BaseSettings):
 class ChainlitSettings(BaseSettings):
     """Chainlit frontend configuration"""
 
-    class Config:
-        env_prefix = "CHAINLIT_"
+    model_config = ConfigDict(env_prefix="CHAINLIT_")
 
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8001)

@@ -5,7 +5,7 @@ Service-related data models for City Guide Smart Assistant
 import uuid
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.networks import HttpUrl
 
 
@@ -48,11 +48,12 @@ class ServiceCategory(BaseModel):
             raise ValueError("Service information must be verified within last 30 days")
         return v
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )
 
 
 class NavigationOption(BaseModel):
@@ -96,8 +97,8 @@ class NavigationOption(BaseModel):
 
     @field_validator("target_url")
     @classmethod
-    def validate_target_url(cls, v, values):
-        if values.get("action_type") in ["appointment", "location"]:
+    def validate_target_url(cls, v, info):
+        if info.data.get("action_type") in ["appointment", "location"]:
             # For appointment and location actions, URL should be provided
             if not v:
                 raise ValueError(
@@ -105,10 +106,11 @@ class NavigationOption(BaseModel):
                 )
         return v
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
         }
+    )
 
 
 class OfficialInformationSource(BaseModel):
@@ -143,8 +145,9 @@ class OfficialInformationSource(BaseModel):
             raise ValueError(f"Status must be one of: {valid_statuses}")
         return v
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )

@@ -24,9 +24,11 @@ transformers = "^4.35.2"
 torch = "^2.2.0"
 qdrant-client = "^1.7.0"
 
+# 添加内存优化依赖
+# psutil = "^5.9.0"
+# memory-profiler = "^0.61.0"
+
 # Optional dependencies for enhanced functionality
-# langchain-openai = "^0.0.2"  # Commented out due to version conflict
-# langchain-milvus = "^0.1.0"  # Commented out due to version conflict
 asyncpg = "^0.30.0"
 
 [tool.poetry.group.dev.dependencies]

@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Message(BaseModel):
@@ -33,11 +33,12 @@ class Message(BaseModel):
             raise ValueError("Content cannot be empty")
         return v.strip()
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )
 
 
 class ConversationContext(BaseModel):
@@ -200,11 +201,12 @@ class ConversationContext(BaseModel):
         )
         return sorted_suggestions[:limit]
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             uuid.UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )
 
 
 class ConversationState(BaseModel):

@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.conversation import router as conversation_router
 from src.api.health import router as health_router
+from src.api.documents import router as documents_router
+from src.api.relevance import router as relevance_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -31,6 +33,8 @@ app.add_middleware(
 # Include routers
 app.include_router(conversation_router)
 app.include_router(health_router)
+app.include_router(documents_router)
+app.include_router(relevance_router)
 
 
 @app.get("/")

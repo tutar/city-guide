@@ -34,6 +34,7 @@ cd src && pytest && ruff check .
 Python 3.12+ (backend), Chainlit (frontend): Follow standard conventions
 
 ## Recent Changes
+- 001-document-attribution: Added Python 3.12+ (backend), Chainlit (frontend) + FastAPI (backend), Chainlit (frontend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), Qwen3-Embedding-0.6B (embeddings)
 - 001-city-guide-assistant: Added Python 3.12+ (backend), Chainlit (frontend), Chainlit (frontend) + FastAPI (backend), Deepseek API (AI), PostgreSQL (relational), Milvus (vector database), Qwen3-Embedding-0.6B (embeddings)
 
 <!-- MANUAL ADDITIONS START -->

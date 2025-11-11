@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class DocumentEmbedding(BaseModel):
@@ -35,7 +35,7 @@ class DocumentEmbedding(BaseModel):
         default=True, description="Whether this embedding is active"
     )
 
-    @validator("document_type")
+    @field_validator("document_type")
     @classmethod
     def validate_document_type(cls, v):
         # Support both English and Chinese document types
@@ -59,21 +59,21 @@ class DocumentEmbedding(BaseModel):
             raise ValueError(f"Document type must be one of: {valid_types}")
         return v
 
-    @validator("embedding")
+    @field_validator("embedding")
     @classmethod
     def validate_embedding_dimension(cls, v):
         if len(v) != 1024:
             raise ValueError(f"Embedding must be 1024-dimensional, got {len(v)}")
         return v
 
-    @validator("title")
+    @field_validator("title")
     @classmethod
     def title_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Title cannot be empty")
         return v.strip()
 
-    @validator("content")
+    @field_validator("content")
     @classmethod
     def content_must_not_be_empty(cls, v):
         if not v.strip():
@@ -112,7 +112,7 @@ class SearchResult(BaseModel):
     )
     rank: int = Field(..., ge=1, description="Rank in search results")
 
-    @validator("similarity_score")
+    @field_validator("similarity_score")
     @classmethod
     def validate_similarity_score(cls, v):
         if not 0.0 <= v <= 1.0:
@@ -135,7 +135,7 @@ class BatchEmbeddingRequest(BaseModel):
         ..., description="Service category for all documents"
     )
 
-    @validator("documents")
+    @field_validator("documents")
     @classmethod
     def validate_documents(cls, v):
         if not v:

@@ -5,7 +5,7 @@ Service-related data models for City Guide Smart Assistant
 import uuid
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic.networks import HttpUrl
 
 
@@ -29,7 +29,7 @@ class ServiceCategory(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @validator("name")
+    @field_validator("name")
     @classmethod
     def name_must_be_unique(cls, v):
         # This would be validated at database level
@@ -37,7 +37,7 @@ class ServiceCategory(BaseModel):
             raise ValueError("Name cannot be empty")
         return v.strip()
 
-    @validator("last_verified")
+    @field_validator("last_verified")
     @classmethod
     def last_verified_within_30_days(cls, v):
         # Ensure both datetimes are timezone-aware for comparison
@@ -79,7 +79,7 @@ class NavigationOption(BaseModel):
         default=True, description="Whether this option is currently available"
     )
 
-    @validator("action_type")
+    @field_validator("action_type")
     @classmethod
     def validate_action_type(cls, v):
         valid_types = ["explain", "requirements", "appointment", "location", "related"]
@@ -87,14 +87,14 @@ class NavigationOption(BaseModel):
             raise ValueError(f"Action type must be one of: {valid_types}")
         return v
 
-    @validator("label")
+    @field_validator("label")
     @classmethod
     def label_must_be_clear(cls, v):
         if not v.strip():
             raise ValueError("Label must be clear and actionable")
         return v.strip()
 
-    @validator("target_url")
+    @field_validator("target_url")
     @classmethod
     def validate_target_url(cls, v, values):
         if values.get("action_type") in ["appointment", "location"]:
@@ -127,7 +127,7 @@ class OfficialInformationSource(BaseModel):
     error_count: int = Field(default=0, description="Number of consecutive errors")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @validator("update_frequency")
+    @field_validator("update_frequency")
     @classmethod
     def validate_update_frequency(cls, v):
         valid_frequencies = ["daily", "weekly", "monthly", "on_change"]
@@ -135,7 +135,7 @@ class OfficialInformationSource(BaseModel):
             raise ValueError(f"Update frequency must be one of: {valid_frequencies}")
         return v
 
-    @validator("status")
+    @field_validator("status")
     @classmethod
     def validate_status(cls, v):
         valid_statuses = ["active", "inactive", "error"]

@@ -11,6 +11,12 @@ from src.api.conversation import (
     SendMessageRequest,
     StartConversationRequest,
 )
+from src.chainlit.components.attribution_display import attribution_display
+from src.chainlit.handlers.document_navigation import (
+    handle_document_preview,
+    handle_document_navigation,
+    handle_bulk_document_access,
+)
 
 
 # FastAPI base URL
@@ -105,10 +111,19 @@ async def on_message(message: cl.Message):
 
         response = await send_message_http(request)
 
-        # Send assistant response
-        await cl.Message(
-            content=response.get("response", ""), author="Assistant"
-        ).send()
+        # Send assistant response with attribution
+        attribution_data = response.get("attribution")
+        if attribution_data:
+            # Use attribution display component
+            await attribution_display.display_response_with_attribution(
+                response_text=response.get("response", ""),
+                attribution_data=attribution_data,
+            )
+        else:
+            # Fallback to basic message display
+            await cl.Message(
+                content=response.get("response", ""), author="Assistant"
+            ).send()
 
         # Update navigation options
         navigation_options = response.get("navigation_options", [])
@@ -259,7 +274,17 @@ async def display_navigation_options(navigation_options: list):
 
 @cl.action_callback
 async def on_action(action: cl.Action):
-    """Handle navigation option selections"""
+    """Handle navigation option selections and document actions"""
+    # Check if this is a document navigation action
+    action_type = action.payload.get("action_type", "") if action.payload else ""
+    document_id = action.payload.get("document_id", "") if action.payload else ""
+
+    if action_type and document_id:
+        # Handle document navigation action
+        await handle_document_navigation_action(action_type, document_id, action.name)
+        return
+
+    # Handle regular navigation option selections
     # Extract label from payload
     action_label = action.payload.get("label", "") if action.payload else ""
 
@@ -281,10 +306,19 @@ async def on_action(action: cl.Action):
         request = SendMessageRequest(session_id=session_id, message=action_label)
         response = await send_message_http(request)
 
-        # Send assistant response
-        await cl.Message(
-            content=response.get("response", ""), author="Assistant"
-        ).send()
+        # Send assistant response with attribution
+        attribution_data = response.get("attribution")
+        if attribution_data:
+            # Use attribution display component
+            await attribution_display.display_response_with_attribution(
+                response_text=response.get("response", ""),
+                attribution_data=attribution_data,
+            )
+        else:
+            # Fallback to basic message display
+            await cl.Message(
+                content=response.get("response", ""), author="Assistant"
+            ).send()
 
         # Update navigation options
         navigation_options = response.get("navigation_options", [])
@@ -296,6 +330,60 @@ async def on_action(action: cl.Action):
         await cl.Message(
             content="Sorry, I encountered an error while processing your message. Please try again.",
             author="Assistant",
+        ).send()
+
+
+async def handle_document_navigation_action(
+    action_type: str, document_id: str, action_name: str
+):
+    """Handle document navigation actions (preview, open, download)."""
+    session_id = cl.user_session.get("session_id")
+    if not session_id:
+        await cl.Message(
+            content="Session not found. Please refresh the page and try again.",
+            author="Assistant",
+        ).send()
+        return
+
+    try:
+        # Handle the document navigation action
+        result = await handle_document_navigation(
+            action_type=action_type,
+            document_id=document_id,
+            user_session_id=session_id,
+            message_id=action_name,
+        )
+
+        if result["success"]:
+            # Show success message
+            await cl.Message(
+                content=result.get("message", "Document action completed"),
+                author="Document Navigation",
+            ).send()
+
+            # If this was a preview action, show the preview
+            if action_type == "preview" and "preview" in result:
+                from src.chainlit.handlers.document_navigation import (
+                    DocumentNavigationHandler,
+                )
+
+                handler = DocumentNavigationHandler()
+                await handler.send_document_preview_message(
+                    document_id=document_id,
+                    preview_data=result["preview"],
+                    user_session_id=session_id,
+                )
+        else:
+            # Show error message
+            await cl.Message(
+                content=f"Failed to perform document action: {result.get('error', 'Unknown error')}",
+                author="Document Navigation",
+            ).send()
+
+    except Exception as e:
+        await cl.Message(
+            content=f"Error handling document action: {str(e)}",
+            author="Document Navigation",
         ).send()
 
 

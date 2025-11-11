@@ -14,6 +14,7 @@ from src.models.conversation_model import ConversationContext
 from src.services.data_service import DataService
 from src.services.search_service import SearchService
 from src.services.navigation_service import NavigationService
+from src.services.ai_response_service import AIResponseService
 from src.utils.config import settings
 
 # Choose AI service based on configuration
@@ -28,6 +29,7 @@ router = APIRouter(prefix="/api/conversation", tags=["conversation"])
 _ai_service = AIService()
 _search_service = SearchService(ai_service=_ai_service)
 _navigation_service = NavigationService(ai_service=_ai_service)
+_ai_response_service = AIResponseService()
 
 
 class StartConversationRequest(BaseModel):
@@ -66,6 +68,20 @@ class SendMessageRequest(BaseModel):
     message: str = Field(..., description="User message content")
 
 
+class AttributionData(BaseModel):
+    """Attribution data for document sources"""
+
+    sentence_attributions: list[dict[str, Any]] = Field(
+        default_factory=list, description="Sentence-level document attributions"
+    )
+    citation_list: dict[str, Any] = Field(
+        default_factory=dict, description="Complete citation list"
+    )
+    fallback_mode: bool = Field(
+        False, description="Whether attribution is in fallback mode"
+    )
+
+
 class SendMessageResponse(BaseModel):
     """Response model for sending a message"""
 
@@ -74,6 +90,9 @@ class SendMessageResponse(BaseModel):
     conversation_history: list = Field(..., description="Updated conversation history")
     usage: dict[str, Any] | None = Field(
         None, description="API usage information if available"
+    )
+    attribution: AttributionData | None = Field(
+        None, description="Document source attribution data"
     )
 
 
@@ -222,9 +241,9 @@ async def send_message(request: SendMessageRequest):
             )
             timings["parallel_operations"] = time.time() - parallel_start
 
-            # Generate AI response
+            # Generate AI response with attribution
             ai_start = time.time()
-            response = ai_service.generate_government_guidance(
+            response = _ai_response_service.generate_response_with_attribution(
                 user_query=request.message,
                 context_documents=search_results,
                 conversation_history=conversation_history_dicts,
@@ -255,6 +274,17 @@ async def send_message(request: SendMessageRequest):
             for step, duration in timings.items():
                 print(f"  {step}: {duration:.3f}s")
 
+            # Extract attribution data from response
+            attribution_data = None
+            if "attribution" in response:
+                attribution_data = AttributionData(
+                    sentence_attributions=response["attribution"].get(
+                        "sentence_attributions", []
+                    ),
+                    citation_list=response["attribution"].get("citation_list", {}),
+                    fallback_mode=response["attribution"].get("fallback_mode", False),
+                )
+
             return SendMessageResponse(
                 response=response["response"],
                 navigation_options=updated_context.navigation_options,
@@ -267,6 +297,7 @@ async def send_message(request: SendMessageRequest):
                     for msg in updated_context.conversation_history
                 ],
                 usage=response.get("usage"),
+                attribution=attribution_data,
             )
 
     except HTTPException:

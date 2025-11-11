@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class Message(BaseModel):
@@ -18,7 +18,7 @@ class Message(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] | None = Field(default_factory=dict)
 
-    @validator("role")
+    @field_validator("role")
     @classmethod
     def validate_role(cls, v):
         valid_roles = ["user", "assistant"]
@@ -26,7 +26,7 @@ class Message(BaseModel):
             raise ValueError(f"Role must be one of: {valid_roles}")
         return v
 
-    @validator("content")
+    @field_validator("content")
     @classmethod
     def content_must_not_be_empty(cls, v):
         if not v.strip():
@@ -69,14 +69,14 @@ class ConversationContext(BaseModel):
         description="Track transitions between different service categories",
     )
 
-    @validator("user_session_id")
+    @field_validator("user_session_id")
     @classmethod
     def session_id_must_be_valid(cls, v):
         if not v.strip():
             raise ValueError("Session ID cannot be empty")
         return v.strip()
 
-    @validator("conversation_history")
+    @field_validator("conversation_history")
     @classmethod
     def conversation_history_validation(cls, v):
         # Ensure conversation history doesn't grow too large
@@ -223,7 +223,7 @@ class ConversationState(BaseModel):
         }
     )
 
-    @validator("state")
+    @field_validator("state")
     @classmethod
     def validate_state(cls, v):
         valid_states = ["created", "active", "inactive", "completed"]

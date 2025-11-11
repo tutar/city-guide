@@ -1,0 +1,129 @@
+openapi: 3.0.3
+info:
+  title: Document Attribution API
+  description: API extensions for document source attribution in AI responses
+  version: 1.0.0
+  contact:
+    name: City Guide Kit Team
+
+paths:
+  /api/conversation/message:
+    post:
+      summary: Send message to AI assistant with attribution support
+      description: Enhanced endpoint that includes document source attribution in responses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: User message
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Conversation identifier
+              required:
+                - message
+      responses:
+        '200':
+          description: AI response with document attribution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIResponseWithAttribution'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    AIResponseWithAttribution:
+      type: object
+      properties:
+        response:
+          type: string
+          description: AI-generated response text
+        conversation_id:
+          type: string
+          format: uuid
+          description: Conversation identifier
+        attribution:
+          $ref: '#/components/schemas/ResponseAttribution'
+
+    ResponseAttribution:
+      type: object
+      properties:
+        sentence_attributions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SentenceAttribution'
+          description: Attribution mapping for each sentence in response
+        citation_list:
+          $ref: '#/components/schemas/CitationList'
+
+    SentenceAttribution:
+      type: object
+      properties:
+        sentence_index:
+          type: integer
+          minimum: 0
+          description: Zero-based index of sentence in response
+        document_source_id:
+          type: string
+          format: uuid
+          description: UUID of the source document
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: AI confidence in attribution accuracy
+
+    DocumentSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID of the document source
+        title:
+          type: string
+          description: Document title for display
+        location:
+          type: string
+          description: Document storage location/URL
+        access_info:
+          type: object
+          description: Access permissions and metadata
+        created_at:
+          type: string
+          format: date-time
+          description: When document was added
+
+    CitationList:
+      type: object
+      properties:
+        document_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentSource'
+          description: List of all referenced documents
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details

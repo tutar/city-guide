@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class DocumentEmbedding(BaseModel):
@@ -31,13 +31,13 @@ class DocumentEmbedding(BaseModel):
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    @validator("document_content")
+    @field_validator("document_content")
     def content_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Document content must be non-empty")
         return v.strip()
 
-    @validator("embedding_vector")
+    @field_validator("embedding_vector")
     def validate_embedding_dimension(cls, v):
         expected_dimension = 1024  # Qwen3-Embedding-0.6B dimension
         if len(v) != expected_dimension:
@@ -46,7 +46,7 @@ class DocumentEmbedding(BaseModel):
             )
         return v
 
-    @validator("metadata")
+    @field_validator("metadata")
     def validate_metadata(cls, v):
         # Ensure source priority is set
         if "source_priority" not in v:
@@ -76,13 +76,13 @@ class SearchQuery(BaseModel):
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    @validator("query_text")
+    @field_validator("query_text")
     def query_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Query text cannot be empty")
         return v.strip()
 
-    @validator("query_embedding")
+    @field_validator("query_embedding")
     def validate_query_embedding(cls, v):
         expected_dimension = 1024  # Qwen3-Embedding-0.6B dimension
         if len(v) != expected_dimension:
@@ -108,7 +108,7 @@ class SearchResult(BaseModel):
     hybrid_score: float | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-    @validator("similarity_score")
+    @field_validator("similarity_score")
     def validate_similarity_score(cls, v):
         if not 0 <= v <= 1:
             raise ValueError("Similarity score must be between 0 and 1")
@@ -137,7 +137,7 @@ class HybridSearchRequest(BaseModel):
         default=True, description="Include semantic vector search"
     )
 
-    @validator("query")
+    @field_validator("query")
     def query_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Query cannot be empty")

@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class SearchQuery(BaseModel):
@@ -40,7 +40,7 @@ class SearchQuery(BaseModel):
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @validator("search_type")
+    @field_validator("search_type")
     @classmethod
     def validate_search_type(cls, v):
         valid_types = ["hybrid", "vector", "keyword"]
@@ -48,14 +48,14 @@ class SearchQuery(BaseModel):
             raise ValueError(f"Search type must be one of: {valid_types}")
         return v
 
-    @validator("query_text")
+    @field_validator("query_text")
     @classmethod
     def query_text_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Query text cannot be empty")
         return v.strip()
 
-    @validator("normalized_query")
+    @field_validator("normalized_query")
     @classmethod
     def normalized_query_must_not_be_empty(cls, v):
         if not v.strip():
@@ -160,7 +160,7 @@ class QuerySuggestion(BaseModel):
         default=0, ge=0, description="How often suggestion was used"
     )
 
-    @validator("confidence_score")
+    @field_validator("confidence_score")
     @classmethod
     def validate_confidence_score(cls, v):
         if not 0.0 <= v <= 1.0:

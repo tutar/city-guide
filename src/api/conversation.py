@@ -2,6 +2,8 @@
 Conversation API endpoints for City Guide Smart Assistant
 """
 
+import asyncio
+import time
 import uuid
 from typing import Any
 
@@ -21,6 +23,11 @@ else:
     from src.services.ai_service import AIService
 
 router = APIRouter(prefix="/api/conversation", tags=["conversation"])
+
+# Initialize services once to avoid repeated initialization
+_ai_service = AIService()
+_search_service = SearchService(ai_service=_ai_service)
+_navigation_service = NavigationService(ai_service=_ai_service)
 
 
 class StartConversationRequest(BaseModel):
@@ -82,8 +89,7 @@ async def start_conversation(request: StartConversationRequest):
     try:
         # Initialize services
         with DataService() as data_service:
-            SearchService()
-            ai_service = AIService()
+            ai_service = _ai_service
 
             # Check if session already exists
             existing_context = data_service.get_conversation_context(
@@ -204,60 +210,95 @@ async def send_message(request: SendMessageRequest):
     Processes user message and returns assistant response with updated
     navigation options and conversation history.
     """
+    # Performance monitoring
+    timings = {}
+
     try:
+        # Start total timing
+        total_start = time.time()
+
         with DataService() as data_service:
-            search_service = SearchService()
-            ai_service = AIService()
-            navigation_service = NavigationService()
+            # Use pre-initialized services to avoid repeated initialization
+            search_service = _search_service
+            ai_service = _ai_service
+            navigation_service = _navigation_service
+            timings["service_init"] = 0.0  # Service initialization is now zero-cost
 
             # Get existing conversation context
+            context_start = time.time()
             conversation_context = data_service.get_conversation_context(
                 request.session_id
             )
             if not conversation_context:
                 raise HTTPException(status_code=404, detail="Conversation not found")
+            timings["get_context"] = time.time() - context_start
 
             # Add user message to conversation
+            add_message_start = time.time()
             conversation_context.add_message("user", request.message)
+            timings["add_user_message"] = time.time() - add_message_start
 
-            # Search for relevant documents
-            search_results = search_service.search_documents(
-                query=request.message,
-                service_category_id=conversation_context.current_service_category_id,
+            # Parallel execution: search documents and get navigation options concurrently
+            parallel_start = time.time()
+
+            # Create tasks for parallel execution
+            search_task = asyncio.create_task(
+                search_service.search_documents(
+                    query=request.message,
+                    service_category_id=conversation_context.current_service_category_id,
+                )
             )
 
-            # Convert Message objects to dictionaries for AI service
-            conversation_history_dicts = [
-                {
-                    "role": msg.role,
-                    "content": msg.content,
-                }
-                for msg in conversation_context.get_recent_messages()
-            ]
+            nav_task = asyncio.create_task(
+                navigation_service.get_navigation_options_by_category(
+                    service_category_id=conversation_context.current_service_category_id
+                    or settings.default_service_category_id,
+                )
+            )
+
+            # Get conversation history as dictionaries (optimized)
+            convert_start = time.time()
+            conversation_history_dicts = conversation_context.get_recent_messages_dict()
+            timings["convert_history"] = time.time() - convert_start
+
+            # Wait for both tasks to complete
+            search_results, navigation_response = await asyncio.gather(
+                search_task, nav_task
+            )
+            timings["parallel_operations"] = time.time() - parallel_start
 
             # Generate AI response
+            ai_start = time.time()
             response = ai_service.generate_government_guidance(
                 user_query=request.message,
                 context_documents=search_results,
                 conversation_history=conversation_history_dicts,
             )
+            timings["ai_generation"] = time.time() - ai_start
 
             # Add assistant response to conversation
+            add_assistant_start = time.time()
             conversation_context.add_message("assistant", response["response"])
+            timings["add_assistant_message"] = time.time() - add_assistant_start
 
-            # Update navigation options
-            navigation_response = navigation_service.get_navigation_options_by_category(
-                service_category_id=conversation_context.current_service_category_id,
-            )
-            if navigation_response.get("navigation_suggestions"):
-                conversation_context.navigation_options = response[
-                    "navigation_suggestions"
-                ]
+            # Update navigation options from parallel task result
+            if navigation_response:
+                conversation_context.navigation_options = navigation_response
 
             # Save updated conversation context
+            save_start = time.time()
             updated_context = data_service.update_conversation_context(
                 request.session_id, conversation_context
             )
+            timings["save_context"] = time.time() - save_start
+
+            # Calculate total time
+            timings["total"] = time.time() - total_start
+
+            # Log performance metrics
+            print(f"Performance metrics for send_message:")
+            for step, duration in timings.items():
+                print(f"  {step}: {duration:.3f}s")
 
             return SendMessageResponse(
                 response=response["response"],

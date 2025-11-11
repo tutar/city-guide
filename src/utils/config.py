@@ -101,6 +101,9 @@ class Settings(BaseSettings):
     secret_key: str = Field(
         default="your-secret-key-change-in-production", alias="SECRET_KEY"
     )
+    default_service_category_id: str = Field(
+        default="", alias="DEFAULT_SERVICE_CATEGORY_ID"
+    )
 
     # Sub-configurations
     database: DatabaseSettings = DatabaseSettings()

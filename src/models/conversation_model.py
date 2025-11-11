@@ -96,6 +96,17 @@ class ConversationContext(BaseModel):
         """Get recent messages from conversation history"""
         return self.conversation_history[-limit:]
 
+    def get_recent_messages_dict(self, limit: int = 10) -> list[dict[str, Any]]:
+        """Get recent messages as dictionaries for AI service (more efficient)"""
+        recent_messages = self.conversation_history[-limit:]
+        return [
+            {
+                "role": msg.role,
+                "content": msg.content,
+            }
+            for msg in recent_messages
+        ]
+
     def should_archive(self) -> bool:
         """Check if conversation should be archived due to inactivity"""
         if not self.is_active:

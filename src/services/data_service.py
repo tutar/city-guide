@@ -170,7 +170,7 @@ class DataService:
         try:
             db_categories = (
                 self.db.query(ServiceCategory)
-                .filter(ServiceCategory.is_active is True)
+                .filter(ServiceCategory.is_active == True)
                 .all()
             )
 
@@ -453,7 +453,7 @@ class DataService:
                 self.db.query(NavigationOption)
                 .filter(
                     NavigationOption.service_category_id == category_id,
-                    NavigationOption.is_active is True,
+                    NavigationOption.is_active == True,
                 )
                 .order_by(NavigationOption.priority)
                 .all()
@@ -486,7 +486,7 @@ class DataService:
                 self.db.query(NavigationOption)
                 .filter(
                     NavigationOption.service_category_id == category_id,
-                    NavigationOption.is_active is True,
+                    NavigationOption.is_active == True,
                     NavigationOption.priority <= priority_threshold,
                 )
                 .order_by(NavigationOption.priority)
@@ -562,7 +562,7 @@ class DataService:
         try:
             db_options = (
                 self.db.query(NavigationOption)
-                .filter(NavigationOption.is_active is True)
+                .filter(NavigationOption.is_active == True)
                 .order_by(NavigationOption.priority)
                 .all()
             )
@@ -631,7 +631,7 @@ class DataService:
         try:
             db_categories = (
                 self.db.query(ServiceCategory)
-                .filter(ServiceCategory.is_active is True)
+                .filter(ServiceCategory.is_active == True)
                 .order_by(ServiceCategory.name)
                 .all()
             )

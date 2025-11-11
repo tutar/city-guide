@@ -11,8 +11,49 @@ from transformers import AutoModel, AutoTokenizer
 
 from src.utils.config import settings
 
+# Simple in-memory cache for AI responses
+_response_cache = {}
+_CACHE_MAX_SIZE = 1000
+_CACHE_TTL = 300  # 5 minutes
+
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+def _get_cache_key(
+    messages: list[dict[str, str]], system_prompt: str | None = None
+) -> str:
+    """Generate a cache key from messages and system prompt"""
+    import hashlib
+    import json
+
+    # Ensure messages are in dict format
+    messages_dicts = []
+    for msg in messages:
+        if hasattr(msg, "role") and hasattr(msg, "content"):
+            # Convert Message object to dict
+            messages_dicts.append({"role": msg.role, "content": msg.content})
+        else:
+            # Already a dict
+            messages_dicts.append(msg)
+
+    # Create a string representation of the input
+    cache_data = {"messages": messages_dicts, "system_prompt": system_prompt}
+    cache_str = json.dumps(cache_data, sort_keys=True)
+
+    # Generate hash
+    return hashlib.md5(cache_str.encode()).hexdigest()
+
+
+def _clean_cache():
+    """Clean cache if it exceeds maximum size"""
+    global _response_cache
+    if len(_response_cache) > _CACHE_MAX_SIZE:
+        # Remove oldest entries (first 20%)
+        keys_to_remove = list(_response_cache.keys())[: _CACHE_MAX_SIZE // 5]
+        for key in keys_to_remove:
+            _response_cache.pop(key, None)
+        logger.info(f"Cleaned cache, removed {len(keys_to_remove)} entries")
 
 
 class AIService:
@@ -82,10 +123,26 @@ class AIService:
     ) -> dict[str, Any]:
         """Send chat completion request to Deepseek API"""
         try:
+            # Check cache first
+            cache_key = _get_cache_key(messages, system_prompt)
+            if cache_key in _response_cache:
+                logger.info("Cache hit for AI response")
+                return _response_cache[cache_key]
+
+            # Ensure messages are in dict format
+            messages_dicts = []
+            for msg in messages:
+                if hasattr(msg, "role") and hasattr(msg, "content"):
+                    # Convert Message object to dict
+                    messages_dicts.append({"role": msg.role, "content": msg.content})
+                else:
+                    # Already a dict
+                    messages_dicts.append(msg)
+
             # Prepare request payload
             payload = {
                 "model": "deepseek-chat",
-                "messages": messages,
+                "messages": messages_dicts,
                 "max_tokens": max_tokens or self.max_tokens,
                 "temperature": temperature or self.temperature,
                 "stream": False,
@@ -117,6 +174,10 @@ class AIService:
                 raise Exception(f"API request failed: {response.status_code}")
 
             result = response.json()
+
+            # Cache the result
+            _response_cache[cache_key] = result
+            _clean_cache()
 
             logger.info(
                 f"Deepseek API response received, tokens used: {result.get('usage', {}).get('total_tokens', 0)}"
@@ -151,37 +212,43 @@ Guidelines:
 
 Format your response with clear sections and bullet points when appropriate."""
 
-            # Prepare context from documents
+            # Prepare context from documents - OPTIMIZED: limit to top 2 documents and shorter content
             context_text = ""
             for i, doc in enumerate(
-                context_documents[:3]
-            ):  # Use top 3 most relevant documents
+                context_documents[:2]
+            ):  # OPTIMIZED: Use only top 2 most relevant documents
                 context_text += (
                     f"\n\nDocument {i+1}: {doc.get('document_title', 'Unknown')}\n"
                 )
-                context_text += f"Content: {doc.get('document_content', '')[:500]}..."
+                # OPTIMIZED: Shorter content to reduce token count
+                context_text += f"Content: {doc.get('document_content', '')[:300]}..."
 
-            # Prepare user message with context
-            user_message = f"""User Query: {user_query}
+            # Prepare user message with context - OPTIMIZED: more concise
+            user_message = f"""Query: {user_query}
 
-Relevant Information:{context_text}
+Context:{context_text}
 
-Please provide guidance for this government service query."""
+Provide government service guidance."""
 
-            # Prepare messages for API
+            # Prepare messages for API - OPTIMIZED: limit conversation history
             messages = []
 
             # Add conversation history if available
             if conversation_history:
                 messages.extend(
-                    conversation_history[-5:]
-                )  # Last 5 messages for context
+                    conversation_history[-3:]
+                )  # OPTIMIZED: Last 3 messages only
 
             # Add current user message
             messages.append({"role": "user", "content": user_message})
 
-            # Get response from Deepseek API
-            response = self.chat_completion(messages, system_prompt)
+            # Get response from Deepseek API with optimized parameters
+            response = self.chat_completion(
+                messages,
+                system_prompt,
+                max_tokens=800,  # OPTIMIZED: Limit response length
+                temperature=0.3,  # OPTIMIZED: More deterministic responses
+            )
 
             # Extract the assistant's response
             assistant_response = response["choices"][0]["message"]["content"]

@@ -167,10 +167,6 @@ async def display_navigation_options(navigation_options: list):
 
     # Display high priority options first
     if high_priority_options:
-        await cl.Message(
-            content="**Recommended Next Steps:**", author="Navigation"
-        ).send()
-
         high_priority_actions = []
         for i, option in enumerate(high_priority_options):
             action_type = option.get("action_type", "general")
@@ -195,15 +191,13 @@ async def display_navigation_options(navigation_options: list):
 
         if high_priority_actions:
             await cl.Message(
-                content="high_priority_actions",
+                content="**Recommended Next Steps:**",
                 actions=high_priority_actions,
                 author="Navigation",
             ).send()
 
     # Display medium priority options
     if medium_priority_options:
-        await cl.Message(content="**Related Actions:**", author="Navigation").send()
-
         medium_priority_actions = []
         for i, option in enumerate(medium_priority_options):
             action_type = option.get("action_type", "general")
@@ -228,15 +222,13 @@ async def display_navigation_options(navigation_options: list):
 
         if medium_priority_actions:
             await cl.Message(
-                content="medium_priority_actions",
+                content="**Related Actions:**",
                 actions=medium_priority_actions,
                 author="Navigation",
             ).send()
 
     # Display low priority options
     if low_priority_options:
-        await cl.Message(content="**Additional Options:**", author="Navigation").send()
-
         low_priority_actions = []
         for i, option in enumerate(low_priority_options):
             action_type = option.get("action_type", "general")
@@ -261,7 +253,7 @@ async def display_navigation_options(navigation_options: list):
 
         if low_priority_actions:
             await cl.Message(
-                content="low_priority_actions",
+                content="**Additional Options:**",
                 actions=low_priority_actions,
                 author="Navigation",
             ).send()

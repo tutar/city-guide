@@ -8,6 +8,7 @@ from typing import Any
 
 from src.services.data_service import DataService
 from src.services.navigation_generator import NavigationGenerator
+from src.services.ai_service import AIService
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -16,11 +17,11 @@ logger = logging.getLogger(__name__)
 class NavigationService:
     """Service for managing navigation options and filtering by service category"""
 
-    def __init__(self):
+    def __init__(self, ai_service: AIService | None = None):
         self.data_service = DataService()
-        self.navigation_generator = NavigationGenerator()
+        self.navigation_generator = NavigationGenerator(ai_service=ai_service)
 
-    def get_navigation_options_by_category(
+    async def get_navigation_options_by_category(
         self,
         service_category_id: uuid.UUID,
         conversation_context: dict[str, Any] | None = None,

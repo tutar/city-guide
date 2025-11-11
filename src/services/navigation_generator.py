@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 class NavigationGenerator:
     """Service for generating dynamic navigation options based on conversation context"""
 
-    def __init__(self):
-        self.ai_service = AIService()
+    def __init__(self, ai_service: AIService | None = None):
+        self.ai_service = ai_service or AIService()
         self.data_service = DataService()
 
     def generate_dynamic_navigation_options(

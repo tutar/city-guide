@@ -2,6 +2,7 @@
 Search service for City Guide Smart Assistant implementing hybrid search with RRF fusion
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -18,9 +19,9 @@ logger = logging.getLogger(__name__)
 class SearchService:
     """Service for hybrid search combining semantic and keyword search"""
 
-    def __init__(self):
+    def __init__(self, ai_service: AIService | None = None):
         self.embedding_service = EmbeddingService()
-        self.ai_service = AIService()
+        self.ai_service = ai_service or AIService()
         self.bm25_service = BM25Service()
         self._initialize_bm25_index()
 
@@ -355,8 +356,8 @@ class SearchService:
             logger.error(f"Failed to handle external URL: {e}")
             raise
 
-    def search_documents(
-        self, query: str, service_category_id: str | None = None, limit: int = 10
+    async def search_documents(
+        self, query: str, service_category_id: str | None = None, limit: int = 5
     ) -> list[dict[str, Any]]:
         """
         Search for documents using hybrid search
@@ -365,17 +366,20 @@ class SearchService:
         that can be used by the conversation API.
         """
         try:
+            # OPTIMIZED: Use smaller limit for faster search
+            effective_limit = min(limit, 5)
+
             # Create search request
             search_request = HybridSearchRequest(
                 query=query,
-                limit=limit,
+                limit=effective_limit,
                 include_semantic_search=True,
-                include_keyword_search=True,
+                include_keyword_search=False,  # OPTIMIZED: Disable keyword search for speed
                 service_category_id=service_category_id,
             )
 
-            # Perform hybrid search
-            search_results = self.hybrid_search(search_request)
+            # Perform hybrid search in thread to avoid blocking event loop with GPU operations
+            search_results = await asyncio.to_thread(self.hybrid_search, search_request)
 
             # Convert to simple dict format for API response
             documents = []

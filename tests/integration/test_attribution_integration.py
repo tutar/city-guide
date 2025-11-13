@@ -30,13 +30,13 @@ class TestAttributionIntegration:
         user_query = "What are the requirements for obtaining a passport?"
         context_documents = [
             {
-                "document_title": "Passport Application Guide",
-                "document_content": "To apply for a passport, you need valid ID, proof of citizenship, and passport photos.",
+                "title": "Passport Application Guide",
+                "content": "To apply for a passport, you need valid ID, proof of citizenship, and passport photos.",
                 "document_type": "guide",
             },
             {
-                "document_title": "Government ID Requirements",
-                "document_content": "Valid government-issued ID is required for all official applications.",
+                "title": "Government ID Requirements",
+                "content": "Valid government-issued ID is required for all official applications.",
                 "document_type": "requirements",
             },
         ]

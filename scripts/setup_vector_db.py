@@ -40,21 +40,31 @@ def connect_to_milvus():
 def create_collection():
     """Create document embeddings collection"""
     collection_name = settings.milvus.collection
+    embedding_dimension = settings.ai.embedding_dimension
 
     # Check if collection already exists
     if utility.has_collection(collection_name):
         logger.info(f"Collection '{collection_name}' already exists")
         return Collection(collection_name)
 
-    # Define collection schema
+    # Define collection schema - Unified design
     fields = [
+        # Primary key and identifiers
         FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=36),
         FieldSchema(name="service_category_id", dtype=DataType.VARCHAR, max_length=36),
+        FieldSchema(name="document_url", dtype=DataType.VARCHAR, max_length=500),
         FieldSchema(name="document_type", dtype=DataType.VARCHAR, max_length=50),
+        # Document content
         FieldSchema(name="title", dtype=DataType.VARCHAR, max_length=500),
         FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=65535),
-        FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1024),
+        # Vector and indexing
+        FieldSchema(
+            name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_dimension
+        ),
+        FieldSchema(name="chunk_index", dtype=DataType.INT64),
+        # Metadata and version control
         FieldSchema(name="metadata", dtype=DataType.JSON),
+        FieldSchema(name="embedding_model", dtype=DataType.VARCHAR, max_length=100),
         FieldSchema(name="created_at", dtype=DataType.INT64),
     ]
 

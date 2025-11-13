@@ -4,7 +4,7 @@ Embedding service for City Guide Smart Assistant using Milvus vector database
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from pymilvus import (
@@ -55,6 +55,10 @@ class EmbeddingService:
                 self.collection = Collection(self.collection_name)
                 logger.info(f"Using existing collection: {self.collection_name}")
 
+            # Load collection for immediate use
+            self.collection.load()
+            logger.info(f"Collection loaded: {self.collection_name}")
+
         except Exception as e:
             logger.error(f"Failed to setup collection: {e}")
             raise
@@ -62,24 +66,33 @@ class EmbeddingService:
     def _create_collection(self):
         """Create the document embeddings collection"""
         try:
-            # Define schema
+            # Define schema - Unified design
             fields = [
+                # Primary key and identifiers
                 FieldSchema(
                     name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=36
                 ),
-                FieldSchema(name="source_id", dtype=DataType.VARCHAR, max_length=36),
+                FieldSchema(
+                    name="service_category_id", dtype=DataType.VARCHAR, max_length=36
+                ),
                 FieldSchema(
                     name="document_url", dtype=DataType.VARCHAR, max_length=500
                 ),
                 FieldSchema(
-                    name="document_title", dtype=DataType.VARCHAR, max_length=500
+                    name="document_type", dtype=DataType.VARCHAR, max_length=50
                 ),
-                FieldSchema(name="chunk_index", dtype=DataType.INT64),
+                # Document content
+                FieldSchema(name="title", dtype=DataType.VARCHAR, max_length=500),
+                FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=65535),
+                # Vector and indexing
                 FieldSchema(
-                    name="embedding_vector",
+                    name="embedding",
                     dtype=DataType.FLOAT_VECTOR,
                     dim=self.embedding_dimension,
                 ),
+                FieldSchema(name="chunk_index", dtype=DataType.INT64),
+                # Metadata and version control
+                FieldSchema(name="metadata", dtype=DataType.JSON),
                 FieldSchema(
                     name="embedding_model", dtype=DataType.VARCHAR, max_length=100
                 ),
@@ -95,9 +108,9 @@ class EmbeddingService:
             index_params = {
                 "index_type": "IVF_FLAT",
                 "metric_type": "COSINE",
-                "params": {"nlist": 1024},
+                "params": {"nlist": 128},
             }
-            self.collection.create_index("embedding_vector", index_params)
+            self.collection.create_index("embedding", index_params)
 
             logger.info(f"Created collection: {self.collection_name}")
 
@@ -108,20 +121,19 @@ class EmbeddingService:
     def store_document_embedding(self, document_embedding: DocumentEmbedding) -> str:
         """Store a document embedding in Milvus"""
         try:
-            # Prepare data for insertion - adapt to Milvus schema
+            # Prepare data for insertion - Unified schema
             data = [
                 [str(document_embedding.id)],  # id
-                [
-                    str(document_embedding.service_category_id)
-                ],  # source_id (use service_category_id)
-                [
-                    document_embedding.metadata.get("source", "")
-                ],  # document_url (use source from metadata)
-                [document_embedding.title],  # document_title
+                [str(document_embedding.service_category_id)],  # service_category_id
+                [document_embedding.metadata.get("source", "")],  # document_url
+                [document_embedding.document_type],  # document_type
+                [document_embedding.title],  # title
+                [document_embedding.content],  # content
+                [document_embedding.embedding],  # embedding
                 [document_embedding.metadata.get("section_index", 0)],  # chunk_index
-                [document_embedding.embedding],  # embedding_vector
+                [document_embedding.metadata],  # metadata
                 ["Qwen/Qwen3-Embedding-0.6B"],  # embedding_model
-                [int(datetime.utcnow().timestamp())],  # created_at
+                [int(datetime.now(timezone.utc).timestamp())],  # created_at
             ]
 
             # Insert into collection
@@ -143,25 +155,25 @@ class EmbeddingService:
     ) -> list[dict[str, Any]]:
         """Search for similar documents using vector similarity"""
         try:
-            # Load collection for search
-            self.collection.load()
-
             # Search parameters
             search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
 
             # Execute search
             results = self.collection.search(
                 data=[query_embedding],
-                anns_field="embedding_vector",
+                anns_field="embedding",
                 param=search_params,
                 limit=limit,
                 expr=filter_expression,
                 output_fields=[
                     "id",
-                    "source_id",
+                    "service_category_id",
                     "document_url",
-                    "document_title",
+                    "document_type",
+                    "title",
+                    "content",
                     "chunk_index",
+                    "metadata",
                 ],
             )
 
@@ -175,12 +187,16 @@ class EmbeddingService:
 
                 result = {
                     "document_id": uuid.UUID(hit.entity.get("id")),
-                    "source_id": uuid.UUID(hit.entity.get("source_id")),
+                    "service_category_id": uuid.UUID(
+                        hit.entity.get("service_category_id")
+                    ),
                     "document_url": hit.entity.get("document_url"),
-                    "document_title": hit.entity.get("document_title"),
+                    "document_type": hit.entity.get("document_type"),
+                    "title": hit.entity.get("title"),
+                    "content": hit.entity.get("content"),
                     "chunk_index": hit.entity.get("chunk_index"),
+                    "metadata": hit.entity.get("metadata", {}),
                     "similarity_score": similarity_score,
-                    "metadata": {},
                 }
                 search_results.append(result)
 
@@ -194,17 +210,18 @@ class EmbeddingService:
     def get_document_by_id(self, document_id: str) -> dict[str, Any] | None:
         """Get document embedding by ID"""
         try:
-            self.collection.load()
-
             # Query by primary key
             result = self.collection.query(
                 expr=f"id == '{document_id}'",
                 output_fields=[
                     "id",
-                    "source_id",
+                    "service_category_id",
                     "document_url",
-                    "document_title",
+                    "document_type",
+                    "title",
+                    "content",
                     "chunk_index",
+                    "metadata",
                     "embedding_model",
                     "created_at",
                 ],
@@ -214,10 +231,13 @@ class EmbeddingService:
                 document = result[0]
                 return {
                     "id": uuid.UUID(document["id"]),
-                    "source_id": uuid.UUID(document["source_id"]),
+                    "service_category_id": uuid.UUID(document["service_category_id"]),
                     "document_url": document["document_url"],
-                    "document_title": document["document_title"],
+                    "document_type": document["document_type"],
+                    "title": document["title"],
+                    "content": document["content"],
                     "chunk_index": document["chunk_index"],
+                    "metadata": document["metadata"],
                     "embedding_model": document["embedding_model"],
                     "created_at": datetime.fromtimestamp(document["created_at"]),
                 }
@@ -332,7 +352,7 @@ class EmbeddingService:
                     if search_query.response_quality
                     else -1
                 ],  # response_quality
-                [int(datetime.utcnow().timestamp())],  # created_at
+                [int(datetime.now(timezone.utc).timestamp())],  # created_at
             ]
 
             # Insert into collection

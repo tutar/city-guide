@@ -335,12 +335,12 @@ class TestAIService:
                 user_query = "How to apply for passport?"
                 context_documents = [
                     {
-                        "document_title": "Passport Requirements",
-                        "document_content": "Requirements content...",
+                        "title": "Passport Requirements",
+                        "content": "Requirements content...",
                     },
                     {
-                        "document_title": "Application Process",
-                        "document_content": "Process content...",
+                        "title": "Application Process",
+                        "content": "Process content...",
                     },
                 ]
                 conversation_history = [

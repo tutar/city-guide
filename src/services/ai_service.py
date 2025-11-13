@@ -217,11 +217,9 @@ Format your response with clear sections and bullet points when appropriate."""
             for i, doc in enumerate(
                 context_documents[:2]
             ):  # OPTIMIZED: Use only top 2 most relevant documents
-                context_text += (
-                    f"\n\nDocument {i+1}: {doc.get('document_title', 'Unknown')}\n"
-                )
+                context_text += f"\n\nDocument {i+1}: {doc.get('title', 'Unknown')}\n"
                 # OPTIMIZED: Shorter content to reduce token count
-                context_text += f"Content: {doc.get('document_content', '')[:300]}..."
+                context_text += f"Content: {doc.get('content', '')[:300]}..."
 
             # Prepare user message with context - OPTIMIZED: more concise
             user_message = f"""Query: {user_query}

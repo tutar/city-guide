@@ -236,7 +236,7 @@ class AIResponseService:
             score += 0.3
 
         # Check document content
-        content = document.get("document_content", "").lower()
+        content: str = document.get("document_content", "").lower()
         if content:
             # Count overlapping words
             sentence_words = set(sentence.split())
@@ -265,7 +265,7 @@ class AIResponseService:
         import hashlib
 
         # Create a unique identifier from document metadata
-        doc_key = f"{document.get('document_title', '')}:{document.get('document_content', '')[:100]}"
+        doc_key = f"{document.get('title', '')}:{document.get('content', '')[:100]}"
         doc_hash = hashlib.md5(doc_key.encode()).hexdigest()
 
         # Convert hash to UUID
@@ -289,6 +289,12 @@ class AIResponseService:
             Enhanced response with attribution
         """
         enhanced_response = ai_response.copy()
+
+        # Embed document citations into the response text
+        response_with_citations = self._embed_citations_into_response(
+            ai_response.get("response", ""), response_attribution, context_documents
+        )
+        enhanced_response["response"] = response_with_citations
 
         # Add attribution data
         enhanced_response["attribution"] = {
@@ -319,6 +325,81 @@ class AIResponseService:
 
         return enhanced_response
 
+    def _embed_citations_into_response(
+        self,
+        response_text: str,
+        response_attribution: ResponseAttribution,
+        context_documents: List[Dict[str, Any]],
+    ) -> str:
+        """
+        Embed document citations into the response text.
+
+        Args:
+            response_text: Original response text
+            response_attribution: Attribution data
+            context_documents: Context documents used
+
+        Returns:
+            Response text with embedded citations
+        """
+        if not response_attribution.sentence_attributions:
+            return response_text
+
+        # Split response into sentences
+        sentences = self._split_into_sentences(response_text)
+
+        # Create citation mapping
+        citation_map = {}
+        for attribution in response_attribution.sentence_attributions:
+            if (
+                attribution.confidence_score > 0.3
+            ):  # Only include high-confidence attributions
+                doc_id = attribution.document_source_id
+                if doc_id not in citation_map:
+                    citation_map[doc_id] = {
+                        "title": self._get_document_title(doc_id, context_documents),
+                        "citation_number": len(citation_map) + 1,
+                    }
+
+        # If no citations to add, return original text
+        if not citation_map:
+            return response_text
+
+        # Add citations to sentences
+        enhanced_sentences = []
+        for i, sentence in enumerate(sentences):
+            enhanced_sentence = sentence
+
+            # Find attribution for this sentence
+            for attribution in response_attribution.sentence_attributions:
+                if (
+                    attribution.sentence_index == i
+                    and attribution.confidence_score > 0.3
+                ):
+                    doc_id = attribution.document_source_id
+                    if doc_id in citation_map:
+                        citation_number = citation_map[doc_id]["citation_number"]
+                        # Add citation marker
+                        enhanced_sentence = f"{sentence}[{citation_number}]"
+                        break
+
+            enhanced_sentences.append(enhanced_sentence)
+
+        # Combine sentences back into text
+        response_with_citations = ". ".join(enhanced_sentences)
+
+        # Add citation references at the end
+        if citation_map:
+            citation_references = "\n\n**References:**\n"
+            for doc_id, citation_info in citation_map.items():
+                title = citation_info["title"]
+                citation_number = citation_info["citation_number"]
+                citation_references += f"[{citation_number}] {title}\n"
+
+            response_with_citations += citation_references
+
+        return response_with_citations
+
     def _get_document_title(
         self, doc_id: UUID, context_documents: List[Dict[str, Any]]
     ) -> str:
@@ -338,7 +419,7 @@ class AIResponseService:
             # Check if this document matches our ID (simplified)
             potential_id = self._get_document_source_id(document)
             if potential_id == doc_id:
-                return document.get("document_title", "Unknown Document")
+                return document.get("title", "Unknown Document")
 
         return "Unknown Document"
 

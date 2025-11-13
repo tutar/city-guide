@@ -35,7 +35,7 @@ class SearchService:
             results = self.embedding_service.collection.query(
                 expr="",
                 limit=1000,
-                output_fields=["id", "document_title", "document_url", "chunk_index"],
+                output_fields=["id", "title", "document_url", "chunk_index"],
             )
 
             # Prepare documents for BM25 indexing
@@ -43,10 +43,8 @@ class SearchService:
             for doc in results:
                 document = {
                     "id": doc["id"],
-                    "document_title": doc.get("document_title", "Unknown"),
-                    "document_content": doc.get(
-                        "document_title", ""
-                    ),  # Use title as content
+                    "document_title": doc.get("title", "Unknown"),
+                    "document_content": doc.get("title", ""),  # Use title as content
                     "source_url": doc.get("document_url", ""),
                     "chunk_index": doc.get("chunk_index", 0),
                 }
@@ -105,7 +103,7 @@ class SearchService:
             filter_expression = None
             if search_request.service_category_id:
                 filter_expression = (
-                    f"source_id == '{search_request.service_category_id}'"
+                    f"service_category_id == '{search_request.service_category_id}'"
                 )
 
             # Search for similar documents
@@ -120,8 +118,10 @@ class SearchService:
             for result in semantic_results:
                 search_result = SearchResult(
                     document_id=result["document_id"],
-                    document_title=result["document_title"],
-                    document_content="",  # Content would be fetched separately
+                    document_title=result["title"],
+                    document_content=result[
+                        "content"
+                    ],  # Content would be fetched separately
                     source_url=result["document_url"],
                     similarity_score=result["similarity_score"],
                     metadata=result.get("metadata", {}),

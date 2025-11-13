@@ -228,8 +228,8 @@ class TestAccessibleChatInterface:
         """Test displaying search results through chat interface"""
         results = [
             {
-                "document_title": "Test Result",
-                "document_content": "Test content",
+                "title": "Test Result",
+                "content": "Test content",
                 "source_url": "https://example.com",
             }
         ]

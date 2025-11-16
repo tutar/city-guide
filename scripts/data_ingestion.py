@@ -54,103 +54,6 @@ async def create_passport_service_category():
         return created_service
 
 
-async def create_passport_navigation_options(service_category_id):
-    """Create navigation options for passport service"""
-
-    logger.info("Creating passport service navigation options...")
-
-    with DataService() as data_service:
-        # Navigation options for passport service
-        navigation_options = [
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Passport Requirements",
-                action_type="requirements",
-                description="View required documents and eligibility criteria for passport applications",
-                priority=1,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Make Appointment",
-                action_type="appointment",
-                target_url=HttpUrl(
-                    "https://www.gov.hk/en/residents/immigration/traveldoc/hksarpassport/applyhkpassport.htm"
-                ),
-                description="Schedule an appointment for passport application or renewal",
-                priority=2,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Required Materials",
-                action_type="requirements",
-                description="Checklist of documents and materials needed for passport application",
-                priority=3,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Service Locations",
-                action_type="location",
-                target_url=HttpUrl(
-                    "https://www.immd.gov.hk/eng/contactus/office_hour.html"
-                ),
-                description="Find nearby Immigration Department offices for passport services",
-                priority=4,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Passport Renewal",
-                action_type="explain",
-                description="Step-by-step guide for passport renewal process",
-                priority=5,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Lost Passport",
-                action_type="explain",
-                description="Procedures for reporting and replacing lost or stolen passports",
-                priority=6,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Fees and Payment",
-                action_type="explain",
-                description="Current passport application fees and payment methods",
-                priority=7,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Processing Time",
-                action_type="explain",
-                description="Estimated processing times for passport applications",
-                priority=8,
-                is_active=True,
-            ),
-            NavigationOption(
-                service_category_id=service_category_id,
-                label="Related Services",
-                action_type="related",
-                description="Other immigration and travel document services",
-                priority=9,
-                is_active=True,
-            ),
-        ]
-
-        created_options = []
-        for option in navigation_options:
-            created_option = data_service.create_navigation_option(option)
-            created_options.append(created_option)
-            logger.info(f"Created navigation option: {created_option.label}")
-
-        return created_options
-
-
 async def create_sample_passport_documents():
     """Create sample passport document embeddings for search"""
 
@@ -502,17 +405,11 @@ async def main():
                 "Passport service already exists, checking for additional services..."
             )
         else:
-            # Step 2: Create navigation options
-            navigation_options = await create_passport_navigation_options(
-                passport_service.id
-            )
-
             # Step 3: Create sample document embeddings
             document_count = await create_sample_passport_documents()
 
             logger.info("Passport service data ingestion completed!")
             logger.info(f"- Created service category: {passport_service.name}")
-            logger.info(f"- Created navigation options: {len(navigation_options)}")
             logger.info(f"- Added document embeddings: {document_count}")
 
         # Step 4: Create additional service categories

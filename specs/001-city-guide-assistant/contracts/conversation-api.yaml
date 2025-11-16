@@ -61,7 +61,7 @@ paths:
   /conversation/{session_id}/message:
     post:
       summary: Send a message in conversation
-      description: Process user message using Deepseek API with hybrid search and return AI response with navigation options
+      description: Process user message using Deepseek API with hybrid search and return AI response
       tags:
         - Conversation
       parameters:
@@ -196,10 +196,6 @@ components:
         ai_response:
           type: string
           description: AI-generated response to user message
-        navigation_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/NavigationOption'
         current_service_category:
           $ref: '#/components/schemas/ServiceCategory'
           nullable: true
@@ -223,10 +219,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ConversationMessage'
-        navigation_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/NavigationOption'
         user_preferences:
           type: object
           properties:
@@ -256,24 +248,6 @@ components:
         timestamp:
           type: string
           format: date-time
-
-    NavigationOption:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        label:
-          type: string
-        action_type:
-          type: string
-          enum: [explain, requirements, appointment, location, related]
-        target_url:
-          type: string
-          nullable: true
-        description:
-          type: string
-          nullable: true
 
     ServiceCategory:
       type: object

@@ -26,17 +26,6 @@ def test_data_service():
             for service in service_categories:
                 print(f"  - {service.name}: {service.id}")
 
-            # Test 2: Get navigation options
-            if service_categories:
-                service_id = service_categories[0].id
-                nav_options = data_service.get_navigation_options_by_category(
-                    service_id
-                )
-                print(f"✓ Retrieved {len(nav_options)} navigation options")
-
-                for option in nav_options:
-                    print(f"  - {option.label}: {option.action_type}")
-
             print("\n🎉 Data service tests passed!")
             return True
 

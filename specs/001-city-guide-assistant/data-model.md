@@ -31,7 +31,6 @@ Represents the current state of user interaction including current topic, naviga
 - `user_session_id` (string): Anonymous session identifier
 - `current_service_category_id` (UUID, foreign key): Reference to current service
 - `conversation_history` (JSON): Array of message objects with timestamps
-- `navigation_options` (JSON): Current available navigation options
 - `user_preferences` (JSON): User language, location preferences
 - `created_at` (datetime): Session start timestamp
 - `last_activity` (datetime): Last user interaction timestamp
@@ -109,10 +108,6 @@ Represents user search queries for analytics and improvement.
 
 ## Relationships
 
-- **ServiceCategory** → **NavigationOption** (One-to-Many)
-  - One service category can have multiple navigation options
-  - Navigation options are specific to their parent service category
-
 - **ConversationContext** → **ServiceCategory** (Many-to-One)
   - Multiple conversations can reference the same service category
   - Conversation context tracks current service category
@@ -140,7 +135,6 @@ Represents user search queries for analytics and improvement.
 ### Conversation Context Management
 - Inactive conversations are automatically archived after 24 hours
 - Conversation history is anonymized and contains no PII
-- Navigation options are regenerated based on conversation context and search results
 
 ### Vector Embedding Management
 - Embeddings must be regenerated when source documents change
@@ -158,7 +152,6 @@ Represents user search queries for analytics and improvement.
 ### Primary Indexes
 - `ServiceCategory.id` (primary key)
 - `ConversationContext.user_session_id` (session lookup)
-- `NavigationOption.service_category_id` (category navigation)
 - `DocumentEmbedding.source_id` (source-based queries)
 
 ### Performance Indexes

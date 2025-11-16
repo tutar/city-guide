@@ -93,22 +93,6 @@ async def create_tables():
         last_activity = Column(DateTime, default=datetime.utcnow)
         is_active = Column(Boolean, default=True)
 
-    class NavigationOption(Base):
-        __tablename__ = "navigation_options"
-
-        id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-        service_category_id = Column(
-            UUID(as_uuid=True), ForeignKey("service_categories.id"), nullable=False
-        )
-        label = Column(String(255), nullable=False)
-        action_type = Column(
-            String(50), nullable=False
-        )  # explain, requirements, appointment, location, related
-        target_url = Column(String(500))
-        description = Column(Text)
-        priority = Column(Integer, default=5)
-        is_active = Column(Boolean, default=True)
-
     class OfficialInformationSource(Base):
         __tablename__ = "official_information_sources"
 

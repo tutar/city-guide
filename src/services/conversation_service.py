@@ -108,23 +108,6 @@ class ConversationService:
                 # Update service context
                 conversation.current_service_category_id = service_category_id
 
-                # Get navigation options for the service
-                nav_options = data_service.get_navigation_options_by_category(
-                    service_category_id
-                )
-                conversation.navigation_options = [
-                    {
-                        "label": option.label,
-                        "action_type": option.action_type,
-                        "target_url": str(option.target_url)
-                        if option.target_url
-                        else None,
-                        "description": option.description,
-                        "priority": option.priority,
-                    }
-                    for option in nav_options
-                ]
-
                 # Update last activity
                 conversation.last_activity = datetime.now(UTC)
 
@@ -140,39 +123,6 @@ class ConversationService:
 
         except Exception as e:
             logger.error(f"Failed to update service context: {e}")
-            raise
-
-    def update_navigation_options(
-        self, session_id: str, navigation_options: list
-    ) -> ConversationContext:
-        """Update navigation options for a conversation"""
-        try:
-            with self.data_service as data_service:
-                # Get existing conversation
-                conversation = data_service.get_conversation_context(session_id)
-                if not conversation:
-                    raise ValueError(
-                        f"Conversation not found for session: {session_id}"
-                    )
-
-                # Update navigation options
-                conversation.navigation_options = navigation_options
-
-                # Update last activity
-                conversation.last_activity = datetime.now(UTC)
-
-                # Save updated conversation
-                updated_conversation = data_service.update_conversation_context(
-                    session_id, conversation
-                )
-
-            logger.info(
-                f"Updated navigation options for conversation {updated_conversation.id}"
-            )
-            return updated_conversation
-
-        except Exception as e:
-            logger.error(f"Failed to update navigation options: {e}")
             raise
 
     def get_recent_messages(self, session_id: str, limit: int = 10) -> list:
@@ -288,7 +238,6 @@ class ConversationService:
                             if m.role == "assistant"
                         ]
                     ),
-                    "navigation_options_count": len(conversation.navigation_options),
                     "is_active": conversation.is_active,
                     "created_at": conversation.created_at,
                     "last_activity": conversation.last_activity,
@@ -324,7 +273,6 @@ class ConversationService:
                     if conversation.current_service_category_id
                     else None,
                     "user_preferences": conversation.user_preferences,
-                    "navigation_options": conversation.navigation_options,
                     "conversation_history": [
                         {
                             "role": msg.role,

@@ -22,15 +22,6 @@ def test_serialization():
     conversation = ConversationContext(
         user_session_id="test_session",
         user_preferences={"language": "en", "location": "Shenzhen"},
-        navigation_options=[
-            {
-                "label": "Test Option",
-                "action_type": "explain",
-                "target_url": None,
-                "description": "Test description",
-                "priority": 5,
-            }
-        ],
     )
 
     # Add a message
@@ -44,13 +35,6 @@ def test_serialization():
         print("✓ Conversation history serialized successfully")
     except Exception as e:
         print(f"✗ Failed to serialize conversation history: {e}")
-
-    # Try to serialize navigation options
-    try:
-        json.dumps(conversation.navigation_options)
-        print("✓ Navigation options serialized successfully")
-    except Exception as e:
-        print(f"✗ Failed to serialize navigation options: {e}")
 
     # Try to serialize user preferences
     try:

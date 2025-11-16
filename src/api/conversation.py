@@ -5,30 +5,25 @@ Conversation API endpoints for City Guide Smart Assistant
 import asyncio
 import time
 import uuid
-from typing import Any
+from typing import Any, List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from models.attribution import SentenceAttribution
 from src.models.conversation_model import ConversationContext
 from src.services.data_service import DataService
 from src.services.search_service import SearchService
-from src.services.navigation_service import NavigationService
 from src.services.ai_response_service import AIResponseService
 from src.utils.config import settings
 
-# Choose AI service based on configuration
-if getattr(settings.ai, "use_mock_service", False) or settings.app_env == "test":
-    from src.services.mock_ai_service import MockAIService as AIService
-else:
-    from src.services.ai_service import AIService
+from src.services.ai_service import AIService
 
 router = APIRouter(prefix="/api/conversation", tags=["conversation"])
 
 # Initialize services once to avoid repeated initialization
 _ai_service = AIService()
 _search_service = SearchService(ai_service=_ai_service)
-_navigation_service = NavigationService(ai_service=_ai_service)
 _ai_response_service = AIResponseService()
 
 
@@ -55,7 +50,6 @@ class StartConversationResponse(BaseModel):
 
     session_id: str = Field(..., description="Session identifier for this conversation")
     conversation_id: str = Field(..., description="Unique conversation identifier")
-    navigation_options: list = Field(..., description="Initial navigation options")
     service_context: dict[str, Any] | None = Field(
         None, description="Service context if starting with specific service"
     )
@@ -86,13 +80,13 @@ class SendMessageResponse(BaseModel):
     """Response model for sending a message"""
 
     response: str = Field(..., description="Assistant response")
-    navigation_options: list = Field(..., description="Updated navigation options")
+    formatted_response: str = Field(..., description="Formatted assistant response")
     conversation_history: list = Field(..., description="Updated conversation history")
     usage: dict[str, Any] | None = Field(
         None, description="API usage information if available"
     )
-    attribution: AttributionData | None = Field(
-        None, description="Document source attribution data"
+    sentence_attributions: list = Field(
+        ..., description="Sentence-level document attributions"
     )
 
 
@@ -118,7 +112,6 @@ async def start_conversation(request: StartConversationRequest):
                 return StartConversationResponse(
                     session_id=existing_context.user_session_id,
                     conversation_id=str(existing_context.id),
-                    navigation_options=existing_context.navigation_options,
                     service_context={
                         "service_category_id": str(
                             existing_context.current_service_category_id
@@ -166,7 +159,6 @@ async def start_conversation(request: StartConversationRequest):
             return StartConversationResponse(
                 session_id=saved_context.user_session_id,
                 conversation_id=str(saved_context.id),
-                navigation_options=saved_context.navigation_options,
                 service_context=service_context,
             )
 
@@ -195,7 +187,6 @@ async def send_message(request: SendMessageRequest):
             # Use pre-initialized services to avoid repeated initialization
             search_service = _search_service
             ai_service = _ai_service
-            navigation_service = _navigation_service
             timings["service_init"] = 0.0  # Service initialization is now zero-cost
 
             # Get existing conversation context
@@ -223,22 +214,13 @@ async def send_message(request: SendMessageRequest):
                 )
             )
 
-            nav_task = asyncio.create_task(
-                navigation_service.get_navigation_options_by_category(
-                    service_category_id=conversation_context.current_service_category_id
-                    or settings.default_service_category_id,
-                )
-            )
-
             # Get conversation history as dictionaries (optimized)
             convert_start = time.time()
             conversation_history_dicts = conversation_context.get_recent_messages_dict()
             timings["convert_history"] = time.time() - convert_start
 
             # Wait for both tasks to complete
-            search_results, navigation_response = await asyncio.gather(
-                search_task, nav_task
-            )
+            search_results = await search_task
             timings["parallel_operations"] = time.time() - parallel_start
 
             # Generate AI response with attribution
@@ -255,10 +237,6 @@ async def send_message(request: SendMessageRequest):
             conversation_context.add_message("assistant", response["response"])
             timings["add_assistant_message"] = time.time() - add_assistant_start
 
-            # Update navigation options from parallel task result
-            if navigation_response:
-                conversation_context.navigation_options = navigation_response
-
             # Save updated conversation context
             save_start = time.time()
             updated_context = data_service.update_conversation_context(
@@ -274,20 +252,9 @@ async def send_message(request: SendMessageRequest):
             for step, duration in timings.items():
                 print(f"  {step}: {duration:.3f}s")
 
-            # Extract attribution data from response
-            attribution_data = None
-            if "attribution" in response:
-                attribution_data = AttributionData(
-                    sentence_attributions=response["attribution"].get(
-                        "sentence_attributions", []
-                    ),
-                    citation_list=response["attribution"].get("citation_list", {}),
-                    fallback_mode=response["attribution"].get("fallback_mode", False),
-                )
-
             return SendMessageResponse(
                 response=response["response"],
-                navigation_options=updated_context.navigation_options,
+                formatted_response=response["formatted_response"],
                 conversation_history=[
                     {
                         "role": msg.role,
@@ -296,12 +263,9 @@ async def send_message(request: SendMessageRequest):
                     }
                     for msg in updated_context.conversation_history
                 ],
-                usage=response.get("usage"),
-                attribution=attribution_data,
+                sentence_attributions=response.get("sentence_attributions"),
             )
 
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to process message: {str(e)}"
@@ -338,7 +302,6 @@ async def get_conversation_history(session_id: str):
                 )
                 if conversation_context.current_service_category_id
                 else None,
-                "navigation_options": conversation_context.navigation_options,
             }
 
     except HTTPException:

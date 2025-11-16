@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: City Guide Smart Assistant API
-  description: API for Shenzhen government service guidance and dynamic navigation
+  description: API for Shenzhen government service guidance
   version: 1.0.0
   contact:
     name: Development Team
@@ -57,7 +57,7 @@ paths:
 
     post:
       summary: Send message to conversation
-      description: Processes user message and returns AI response with updated navigation
+      description: Processes user message and returns AI response
       parameters:
         - name: session_id
           in: path
@@ -222,10 +222,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ConversationMessage'
-        navigation_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/NavigationOption'
         user_preferences:
           $ref: '#/components/schemas/UserPreferences'
 
@@ -294,27 +290,6 @@ components:
         appointment_url:
           type: string
           format: uri
-
-    NavigationOption:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        label:
-          type: string
-        action_type:
-          type: string
-          enum: ["navigate", "external_link", "explanation"]
-        target_url:
-          type: string
-          format: uri
-        description:
-          type: string
-        priority:
-          type: integer
-          minimum: 1
-          maximum: 10
 
     ConversationMessage:
       type: object

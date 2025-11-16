@@ -38,12 +38,12 @@ POST /api/conversation/message
     "sentence_attributions": [
       {
         "sentence_index": 0,
-        "document_source_id": "doc-uuid-1",
+        "document_id": "doc-uuid-1",
         "confidence_score": 0.95
       },
       {
         "sentence_index": 1,
-        "document_source_id": "doc-uuid-2",
+        "document_id": "doc-uuid-2",
         "confidence_score": 0.92
       }
     ],

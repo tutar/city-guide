@@ -32,7 +32,6 @@ class TestConversationAPI:
         mock_conversation_context = Mock(spec=ConversationContext)
         mock_conversation_context.user_session_id = "test-session-123"
         mock_conversation_context.id = uuid.uuid4()
-        mock_conversation_context.navigation_options = []
         mock_conversation_context.current_service_category_id = None
 
         with patch("src.api.conversation.DataService") as mock_data_service:
@@ -72,7 +71,6 @@ class TestConversationAPI:
                     assert data["session_id"] == "test-session-123"
                     assert "conversation_id" in data
                     assert "welcome_message" in data
-                    assert data["navigation_options"] == []
 
     def test_start_conversation_existing_session(self, test_client):
         """Test starting conversation with existing session"""
@@ -80,7 +78,6 @@ class TestConversationAPI:
         mock_conversation_context = Mock(spec=ConversationContext)
         mock_conversation_context.user_session_id = "existing-session"
         mock_conversation_context.id = uuid.uuid4()
-        mock_conversation_context.navigation_options = [{"label": "Test Option"}]
         mock_conversation_context.current_service_category_id = None
 
         with patch("src.api.conversation.DataService") as mock_data_service:
@@ -106,7 +103,6 @@ class TestConversationAPI:
                     assert response.status_code == 200
                     data = response.json()
                     assert data["session_id"] == "existing-session"
-                    assert data["navigation_options"] == [{"label": "Test Option"}]
 
     def test_start_conversation_with_service_context(self, test_client):
         """Test starting conversation with service context"""
@@ -120,9 +116,6 @@ class TestConversationAPI:
         mock_conversation_context = Mock(spec=ConversationContext)
         mock_conversation_context.user_session_id = "service-session"
         mock_conversation_context.id = uuid.uuid4()
-        mock_conversation_context.navigation_options = [
-            {"label": "Requirements", "action_type": "info"}
-        ]
         mock_conversation_context.current_service_category_id = mock_service_category.id
 
         with patch("src.api.conversation.DataService") as mock_data_service:
@@ -135,14 +128,6 @@ class TestConversationAPI:
                     mock_data_instance.get_service_category.return_value = (
                         mock_service_category
                     )
-                    mock_data_instance.get_navigation_options_by_category.return_value = [
-                        Mock(
-                            label="Requirements",
-                            action_type="info",
-                            target_url=None,
-                            description="Requirements",
-                        )
-                    ]
                     mock_data_instance.create_conversation_context.return_value = (
                         mock_conversation_context
                     )
@@ -164,9 +149,6 @@ class TestConversationAPI:
                     data = response.json()
                     assert data["session_id"] == "service-session"
                     assert data["service_context"] is not None
-                    assert data["navigation_options"] == [
-                        {"label": "Requirements", "action_type": "info"}
-                    ]
 
     def test_send_message_success(self, test_client):
         """Test successful message sending"""
@@ -174,7 +156,6 @@ class TestConversationAPI:
         mock_conversation_context = Mock(spec=ConversationContext)
         mock_conversation_context.user_session_id = "test-session"
         mock_conversation_context.id = uuid.uuid4()
-        mock_conversation_context.navigation_options = []
         mock_conversation_context.current_service_category_id = None
         mock_conversation_context.conversation_history = []
         mock_conversation_context.get_recent_messages.return_value = []
@@ -222,9 +203,6 @@ class TestConversationAPI:
                     assert response.status_code == 200
                     data = response.json()
                     assert data["response"] == "Here's how to apply for a passport..."
-                    assert data["navigation_options"] == [
-                        {"label": "Make appointment", "action_type": "appointment"}
-                    ]
                     assert data["usage"]["total_tokens"] == 100
 
     def test_send_message_conversation_not_found(self, test_client):
@@ -256,7 +234,6 @@ class TestConversationAPI:
         mock_conversation_context = Mock(spec=ConversationContext)
         mock_conversation_context.user_session_id = "test-session"
         mock_conversation_context.id = uuid.uuid4()
-        mock_conversation_context.navigation_options = []
         mock_conversation_context.current_service_category_id = None
 
         # Create actual Message objects

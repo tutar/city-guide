@@ -63,7 +63,6 @@ class ConversationContext(Base):
         UUID(as_uuid=True), ForeignKey("service_categories.id")
     )
     conversation_history = Column(JSON)
-    navigation_options = Column(JSON)
     user_preferences = Column(JSON)
     # Service relationship tracking fields
     service_relationships = Column(JSON, default=list)
@@ -71,21 +70,6 @@ class ConversationContext(Base):
     service_transitions = Column(JSON, default=list)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     last_activity = Column(DateTime, default=lambda: datetime.now(UTC))
-    is_active = Column(Boolean, default=True)
-
-
-class NavigationOption(Base):
-    __tablename__ = "navigation_options"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    service_category_id = Column(
-        UUID(as_uuid=True), ForeignKey("service_categories.id"), nullable=False
-    )
-    label = Column(String(255), nullable=False)
-    action_type = Column(String(50), nullable=False)
-    target_url = Column(String(500))
-    description = Column(Text)
-    priority = Column(Integer, default=5)
     is_active = Column(Boolean, default=True)
 
 
@@ -226,15 +210,6 @@ class DataService:
                     }
                     for msg in conversation_context.conversation_history
                 ],
-                navigation_options=[
-                    {
-                        **option,
-                        "target_url": str(option.get("target_url"))
-                        if option.get("target_url")
-                        else None,
-                    }
-                    for option in conversation_context.navigation_options
-                ],
                 user_preferences=conversation_context.user_preferences,
                 # Service relationship tracking fields
                 service_relationships=conversation_context.service_relationships,
@@ -254,7 +229,6 @@ class DataService:
                 conversation_history=[
                     Message(**msg) for msg in db_context.conversation_history
                 ],
-                navigation_options=db_context.navigation_options,
                 user_preferences=db_context.user_preferences,
                 # Service relationship tracking fields
                 service_relationships=db_context.service_relationships,
@@ -296,7 +270,6 @@ class DataService:
                     conversation_history=[
                         Message(**msg) for msg in db_context.conversation_history
                     ],
-                    navigation_options=db_context.navigation_options,
                     user_preferences=db_context.user_preferences,
                     # Service relationship tracking fields
                     service_relationships=db_context.service_relationships,
@@ -351,15 +324,6 @@ class DataService:
                 }
                 for msg in conversation_context.conversation_history
             ]
-            db_context.navigation_options = [
-                {
-                    **option,
-                    "target_url": str(option.get("target_url"))
-                    if option.get("target_url")
-                    else None,
-                }
-                for option in conversation_context.navigation_options
-            ]
             db_context.user_preferences = {
                 key: str(value)
                 if hasattr(value, "__str__")
@@ -389,7 +353,6 @@ class DataService:
                 conversation_history=[
                     Message(**msg) for msg in db_context.conversation_history
                 ],
-                navigation_options=db_context.navigation_options,
                 user_preferences=db_context.user_preferences,
                 # Service relationship tracking fields
                 service_relationships=db_context.service_relationships,
@@ -443,188 +406,6 @@ class DataService:
             self.db.rollback()
             logger.error(f"Failed to create navigation option: {e}")
             raise
-
-    def get_navigation_options_by_category(
-        self, category_id: uuid.UUID
-    ) -> list[NavigationOptionModel]:
-        """Get navigation options for a service category"""
-        try:
-            db_options = (
-                self.db.query(NavigationOption)
-                .filter(
-                    NavigationOption.service_category_id == category_id,
-                    NavigationOption.is_active == True,
-                )
-                .order_by(NavigationOption.priority)
-                .all()
-            )
-
-            return [
-                NavigationOptionModel(
-                    id=option.id,
-                    service_category_id=option.service_category_id,
-                    label=option.label,
-                    action_type=option.action_type,
-                    target_url=option.target_url,
-                    description=option.description,
-                    priority=option.priority,
-                    is_active=option.is_active,
-                )
-                for option in db_options
-            ]
-
-        except Exception as e:
-            logger.error(f"Failed to get navigation options: {e}")
-            raise
-
-    def get_navigation_options_by_priority(
-        self, category_id: uuid.UUID, priority_threshold: int = 5
-    ) -> list[NavigationOptionModel]:
-        """Get high-priority navigation options for a service category"""
-        try:
-            db_options = (
-                self.db.query(NavigationOption)
-                .filter(
-                    NavigationOption.service_category_id == category_id,
-                    NavigationOption.is_active == True,
-                    NavigationOption.priority <= priority_threshold,
-                )
-                .order_by(NavigationOption.priority)
-                .all()
-            )
-
-            return [
-                NavigationOptionModel(
-                    id=option.id,
-                    service_category_id=option.service_category_id,
-                    label=option.label,
-                    action_type=option.action_type,
-                    target_url=option.target_url,
-                    description=option.description,
-                    priority=option.priority,
-                    is_active=option.is_active,
-                )
-                for option in db_options
-            ]
-
-        except Exception as e:
-            logger.error(f"Failed to get high-priority navigation options: {e}")
-            raise
-
-    def update_navigation_option(
-        self, navigation_option: NavigationOptionModel
-    ) -> NavigationOptionModel:
-        """Update an existing navigation option"""
-        try:
-            db_option = (
-                self.db.query(NavigationOption)
-                .filter(NavigationOption.id == navigation_option.id)
-                .first()
-            )
-
-            if not db_option:
-                raise ValueError(f"Navigation option not found: {navigation_option.id}")
-
-            # Update fields
-            db_option.label = navigation_option.label
-            db_option.action_type = navigation_option.action_type
-            db_option.target_url = (
-                str(navigation_option.target_url)
-                if navigation_option.target_url
-                else None
-            )
-            db_option.description = navigation_option.description
-            db_option.priority = navigation_option.priority
-            db_option.is_active = navigation_option.is_active
-
-            self.db.commit()
-            self.db.refresh(db_option)
-
-            # Convert back to Pydantic model
-            return NavigationOptionModel(
-                id=db_option.id,
-                service_category_id=db_option.service_category_id,
-                label=db_option.label,
-                action_type=db_option.action_type,
-                target_url=db_option.target_url,
-                description=db_option.description,
-                priority=db_option.priority,
-                is_active=db_option.is_active,
-            )
-
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Failed to update navigation option: {e}")
-            raise
-
-    def get_all_active_navigation_options(self) -> list[NavigationOptionModel]:
-        """Get all active navigation options across all service categories"""
-        try:
-            db_options = (
-                self.db.query(NavigationOption)
-                .filter(NavigationOption.is_active == True)
-                .order_by(NavigationOption.priority)
-                .all()
-            )
-
-            return [
-                NavigationOptionModel(
-                    id=option.id,
-                    service_category_id=option.service_category_id,
-                    label=option.label,
-                    action_type=option.action_type,
-                    target_url=option.target_url,
-                    description=option.description,
-                    priority=option.priority,
-                    is_active=option.is_active,
-                )
-                for option in db_options
-            ]
-
-        except Exception as e:
-            logger.error(f"Failed to get all active navigation options: {e}")
-            raise
-
-    def get_prioritized_navigation_options(
-        self, user_session_id: str
-    ) -> list[NavigationOptionModel]:
-        """Get navigation options prioritized based on conversation history"""
-        try:
-            # Get conversation context to understand current focus
-            conversation_context = self.get_conversation_context(user_session_id)
-
-            if not conversation_context:
-                # Return default options if no conversation context
-                return self.get_all_active_navigation_options()
-
-            # Analyze conversation history for prioritization
-            current_category_id = conversation_context.current_service_category_id
-            recent_messages = conversation_context.get_recent_messages(limit=5)
-
-            # Extract keywords from recent conversation
-            conversation_keywords = self._extract_conversation_keywords(recent_messages)
-
-            # Get all active navigation options
-            all_options = self.get_all_active_navigation_options()
-
-            # Prioritize options based on conversation context
-            prioritized_options = []
-            for option in all_options:
-                priority_score = self._calculate_priority_score(
-                    option, current_category_id, conversation_keywords
-                )
-                prioritized_options.append((priority_score, option))
-
-            # Sort by priority score (higher score = higher priority)
-            prioritized_options.sort(key=lambda x: x[0], reverse=True)
-
-            # Return top options
-            return [option for score, option in prioritized_options[:10]]
-
-        except Exception as e:
-            logger.error(f"Failed to get prioritized navigation options: {e}")
-            # Fallback to all active options
-            return self.get_all_active_navigation_options()
 
     def get_all_service_categories(self) -> list[ServiceCategoryModel]:
         """Get all service categories for main menu navigation"""

@@ -50,7 +50,6 @@ class ConversationContext(BaseModel):
         None, description="Reference to current service"
     )
     conversation_history: list[Message] = Field(default_factory=list)
-    navigation_options: list[dict[str, Any]] = Field(default_factory=list)
     user_preferences: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_activity: datetime = Field(default_factory=lambda: datetime.now(UTC))

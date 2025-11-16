@@ -74,7 +74,7 @@ components:
           type: integer
           minimum: 0
           description: Zero-based index of sentence in response
-        document_source_id:
+        document_id:
           type: string
           format: uuid
           description: UUID of the source document

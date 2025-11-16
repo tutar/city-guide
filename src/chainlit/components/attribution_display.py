@@ -13,44 +13,29 @@ class AttributionDisplay:
     """Component for displaying document source attribution in AI responses."""
 
     def __init__(self):
-        self.attribution_styles = {
-            "marker": {
-                "background": "#f0f9ff",
-                "border": "1px solid #bae6fd",
-                "border_radius": "4px",
-                "padding": "2px 6px",
-                "font_size": "0.8em",
-                "color": "#0369a1",
-                "cursor": "pointer",
-                "margin": "0 2px",
-            },
-            "citation_list": {
-                "background": "#f8fafc",
-                "border": "1px solid #e2e8f0",
-                "border_radius": "8px",
-                "padding": "16px",
-                "margin_top": "12px",
-            },
-            "document_item": {
-                "background": "white",
-                "border": "1px solid #e2e8f0",
-                "border_radius": "6px",
-                "padding": "12px",
-                "margin_bottom": "8px",
-            },
-        }
+        self._response_sentence_attributions_cache: Dict[str, float] = {}
+
+    def get_cached_sentence_attributions(self, response_id: str) -> Optional[float]:
+        """Get cached sentence attributions for a response ID."""
+        return self._response_sentence_attributions_cache.get(response_id)
+
+    def cache_sentence_attributions(
+        self, response_id: str, attributions: float
+    ) -> None:
+        """Cache sentence attributions for a response ID."""
+        self._response_sentence_attributions_cache[response_id] = attributions
 
     async def display_response_with_attribution(
         self,
-        response_text: str,
-        attribution_data: Dict[str, Any],
+        formatted_response: str,
+        sentence_attributions: List[Dict[str, Any]],
         message_id: Optional[str] = None,
     ) -> cl.Message:
         """
         Display AI response with document source attribution markers.
 
         Args:
-            response_text: The AI-generated response text
+            formatted_response: The AI-generated response text
             attribution_data: Attribution data from the API response
             message_id: Optional message ID for updating existing message
 
@@ -58,32 +43,12 @@ class AttributionDisplay:
             Chainlit Message object with attribution display
         """
         try:
-            # Extract attribution data
-            sentence_attributions = attribution_data.get("sentence_attributions", [])
-            citation_list = attribution_data.get("citation_list", {})
-            fallback_mode = attribution_data.get("fallback_mode", False)
-
-            # Format response with attribution markers
-            formatted_response = self._format_response_with_markers(
-                response_text, sentence_attributions
-            )
-
-            # Create message with attribution metadata
-            message_metadata = {
-                "role": "assistant",
-                "attribution_data": attribution_data,
-                "has_attribution": len(sentence_attributions) > 0,
-                "fallback_mode": fallback_mode,
-                "citation_count": len(citation_list.get("document_sources", [])),
-            }
-
             # Create the main response message
             if message_id:
                 # Update existing message
                 message = cl.Message(
                     content=formatted_response,
                     author="Assistant",
-                    metadata=message_metadata,
                     id=message_id,
                 )
             else:
@@ -91,18 +56,9 @@ class AttributionDisplay:
                 message = cl.Message(
                     content=formatted_response,
                     author="Assistant",
-                    metadata=message_metadata,
                 )
 
             await message.send()
-
-            # Add citation list if available
-            if citation_list.get("document_sources"):
-                await self._display_citation_list(citation_list, message.id)
-
-            # Add fallback mode indicator if applicable
-            if fallback_mode:
-                await self._display_fallback_indicator(message.id)
 
             return message
 
@@ -143,9 +99,9 @@ class AttributionDisplay:
 
             if attribution:
                 # Add attribution marker
-                doc_id = attribution.get("document_source_id", "")
+                doc_id = attribution.get("sentence_index", "")
                 confidence = attribution.get("confidence_score", 0.0)
-                marker_text = f"[Source {doc_id[:8]}]"
+                marker_text = f"[^{doc_id}]"
 
                 formatted_sentence = f"{sentence} {marker_text}"
             else:
@@ -169,55 +125,43 @@ class AttributionDisplay:
         import re
 
         sentences = re.split(r"[.!?。！？]+", text)
-        sentences = [s.strip() for s in sentences if s.strip()]
+        # sentences = [s.strip() for s in sentences if s.strip()]
         return sentences
 
     async def _display_citation_list(
-        self, citation_list: Dict[str, Any], parent_message_id: str
+        self, citation_list: Dict[str, Any], message: cl.Message
     ) -> None:
         """
         Display citation list with document sources.
 
         Args:
             citation_list: Citation list data
-            parent_message_id: ID of the parent message
+            message: The message object
         """
         document_sources = citation_list.get("document_sources", [])
 
         if not document_sources:
             return
 
-        # Create citation list header
-        citation_header = f"## 📚 Document Sources ({len(document_sources)})"
-        citation_header += "\n\n*References used in this response:*"
-
         # Create citation list content
-        citation_content = citation_header + "\n\n"
+        message_actions = []
+        citations = []
 
         for i, doc_source in enumerate(document_sources, 1):
-            doc_id = doc_source.get("id", "")
-            title = doc_source.get("title", "Unknown Document")
-            location = doc_source.get("location", "")
-            access_info = doc_source.get("access_info", {})
+            # payload with doc ids and (todo)display with favicon.ico of doc urls
+            citations.append({"doc_id": doc_source.get("id", ""), "citation_id": i})
 
-            citation_content += f"**{i}. {title}**\n"
-            citation_content += f"   - ID: `{doc_id}`\n"
+        action_payload = {"citations": citations}
+        display_reference_action = cl.Action(
+            name="display_reference_sidebar",
+            payload=action_payload,
+            label="已阅读结果",
+        )
+        message_actions.append(display_reference_action)
 
-            if location:
-                citation_content += f"   - Location: {location}\n"
-
-            if access_info.get("permission"):
-                citation_content += f"   - Access: {access_info['permission']}\n"
-
-            citation_content += "\n"
-
+        message.actions = message_actions
         # Send citation list as a follow-up message
-        await cl.Message(
-            content=citation_content,
-            author="System",
-            parent_id=parent_message_id,
-            metadata={"role": "citation_list", "document_count": len(document_sources)},
-        ).send()
+        await message.update()
 
     async def _display_fallback_indicator(self, parent_message_id: str) -> None:
         """
@@ -239,13 +183,13 @@ class AttributionDisplay:
         ).send()
 
     async def display_attribution_details(
-        self, document_source_id: str, attribution_data: Dict[str, Any]
+        self, document_id: str, attribution_data: Dict[str, Any]
     ) -> None:
         """
         Display detailed attribution information for a specific document.
 
         Args:
-            document_source_id: Document source ID
+            document_id: Document source ID
             attribution_data: Full attribution data
         """
         try:
@@ -254,17 +198,13 @@ class AttributionDisplay:
             document_sources = citation_list.get("document_sources", [])
 
             document_source = next(
-                (
-                    doc
-                    for doc in document_sources
-                    if doc.get("id") == document_source_id
-                ),
+                (doc for doc in document_sources if doc.get("id") == document_id),
                 None,
             )
 
             if not document_source:
                 await cl.Message(
-                    content=f"Document source {document_source_id} not found in citations.",
+                    content=f"Document source {document_id} not found in citations.",
                     author="System",
                 ).send()
                 return
@@ -275,7 +215,7 @@ class AttributionDisplay:
             access_info = document_source.get("access_info", {})
 
             content = f"## 📄 Document Details: {title}\n\n"
-            content += f"**ID:** `{document_source_id}`\n\n"
+            content += f"**ID:** `{document_id}`\n\n"
 
             if location:
                 content += f"**Location:** {location}\n\n"
@@ -291,7 +231,7 @@ class AttributionDisplay:
             relevant_sentences = [
                 attr
                 for attr in sentence_attributions
-                if attr.get("document_source_id") == document_source_id
+                if attr.get("document_id") == document_id
             ]
 
             if relevant_sentences:
@@ -305,7 +245,7 @@ class AttributionDisplay:
                 author="System",
                 metadata={
                     "role": "document_details",
-                    "document_id": document_source_id,
+                    "document_id": document_id,
                 },
             ).send()
 
@@ -331,7 +271,7 @@ class AttributionDisplay:
 
         total_sentences = len(sentence_attributions)
         attributed_sentences = len(
-            [a for a in sentence_attributions if a.get("document_source_id")]
+            [a for a in sentence_attributions if a.get("document_id")]
         )
         unique_documents = len(citation_list.get("document_sources", []))
 
@@ -341,7 +281,7 @@ class AttributionDisplay:
                 sum(
                     a.get("confidence_score", 0.0)
                     for a in sentence_attributions
-                    if a.get("document_source_id")
+                    if a.get("document_id")
                 )
                 / attributed_sentences
             )

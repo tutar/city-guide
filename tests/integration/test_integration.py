@@ -67,22 +67,12 @@ def test_conversation_flow():
                 )
                 print(f"✓ Updated service context to: {passport_service.name}")
 
-                # Test 5: Get navigation options
-                nav_options = navigation_service.get_navigation_options_by_category(
-                    service_category_id=passport_service.id
-                )
-                print(f"✓ Retrieved {len(nav_options)} navigation options")
-
-                # Display navigation options
-                for i, option in enumerate(nav_options, 1):
-                    print(f"  {i}. {option['label']} - {option['description']}")
-
                 # Test 6: Add assistant response with navigation
                 conversation = conversation_service.add_message(
                     session_id=session_id,
                     role="assistant",
                     content="I can help you with Hong Kong passport services. Here are the available options:",
-                    metadata={"navigation_options": nav_options},
+                    metadata={},
                 )
                 print("✓ Added assistant message with navigation options")
 
@@ -104,20 +94,6 @@ def test_conversation_flow():
                     f"✓ Exported conversation history with {len(export_data['conversation_history'])} messages"
                 )
 
-                # Test 10: Test navigation service filtering
-                filtered_options = navigation_service.filter_navigation_options(
-                    options=nav_options, action_types=["requirements", "appointment"]
-                )
-                print(
-                    f"✓ Filtered to {len(filtered_options)} options (requirements & appointment)"
-                )
-
-                # Test 11: Test navigation statistics
-                nav_stats = navigation_service.get_navigation_statistics()
-                print(
-                    f"✓ Navigation statistics: {nav_stats['total_options']} total options"
-                )
-
                 print("\n🎉 All integration tests passed!")
                 return True
 
@@ -130,57 +106,6 @@ def test_conversation_flow():
         return False
 
 
-def test_navigation_generation():
-    """Test dynamic navigation generation"""
-
-    print("\n=== Integration Test: Navigation Generation ===")
-
-    try:
-        from src.services.navigation_generator import NavigationGenerator
-
-        navigation_generator = NavigationGenerator()
-
-        # Test conversation context
-        conversation_context = {
-            "current_query": "passport application requirements",
-            "user_preferences": {"language": "en"},
-            "current_service_category_id": None,
-        }
-
-        # Generate navigation options
-        nav_options = navigation_generator.generate_dynamic_navigation_options(
-            conversation_context=conversation_context,
-            search_results=[
-                {
-                    "document_type": "requirements",
-                    "similarity_score": 0.85,
-                    "title": "Passport Requirements",
-                }
-            ],
-        )
-
-        print(f"✓ Generated {len(nav_options)} dynamic navigation options")
-
-        for i, option in enumerate(nav_options, 1):
-            print(
-                f"  {i}. {option['label']} - {option['source']} (priority: {option['priority']})"
-            )
-
-        # Test filtering
-        filtered_options = navigation_generator.filter_navigation_options(
-            options=nav_options, action_types=["requirements"], min_confidence=0.5
-        )
-
-        print(f"✓ Filtered to {len(filtered_options)} high-confidence options")
-
-        print("\n🎉 Navigation generation tests passed!")
-        return True
-
-    except Exception as e:
-        logger.error(f"Navigation generation test failed: {e}")
-        return False
-
-
 if __name__ == "__main__":
     """Run integration tests"""
 
@@ -189,14 +114,13 @@ if __name__ == "__main__":
 
     # Run tests
     test1_passed = test_conversation_flow()
-    test2_passed = test_navigation_generation()
 
     print("\n" + "=" * 60)
     print("Integration Test Results:")
     print(f"  Conversation Flow: {'PASSED' if test1_passed else 'FAILED'}")
     print(f"  Navigation Generation: {'PASSED' if test2_passed else 'FAILED'}")
 
-    if test1_passed and test2_passed:
+    if test1_passed:
         print("\n🎉 All integration tests completed successfully!")
         exit(0)
     else:

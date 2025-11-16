@@ -94,5 +94,4 @@
 - AI response generation pipeline
 - Document repository service
 - Frontend response display components
-- User interface for document navigation
 - Existing `/api/conversation/message` endpoint (extended response format)

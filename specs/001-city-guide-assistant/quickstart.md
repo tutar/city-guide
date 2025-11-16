@@ -121,7 +121,6 @@ response = requests.post(
 )
 
 print(response.json()["ai_response"])
-print(response.json()["navigation_options"])
 ```
 
 ### 2. Service Categories

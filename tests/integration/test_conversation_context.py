@@ -30,7 +30,6 @@ class TestConversationContextIntegration:
         assert conversation.user_session_id == session_id
         assert conversation.current_service_category_id == service_category_id
         assert conversation.conversation_history == []
-        assert conversation.navigation_options == []
         assert conversation.user_preferences == {}
         assert conversation.is_active is True
         assert isinstance(conversation.id, uuid.UUID)
@@ -192,33 +191,6 @@ class TestConversationContextIntegration:
             == "step_by_step_guidance"
         )
 
-    def test_navigation_options_integration(self):
-        """Test navigation options in conversation context"""
-        # Given a conversation context
-        conversation = ConversationContext(user_session_id="test-session-navigation")
-
-        # When adding navigation options
-        navigation_options = [
-            {
-                "label": "Material Requirements",
-                "action_type": "requirements",
-                "priority": 1,
-            },
-            {
-                "label": "Online Appointment",
-                "action_type": "appointment",
-                "priority": 2,
-            },
-            {"label": "Service Locations", "action_type": "location", "priority": 3},
-        ]
-
-        conversation.navigation_options = navigation_options
-
-        # Then navigation options should be accessible
-        assert len(conversation.navigation_options) == 3
-        assert conversation.navigation_options[0]["label"] == "Material Requirements"
-        assert conversation.navigation_options[1]["action_type"] == "appointment"
-
     def test_conversation_state_transitions(self):
         """Test conversation state transitions"""
         # Given a conversation state
@@ -265,9 +237,6 @@ class TestConversationContextIntegration:
         conversation = ConversationContext(
             user_session_id="test-session-persistence",
             current_service_category_id=uuid.uuid4(),
-            navigation_options=[
-                {"label": "Requirements", "action_type": "requirements", "priority": 1}
-            ],
             user_preferences={"language": "en", "preferred_format": "step_by_step"},
         )
 
@@ -285,7 +254,6 @@ class TestConversationContextIntegration:
             == conversation.current_service_category_id
         )
         assert len(conversation_dict["conversation_history"]) == 2
-        assert len(conversation_dict["navigation_options"]) == 1
         assert conversation_dict["user_preferences"]["language"] == "en"
 
         # When deserializing from dict (simulating database retrieval)

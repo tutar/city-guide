@@ -19,41 +19,6 @@ class TestRelevanceAPI:
         """Create a test client."""
         return TestClient(app)
 
-    @pytest.fixture
-    def sample_document_ids(self):
-        """Create sample documents and return their IDs."""
-        document_service = DocumentService()
-
-        # Create sample documents
-        doc1_data = DocumentSourceCreate(
-            document_embedding_id=uuid4(),
-            title="Shenzhen Business Registration Guide",
-            location="/documents/business-registration",
-            access_info={"permission": "public"},
-            attribution_metadata={
-                "document_type": "guide",
-                "category": "business",
-                "region": "Shenzhen",
-            },
-        )
-
-        doc2_data = DocumentSourceCreate(
-            document_embedding_id=uuid4(),
-            title="Shenzhen Tax Regulations",
-            location="/documents/tax-regulations",
-            access_info={"permission": "public"},
-            attribution_metadata={
-                "document_type": "regulation",
-                "category": "tax",
-                "region": "Shenzhen",
-            },
-        )
-
-        doc1 = document_service.create_document_source(doc1_data)
-        doc2 = document_service.create_document_source(doc2_data)
-
-        return [str(doc1.id), str(doc2.id)]
-
     def test_explain_source_relevance_success(self, client, sample_document_ids):
         """Test successful relevance explanation."""
         request_data = {

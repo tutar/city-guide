@@ -55,28 +55,11 @@ class TestComplexServices:
             assert updated_conversation is not None
             print(f"✓ Updated service context to: {business_registration.name}")
 
-        # Get navigation options for complex service
-        navigation_options = navigation_service.get_navigation_options_by_category(
-            business_registration.id
-        )
-        assert len(navigation_options) > 0
-        print(f"✓ Retrieved {len(navigation_options)} navigation options")
-
-        # Verify complex service navigation options
-        complex_options = [
-            opt
-            for opt in navigation_options
-            if opt["action_type"] in ["explain", "requirements"]
-        ]
-        assert len(complex_options) > 0
-        print(f"✓ Found {len(complex_options)} complex service options")
-
         # Add assistant response with navigation
         assistant_message = conversation_service.add_message(
             conversation.id,
             "assistant",
             "I can help you understand the business registration requirements in Shenzhen. Here are the key steps and requirements:",
-            navigation_options=complex_options,
         )
         assert assistant_message is not None
         print("✓ Added assistant message with complex service guidance")
@@ -122,31 +105,6 @@ class TestComplexServices:
         assert conversation_context is not None
         print("✓ Technical term explanation conversation created")
 
-        # Test navigation options for explanation
-        with DataService() as data_service:
-            tax_service = next(
-                (
-                    sc
-                    for sc in data_service.get_active_service_categories()
-                    if "Tax" in sc.name
-                ),
-                None,
-            )
-
-            if tax_service:
-                navigation_service = NavigationService()
-                options = navigation_service.get_navigation_options_by_category(
-                    tax_service.id
-                )
-
-                explanation_options = [
-                    opt for opt in options if opt["action_type"] == "explain"
-                ]
-
-                print(
-                    f"✓ Found {len(explanation_options)} explanation options for tax service"
-                )
-
         print("🎉 Technical term explanation test passed!")
 
     def test_location_based_service_filtering(self):
@@ -170,39 +128,6 @@ class TestComplexServices:
                 "location": "Futian district, Shenzhen",
             },
         )
-
-        # Find relevant service
-        with DataService() as data_service:
-            resident_permit = next(
-                (
-                    sc
-                    for sc in data_service.get_active_service_categories()
-                    if "Resident Permit" in sc.name
-                ),
-                None,
-            )
-
-            if resident_permit:
-                # Get location-specific navigation options
-                options = navigation_service.get_navigation_options_by_category(
-                    resident_permit.id
-                )
-
-                location_options = [
-                    opt for opt in options if opt["action_type"] == "location"
-                ]
-
-                print(f"✓ Found {len(location_options)} location-based options")
-
-                # Test filtering by action type
-                filtered_options = navigation_service.filter_navigation_options(
-                    options, action_types=["location"]
-                )
-
-                assert len(filtered_options) == len(location_options)
-                print(
-                    f"✓ Successfully filtered to {len(filtered_options)} location options"
-                )
 
         print("🎉 Location-based service filtering test passed!")
 

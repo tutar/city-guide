@@ -58,21 +58,6 @@ A user needs to understand complex government service requirements and wants the
 2. **Given** a user needs to understand fee structures, **When** they inquire about costs, **Then** the system provides accurate fee information with official sources
 3. **Given** a user wants to find the nearest service location, **When** they request location information, **Then** the system provides nearby service locations with map integration
 
----
-
-### User Story 3 - Dynamic Contextual Navigation (Priority: P3)
-
-A user wants to explore related government services and information through intuitive navigation that adapts to their current context.
-
-**Why this priority**: This validates the innovative dynamic navigation system that differentiates the product from traditional static guides.
-
-**Independent Test**: Can be fully tested by navigating through different service categories and verifying the navigation options adapt contextually to the current conversation.
-
-**Acceptance Scenarios**:
-
-1. **Given** a user is viewing passport information, **When** they look at the navigation options, **Then** they see relevant sub-options like "Material Requirements", "Appointment Process", "Common Questions"
-2. **Given** a user wants to return to the main menu, **When** they click "All Services", **Then** the system returns to the main service categories
-3. **Given** a user completes one service inquiry, **When** they want to explore related services, **Then** the system suggests relevant alternative services
 
 ### Edge Cases
 

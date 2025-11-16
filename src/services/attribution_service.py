@@ -7,7 +7,7 @@ and attribution metadata management.
 
 import logging
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 from uuid import UUID
 
 from src.models.attribution import (
@@ -49,7 +49,7 @@ class AttributionService:
         self,
         response_id: UUID,
         sentence_index: int,
-        document_source_id: UUID,
+        document: Dict[str, Any],
         confidence_score: float,
         metadata: AttributionMetadata,
     ) -> SentenceAttribution:
@@ -59,7 +59,7 @@ class AttributionService:
         Args:
             response_id: UUID of the AI response
             sentence_index: Position of sentence in response
-            document_source_id: UUID of the source document
+            document: Source document dictionary
             confidence_score: AI confidence in attribution (0.0-1.0)
             metadata: Current attribution metadata
 
@@ -75,18 +75,14 @@ class AttributionService:
         attribution = SentenceAttribution(
             response_id=response_id,
             sentence_index=sentence_index,
-            document_source_id=document_source_id,
+            document_id=document.get("document_id"),
+            title=document.get("document_title", "Unknown Title"),
+            document=document,
             confidence_score=confidence_score,
         )
 
         metadata.total_sentences += 1
         metadata.attributed_sentences += 1
-
-        logger.debug(
-            f"Added attribution for sentence {sentence_index} in response {response_id} "
-            f"to document {document_source_id} with confidence {confidence_score}"
-        )
-
         return attribution
 
     def generate_citation_list(
@@ -103,83 +99,20 @@ class AttributionService:
             CitationList with deduplicated document sources
         """
         # Extract unique document source IDs
-        document_source_ids = list(
-            {attribution.document_source_id for attribution in sentence_attributions}
+        document_ids = list(
+            {attribution.document_id for attribution in sentence_attributions}
         )
 
         citation_list = CitationList(
-            response_id=response_id, document_sources=document_source_ids
+            response_id=response_id, document_sources=document_ids
         )
 
         logger.info(
             f"Generated citation list for response {response_id} "
-            f"with {len(document_source_ids)} unique documents"
+            f"with {len(document_ids)} unique documents"
         )
 
         return citation_list
-
-    def complete_attribution_tracking(
-        self,
-        response_id: UUID,
-        sentence_attributions: List[SentenceAttribution],
-        metadata: AttributionMetadata,
-    ) -> ResponseAttribution:
-        """
-        Complete attribution tracking and generate final response attribution.
-
-        Args:
-            response_id: UUID of the AI response
-            sentence_attributions: List of sentence attributions
-            metadata: Attribution metadata
-
-        Returns:
-            Complete ResponseAttribution object
-        """
-        metadata.tracking_end_time = datetime.now()
-
-        # Calculate performance impact
-        if metadata.tracking_start_time and metadata.tracking_end_time:
-            tracking_duration = (
-                metadata.tracking_end_time - metadata.tracking_start_time
-            ).total_seconds() * 1000  # Convert to milliseconds
-            metadata.performance_impact_ms = tracking_duration
-
-        # Generate citation list
-        citation_list = self.generate_citation_list(response_id, sentence_attributions)
-
-        # Create final response attribution
-        response_attribution = ResponseAttribution(
-            sentence_attributions=sentence_attributions, citation_list=citation_list
-        )
-
-        # Cache the attribution
-        self._attribution_cache[response_id] = response_attribution
-
-        # Update performance metrics
-        self._update_performance_metrics(metadata)
-
-        logger.info(
-            f"Completed attribution tracking for response {response_id}: "
-            f"{len(sentence_attributions)} sentences attributed, "
-            f"{len(citation_list.document_sources)} unique documents, "
-            f"performance impact: {metadata.performance_impact_ms:.2f}ms"
-        )
-
-        return response_attribution
-
-    def get_attribution_for_response(
-        self, response_id: UUID
-    ) -> Optional[ResponseAttribution]:
-        """
-        Get attribution data for a specific response.
-
-        Args:
-            response_id: UUID of the AI response
-
-        Returns:
-            ResponseAttribution if found, None otherwise
-        """
-        return self._attribution_cache.get(response_id)
 
     def validate_attribution_consistency(
         self, response_attribution: ResponseAttribution
@@ -195,7 +128,7 @@ class AttributionService:
         """
         # Extract all document source IDs from sentence attributions
         attribution_doc_ids = {
-            attribution.document_source_id
+            attribution.document_id
             for attribution in response_attribution.sentence_attributions
         }
 
@@ -221,47 +154,3 @@ class AttributionService:
             Dictionary of performance metrics
         """
         return self._performance_metrics.copy()
-
-    def _update_performance_metrics(self, metadata: AttributionMetadata) -> None:
-        """Update performance metrics with new tracking data."""
-        if metadata.performance_impact_ms:
-            # Track average performance impact
-            current_avg = self._performance_metrics.get(
-                "avg_performance_impact_ms", 0.0
-            )
-            count = self._performance_metrics.get("tracking_count", 0)
-
-            new_avg = ((current_avg * count) + metadata.performance_impact_ms) / (
-                count + 1
-            )
-
-            self._performance_metrics["avg_performance_impact_ms"] = new_avg
-            self._performance_metrics["tracking_count"] = count + 1
-            self._performance_metrics[
-                "last_performance_impact_ms"
-            ] = metadata.performance_impact_ms
-
-        # Track attribution coverage
-        if metadata.total_sentences > 0:
-            coverage_rate = metadata.attributed_sentences / metadata.total_sentences
-            self._performance_metrics["attribution_coverage_rate"] = coverage_rate
-
-    def clear_cache(self) -> None:
-        """Clear the attribution cache."""
-        self._attribution_cache.clear()
-        logger.info("Cleared attribution cache")
-
-    def get_cache_stats(self) -> Dict[str, int]:
-        """
-        Get cache statistics.
-
-        Returns:
-            Dictionary with cache statistics
-        """
-        return {
-            "cached_responses": len(self._attribution_cache),
-            "total_attributions": sum(
-                len(attribution.sentence_attributions)
-                for attribution in self._attribution_cache.values()
-            ),
-        }

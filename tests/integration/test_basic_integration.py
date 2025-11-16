@@ -67,12 +67,6 @@ def test_conversation_basic():
                 )
                 print(f"✓ Updated service context to: {passport_service.name}")
 
-                # Test 5: Get navigation options
-                nav_options = navigation_service.get_navigation_options_by_category(
-                    service_category_id=passport_service.id
-                )
-                print(f"✓ Retrieved {len(nav_options)} navigation options")
-
                 # Display navigation options
                 for i, option in enumerate(nav_options, 1):
                     print(f"  {i}. {option['label']} - {option['description']}")
@@ -82,7 +76,7 @@ def test_conversation_basic():
                     session_id=session_id,
                     role="assistant",
                     content="I can help you with Hong Kong passport services. Here are the available options:",
-                    metadata={"navigation_options": nav_options},
+                    metadata={},
                 )
                 print("✓ Added assistant message with navigation options")
 
@@ -104,20 +98,6 @@ def test_conversation_basic():
                     f"✓ Exported conversation history with {len(export_data['conversation_history'])} messages"
                 )
 
-                # Test 10: Test navigation service filtering
-                filtered_options = navigation_service.filter_navigation_options(
-                    options=nav_options, action_types=["requirements", "appointment"]
-                )
-                print(
-                    f"✓ Filtered to {len(filtered_options)} options (requirements & appointment)"
-                )
-
-                # Test 11: Test navigation statistics
-                nav_stats = navigation_service.get_navigation_statistics()
-                print(
-                    f"✓ Navigation statistics: {nav_stats['total_options']} total options"
-                )
-
                 print("\n🎉 All basic integration tests passed!")
                 return True
 
@@ -127,56 +107,6 @@ def test_conversation_basic():
 
     except Exception as e:
         logger.error(f"Basic integration test failed: {e}")
-        return False
-
-
-def test_navigation_basic():
-    """Test basic navigation functionality"""
-
-    print("\n=== Basic Integration Test: Navigation Service ===")
-
-    try:
-        navigation_service = NavigationService()
-
-        # Test 1: Get all active navigation options
-        with DataService() as data_service:
-            service_categories = data_service.get_active_service_categories()
-
-            if service_categories:
-                service_id = service_categories[0].id
-
-                # Test navigation options by category
-                nav_options = navigation_service.get_navigation_options_by_category(
-                    service_id
-                )
-                print(f"✓ Retrieved {len(nav_options)} navigation options for service")
-
-                # Test filtering
-                filtered_options = navigation_service.filter_navigation_options(
-                    options=nav_options, action_types=["requirements", "appointment"]
-                )
-                print(f"✓ Filtered to {len(filtered_options)} specific action types")
-
-                # Test action type options
-                action_options = navigation_service.get_action_type_options(
-                    "requirements"
-                )
-                print(
-                    f"✓ Found {len(action_options)} options for 'requirements' action type"
-                )
-
-                # Test navigation statistics
-                stats = navigation_service.get_navigation_statistics()
-                print(f"✓ Navigation stats: {stats['total_options']} total options")
-
-                print("\n🎉 Basic navigation tests passed!")
-                return True
-            else:
-                print("✗ No service categories found")
-                return False
-
-    except Exception as e:
-        logger.error(f"Basic navigation test failed: {e}")
         return False
 
 

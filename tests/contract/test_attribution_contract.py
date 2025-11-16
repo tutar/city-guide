@@ -20,7 +20,6 @@ class TestAttributionContract:
         # Valid response data
         response_data = {
             "response": "This is a test response with attribution.",
-            "navigation_options": [{"label": "Next Step", "action_type": "general"}],
             "conversation_history": [
                 {
                     "role": "user",
@@ -32,7 +31,7 @@ class TestAttributionContract:
                 "sentence_attributions": [
                     {
                         "sentence_index": 0,
-                        "document_source_id": "12345678-1234-1234-1234-123456789012",
+                        "document_id": "12345678-1234-1234-1234-123456789012",
                         "confidence_score": 0.85,
                     }
                 ],
@@ -74,12 +73,12 @@ class TestAttributionContract:
             "sentence_attributions": [
                 {
                     "sentence_index": 0,
-                    "document_source_id": "12345678-1234-1234-1234-123456789012",
+                    "document_id": "12345678-1234-1234-1234-123456789012",
                     "confidence_score": 0.9,
                 },
                 {
                     "sentence_index": 1,
-                    "document_source_id": "87654321-4321-4321-4321-210987654321",
+                    "document_id": "87654321-4321-4321-4321-210987654321",
                     "confidence_score": 0.7,
                 },
             ],
@@ -114,7 +113,6 @@ class TestAttributionContract:
         """Test backward compatibility - response without attribution."""
         legacy_response_data = {
             "response": "This is a legacy response without attribution.",
-            "navigation_options": [],
             "conversation_history": [],
             "usage": {"tokens": 100, "cost": 0.01}
             # No attribution field
@@ -129,7 +127,7 @@ class TestAttributionContract:
         """Test sentence attribution data contract."""
         valid_attribution = {
             "sentence_index": 0,
-            "document_source_id": "12345678-1234-1234-1234-123456789012",
+            "document_id": "12345678-1234-1234-1234-123456789012",
             "confidence_score": 0.85,
         }
 
@@ -143,9 +141,7 @@ class TestAttributionContract:
         assert len(attribution_data.sentence_attributions) == 1
         attribution = attribution_data.sentence_attributions[0]
         assert attribution["sentence_index"] == 0
-        assert (
-            attribution["document_source_id"] == "12345678-1234-1234-1234-123456789012"
-        )
+        assert attribution["document_id"] == "12345678-1234-1234-1234-123456789012"
         assert attribution["confidence_score"] == 0.85
 
     def test_document_source_contract(self):
@@ -199,7 +195,7 @@ class TestAttributionContract:
                 "sentence_attributions": [
                     {
                         "sentence_index": 0,
-                        "document_source_id": "12345678-1234-1234-1234-123456789012",
+                        "document_id": "12345678-1234-1234-1234-123456789012",
                         "confidence_score": score,
                     }
                 ],
@@ -224,7 +220,7 @@ class TestAttributionContract:
                 "sentence_attributions": [
                     {
                         "sentence_index": 0,
-                        "document_source_id": uuid_str,
+                        "document_id": uuid_str,
                         "confidence_score": 0.8,
                     }
                 ],
@@ -243,9 +239,7 @@ class TestAttributionContract:
 
             # Should validate without errors
             attribution = AttributionData(**attribution_data)
-            assert (
-                attribution.sentence_attributions[0]["document_source_id"] == uuid_str
-            )
+            assert attribution.sentence_attributions[0]["document_id"] == uuid_str
             assert attribution.citation_list["document_sources"][0]["id"] == uuid_str
 
     def test_optional_fields_contract(self):
@@ -253,14 +247,12 @@ class TestAttributionContract:
         # Response without optional fields
         minimal_response = {
             "response": "Minimal response",
-            "navigation_options": [],
             "conversation_history": []
             # No usage, no attribution
         }
 
         response = SendMessageResponse(**minimal_response)
         assert response.response == "Minimal response"
-        assert response.navigation_options == []
         assert response.conversation_history == []
         assert response.usage is None
         assert response.attribution is None
@@ -300,14 +292,6 @@ class TestAttributionContract:
         """Test response with mixed data types in optional fields."""
         mixed_response = {
             "response": "Response with mixed data",
-            "navigation_options": [
-                {"label": "Action 1", "action_type": "general", "priority": 1},
-                {
-                    "label": "Action 2",
-                    "action_type": "external",
-                    "url": "https://example.com",
-                },
-            ],
             "conversation_history": [
                 {
                     "role": "user",
@@ -326,7 +310,7 @@ class TestAttributionContract:
                 "sentence_attributions": [
                     {
                         "sentence_index": 0,
-                        "document_source_id": "12345678-1234-1234-1234-123456789012",
+                        "document_id": "12345678-1234-1234-1234-123456789012",
                         "confidence_score": 0.92,
                         "metadata": {"extracted_at": "2024-01-01T00:00:00"},
                     }
@@ -353,7 +337,6 @@ class TestAttributionContract:
         # Should validate all mixed data types
         response = SendMessageResponse(**mixed_response)
         assert response.response == "Response with mixed data"
-        assert len(response.navigation_options) == 2
         assert len(response.conversation_history) == 2
         assert response.usage["tokens"] == 150
         assert response.attribution is not None
@@ -369,7 +352,7 @@ class TestAttributionContract:
                 "sentence_attributions": [
                     {
                         "sentence_index": 0,
-                        "document_source_id": "12345678-1234-1234-1234-123456789012",
+                        "document_id": "12345678-1234-1234-1234-123456789012",
                         "confidence_score": 1.5,  # Invalid: > 1.0
                     }
                 ],
@@ -384,7 +367,7 @@ class TestAttributionContract:
                 "sentence_attributions": [
                     {
                         "sentence_index": -1,  # Invalid: negative index
-                        "document_source_id": "12345678-1234-1234-1234-123456789012",
+                        "document_id": "12345678-1234-1234-1234-123456789012",
                         "confidence_score": 0.8,
                     }
                 ],

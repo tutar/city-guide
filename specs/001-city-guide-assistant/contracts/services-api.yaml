@@ -76,36 +76,6 @@ paths:
         '404':
           description: Service category not found
 
-  /services/{service_id}/navigation:
-    get:
-      summary: Get navigation options for service
-      description: Retrieve available navigation options for a specific service category
-      tags:
-        - Services
-      parameters:
-        - name: service_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Navigation options retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  service:
-                    $ref: '#/components/schemas/ServiceCategory'
-                  navigation_options:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/NavigationOption'
-        '404':
-          description: Service category not found
-
   /services/search:
     get:
       summary: Search service categories
@@ -184,10 +154,6 @@ components:
           format: date-time
         is_active:
           type: boolean
-        navigation_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/NavigationOption'
         official_sources:
           type: array
           items:
@@ -234,28 +200,6 @@ components:
         last_verified:
           type: string
           format: date-time
-
-    NavigationOption:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        label:
-          type: string
-        action_type:
-          type: string
-          enum: [explain, requirements, appointment, location, related]
-        target_url:
-          type: string
-          nullable: true
-        description:
-          type: string
-          nullable: true
-        priority:
-          type: integer
-          minimum: 1
-          maximum: 10
 
     ServiceCategory:
       type: object

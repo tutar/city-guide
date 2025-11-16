@@ -44,20 +44,6 @@ class TestPassportGuidance:
                 hybrid_score=0.82,
             )
         ]
-        mock.generate_dynamic_navigation_options = AsyncMock()
-        mock.generate_dynamic_navigation_options.return_value = [
-            {
-                "label": "Material Requirements",
-                "action_type": "requirements",
-                "priority": 1,
-            },
-            {
-                "label": "Online Appointment",
-                "action_type": "appointment",
-                "priority": 2,
-            },
-            {"label": "Service Locations", "action_type": "location", "priority": 3},
-        ]
         return mock
 
     @pytest.fixture
@@ -113,17 +99,6 @@ class TestPassportGuidance:
                 conversation_history=conversation.get_recent_messages(),
             )
 
-            # Generate navigation options
-            navigation_options = (
-                await mock_search_service.generate_dynamic_navigation_options(
-                    conversation_context={
-                        "current_service_category_id": passport_service_category.id,
-                        "current_query": user_query,
-                    },
-                    search_results=search_results,
-                )
-            )
-
             # Add assistant response
             conversation.add_message("assistant", guidance_response["response"])
 
@@ -131,60 +106,10 @@ class TestPassportGuidance:
             assert "Hong Kong passport" in guidance_response["response"]
             assert guidance_response["context_documents_used"] > 0
 
-            # Verify navigation options are generated
-            assert len(navigation_options) > 0
-            assert any(
-                "Material Requirements" in option["label"]
-                for option in navigation_options
-            )
-
             # Verify conversation history is maintained
             assert len(conversation.conversation_history) == 2
             assert conversation.conversation_history[0].role == "user"
             assert conversation.conversation_history[1].role == "assistant"
-
-    @pytest.mark.asyncio
-    async def test_material_requirements_navigation(
-        self, mock_search_service, passport_service_category
-    ):
-        """Test navigation to material requirements"""
-        # Given a user is viewing passport guidance
-        conversation_context = {
-            "current_service_category_id": passport_service_category.id,
-            "current_query": "Hong Kong passport requirements",
-        }
-
-        search_results = [
-            Mock(
-                document_id=uuid.uuid4(),
-                document_title="Hong Kong Passport Required Documents",
-                document_content="Required documents for Hong Kong passport application...",
-                source_url="https://example.com/hk-documents",
-                similarity_score=0.92,
-                hybrid_score=0.90,
-            )
-        ]
-
-        # When navigation options are generated
-        navigation_options = (
-            await mock_search_service.generate_dynamic_navigation_options(
-                conversation_context=conversation_context, search_results=search_results
-            )
-        )
-
-        # Then material requirements option should be available
-        material_option = next(
-            (
-                option
-                for option in navigation_options
-                if option["action_type"] == "requirements"
-            ),
-            None,
-        )
-
-        assert material_option is not None
-        assert "Material Requirements" in material_option["label"]
-        assert material_option["priority"] <= 5  # High priority
 
     @pytest.mark.asyncio
     async def test_appointment_system_integration(self, mock_search_service):

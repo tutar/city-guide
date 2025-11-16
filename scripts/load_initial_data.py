@@ -7,7 +7,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
-from src.services.data_service import DataService, NavigationOption, ServiceCategory
+from src.services.data_service import DataService, ServiceCategory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -29,53 +29,7 @@ def create_hong_kong_macau_passport_service():
         updated_at=datetime.now(tz=UTC),
     )
 
-    # Navigation options for passport service
-    navigation_options = [
-        NavigationOption(
-            service_category_id=passport_service.id,
-            label="Material Requirements",
-            action_type="requirements",
-            description="View required documents and materials for passport application",
-            priority=1,
-            is_active=True,
-        ),
-        NavigationOption(
-            service_category_id=passport_service.id,
-            label="Online Appointment",
-            action_type="appointment",
-            description="Schedule an appointment for passport application",
-            priority=2,
-            target_url="https://www.gov.hk/en/appointment/",
-            is_active=True,
-        ),
-        NavigationOption(
-            service_category_id=passport_service.id,
-            label="Service Locations",
-            action_type="location",
-            description="Find nearby passport service locations",
-            priority=3,
-            target_url="https://www.gov.hk/en/service-locations/",
-            is_active=True,
-        ),
-        NavigationOption(
-            service_category_id=passport_service.id,
-            label="Application Process",
-            action_type="explain",
-            description="Step-by-step guide for passport application",
-            priority=4,
-            is_active=True,
-        ),
-        NavigationOption(
-            service_category_id=passport_service.id,
-            label="Fees and Processing Time",
-            action_type="explain",
-            description="Information about fees and processing times",
-            priority=5,
-            is_active=True,
-        ),
-    ]
-
-    return passport_service, navigation_options
+    return passport_service
 
 
 def create_additional_services():
@@ -131,18 +85,11 @@ def load_initial_data():
             logger.info("Starting initial data loading...")
 
             # Create Hong Kong/Macau passport service
-            (
-                passport_service,
-                passport_navigation,
-            ) = create_hong_kong_macau_passport_service()
+            passport_service = create_hong_kong_macau_passport_service()
 
             # Add passport service to database
             data_service.db.add(passport_service)
             data_service.db.flush()  # Get the ID for navigation options
-
-            # Add navigation options
-            for option in passport_navigation:
-                data_service.db.add(option)
 
             # Create additional services
             additional_services = create_additional_services()
@@ -155,14 +102,10 @@ def load_initial_data():
             logger.info(
                 f"Successfully loaded {len(additional_services) + 1} service categories"
             )
-            logger.info(
-                f"Successfully loaded {len(passport_navigation)} navigation options"
-            )
 
             return {
                 "passport_service_id": str(passport_service.id),
                 "total_services": len(additional_services) + 1,
-                "total_navigation_options": len(passport_navigation),
             }
 
     except Exception as e:

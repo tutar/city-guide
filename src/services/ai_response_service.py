@@ -7,18 +7,22 @@ capabilities for document source attribution in AI-generated responses.
 
 import logging
 import re
-from datetime import datetime
+from annotated_types import doc
 from typing import List, Dict, Any, Optional, Tuple
 from uuid import UUID, uuid4
+from deprecated import deprecated
 
+from services.sentence_splitter_service import SentenceSplitterService
 from src.services.ai_service import AIService
 from src.services.attribution_service import AttributionService
-from src.services.document_service import DocumentService
+from src.services.vector_retrieval_service import get_vector_retrieval_service
 from src.models.attribution import (
     SentenceAttribution,
     ResponseAttribution,
     AttributionMetadata,
 )
+
+from src.utils.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,8 @@ class AIResponseService:
     def __init__(self):
         self.ai_service = AIService()
         self.attribution_service = AttributionService()
-        self.document_service = DocumentService()
+        self.vector_retrieval_service = get_vector_retrieval_service()
+        self.sentence_splitter_service = SentenceSplitterService()
 
     def generate_response_with_attribution(
         self,
@@ -73,44 +78,23 @@ class AIResponseService:
             response_text = ai_response.get("response", "")
 
             # Track attribution for the generated response
-            sentence_attributions = self._track_response_attribution(
+            (
+                formatted_response_text,
+                sentence_attributions,
+            ) = self._track_response_attribution(
                 response_id=response_id,
                 response_text=response_text,
                 context_documents=context_documents,
                 attribution_metadata=attribution_metadata,
             )
 
-            # Complete attribution tracking
-            response_attribution = (
-                self.attribution_service.complete_attribution_tracking(
-                    response_id=response_id,
-                    sentence_attributions=sentence_attributions,
-                    metadata=attribution_metadata,
-                )
-            )
-
-            # Validate attribution consistency
-            is_consistent = self.attribution_service.validate_attribution_consistency(
-                response_attribution
-            )
-
-            if not is_consistent:
-                logger.warning(
-                    f"Attribution consistency check failed for response {response_id}"
-                )
-
-            # Enhance response with attribution data
-            enhanced_response = self._enhance_response_with_attribution(
-                ai_response=ai_response,
-                response_attribution=response_attribution,
-                context_documents=context_documents,
-            )
-
             logger.info(
                 f"Generated response with attribution: {response_id}, "
                 f"{len(sentence_attributions)} sentences attributed"
             )
-
+            enhanced_response = ai_response.copy()
+            enhanced_response["formatted_response"] = formatted_response_text
+            enhanced_response["sentence_attributions"] = sentence_attributions
             return enhanced_response
 
         except Exception as e:
@@ -124,7 +108,7 @@ class AIResponseService:
         response_text: str,
         context_documents: List[Dict[str, Any]],
         attribution_metadata: AttributionMetadata,
-    ) -> List[SentenceAttribution]:
+    ) -> Tuple[str, List[SentenceAttribution]]:
         """
         Track attribution for each sentence in the response.
 
@@ -140,86 +124,125 @@ class AIResponseService:
         sentence_attributions = []
 
         # Split response into sentences
-        sentences = self._split_into_sentences(response_text)
+        sentences = self.sentence_splitter_service.split_with_basic_processing(
+            response_text
+        )
+        formatted_sentences = []
+        sentence_index = 0
 
-        for sentence_index, sentence in enumerate(sentences):
-            # Find the most relevant document for this sentence
-            document_source_id, confidence_score = self._find_relevant_document(
+        for _, sentence in enumerate(sentences):
+            if self.sentence_splitter_service.should_skip_citation(sentence):
+                formatted_sentences.append(sentence + "\n\n")
+                continue
+
+            # Find the most relevant document for this sentence using vector retrieval
+            document, confidence_score = self._find_relevant_document_with_vectors(
                 sentence=sentence, context_documents=context_documents
             )
 
-            if document_source_id:
+            if document:
+                sentence_index = sentence_index + 1
                 # Add attribution for this sentence
                 attribution = self.attribution_service.add_sentence_attribution(
                     response_id=response_id,
                     sentence_index=sentence_index,
-                    document_source_id=document_source_id,
+                    document=document,
                     confidence_score=confidence_score,
                     metadata=attribution_metadata,
                 )
                 sentence_attributions.append(attribution)
 
-        return sentence_attributions
+                formatted_sentence = f"{sentence} [^{sentence_index}]"
 
-    def _split_into_sentences(self, text: str) -> List[str]:
-        """
-        Split text into sentences using simple regex.
+            else:
+                formatted_sentence = sentence
 
-        Args:
-            text: Input text
+            formatted_sentences.append(formatted_sentence + "\n\n")
 
-        Returns:
-            List of sentences
-        """
-        # Simple sentence splitting - can be enhanced with NLP libraries
-        sentences = re.split(r"[.!?。！？]+", text)
+        formatted_response_text = " ".join(formatted_sentences)
+        return formatted_response_text, sentence_attributions
 
-        # Filter out empty sentences and strip whitespace
-        sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
-
-        return sentences
-
-    def _find_relevant_document(
+    def _find_relevant_document_with_vectors(
         self, sentence: str, context_documents: List[Dict[str, Any]]
-    ) -> Tuple[Optional[UUID], float]:
+    ) -> Tuple[Optional[Dict[str, Any]], float]:
         """
-        Find the most relevant document for a sentence.
+        Find the most relevant document for a sentence using vector retrieval.
 
         Args:
             sentence: Sentence to find source for
             context_documents: Available context documents
 
         Returns:
-            Tuple of (document_source_id, confidence_score)
+            Tuple of (document, confidence_score)
         """
         if not context_documents:
             return None, 0.0
 
-        # Simple keyword matching for demonstration
-        # In production, this would use more sophisticated NLP techniques
+        try:
+            # Use vector retrieval to find most relevant documents
+            relevant_docs = self.vector_retrieval_service.find_most_relevant_document(
+                query_text=sentence,
+                documents=context_documents,
+                top_k=1,  # We only need the most relevant one
+                similarity_threshold=settings.relevant_minimum_similarity_threshold,  # Minimum similarity threshold
+            )
+
+            if relevant_docs:
+                best_doc = relevant_docs[0]
+                confidence_score = best_doc["similarity_score"]
+                document = best_doc["document"]
+
+                logger.debug(
+                    f"Found relevant document for sentence: '{sentence[:50]}...' "
+                    f"with similarity score: {confidence_score:.3f}"
+                )
+
+                return document, confidence_score
+
+            logger.debug(
+                f"No relevant document found for sentence: '{sentence[:50]}...'"
+            )
+            return None, 0.0
+
+        except Exception as e:
+            logger.error(f"Vector retrieval failed for sentence '{sentence}': {e}")
+            # Fallback to simple keyword matching if vector retrieval fails
+            return self._fallback_keyword_matching(sentence, context_documents)
+
+    def _fallback_keyword_matching(
+        self, sentence: str, context_documents: List[Dict[str, Any]]
+    ) -> Tuple[Optional[Dict[str, Any]], float]:
+        """
+        Fallback keyword matching when vector retrieval fails.
+
+        Args:
+            sentence: Sentence to find source for
+            context_documents: Available context documents
+
+        Returns:
+            Tuple of (document, confidence_score)
+        """
         sentence_lower = sentence.lower()
         best_match = None
         best_score = 0.0
 
         for document in context_documents:
-            score = self._calculate_relevance_score(sentence_lower, document)
+            score = self._calculate_keyword_score(sentence_lower, document)
 
             if score > best_score:
                 best_score = score
                 best_match = document
 
-        if best_match and best_score > 0.1:  # Minimum confidence threshold
-            # Extract or create document source ID
-            document_source_id = self._get_document_source_id(best_match)
-            return document_source_id, min(best_score, 1.0)
+        if best_match and best_score > 0.1:
+            return best_match, min(best_score, 1.0)
 
         return None, 0.0
 
-    def _calculate_relevance_score(
+    def _calculate_keyword_score(
         self, sentence: str, document: Dict[str, Any]
     ) -> float:
         """
-        Calculate relevance score between sentence and document.
+        Calculate keyword-based relevance score (fallback method).
 
         Args:
             sentence: Lowercase sentence
@@ -248,29 +271,7 @@ class AIResponseService:
 
         return score
 
-    def _get_document_source_id(self, document: Dict[str, Any]) -> UUID:
-        """
-        Get or create document source ID for a document.
-
-        Args:
-            document: Document metadata
-
-        Returns:
-            Document source UUID
-        """
-        # In a real implementation, this would look up or create
-        # a DocumentSource in the document service
-        # For now, generate a deterministic UUID based on document content
-
-        import hashlib
-
-        # Create a unique identifier from document metadata
-        doc_key = f"{document.get('title', '')}:{document.get('content', '')[:100]}"
-        doc_hash = hashlib.md5(doc_key.encode()).hexdigest()
-
-        # Convert hash to UUID
-        return UUID(doc_hash[:32])
-
+    @deprecated
     def _enhance_response_with_attribution(
         self,
         ai_response: Dict[str, Any],
@@ -301,7 +302,7 @@ class AIResponseService:
             "sentence_attributions": [
                 {
                     "sentence_index": attribution.sentence_index,
-                    "document_source_id": str(attribution.document_source_id),
+                    "document_id": str(attribution.document_id),
                     "confidence_score": attribution.confidence_score,
                 }
                 for attribution in response_attribution.sentence_attributions
@@ -346,20 +347,21 @@ class AIResponseService:
             return response_text
 
         # Split response into sentences
-        sentences = self._split_into_sentences(response_text)
+        sentences = self.sentence_splitter_service.split_with_basic_processing(
+            response_text
+        )
 
         # Create citation mapping
         citation_map = {}
         for attribution in response_attribution.sentence_attributions:
             if (
-                attribution.confidence_score > 0.3
+                attribution.confidence_score
+                > settings.relevant_minimum_similarity_threshold
             ):  # Only include high-confidence attributions
-                doc_id = attribution.document_source_id
-                if doc_id not in citation_map:
-                    citation_map[doc_id] = {
-                        "title": self._get_document_title(doc_id, context_documents),
-                        "citation_number": len(citation_map) + 1,
-                    }
+                citation_map[attribution.document_id] = {
+                    "title": attribution.title,
+                    "citation_number": len(citation_map) + 1,
+                }
 
         # If no citations to add, return original text
         if not citation_map:
@@ -374,9 +376,10 @@ class AIResponseService:
             for attribution in response_attribution.sentence_attributions:
                 if (
                     attribution.sentence_index == i
-                    and attribution.confidence_score > 0.3
+                    and attribution.confidence_score
+                    > settings.relevant_minimum_similarity_threshold
                 ):
-                    doc_id = attribution.document_source_id
+                    doc_id = attribution.document_id
                     if doc_id in citation_map:
                         citation_number = citation_map[doc_id]["citation_number"]
                         # Add citation marker
@@ -387,16 +390,6 @@ class AIResponseService:
 
         # Combine sentences back into text
         response_with_citations = ". ".join(enhanced_sentences)
-
-        # Add citation references at the end
-        if citation_map:
-            citation_references = "\n\n**References:**\n"
-            for doc_id, citation_info in citation_map.items():
-                title = citation_info["title"]
-                citation_number = citation_info["citation_number"]
-                citation_references += f"[{citation_number}] {title}\n"
-
-            response_with_citations += citation_references
 
         return response_with_citations
 
@@ -417,9 +410,9 @@ class AIResponseService:
         # For now, try to find matching document in context
         for document in context_documents:
             # Check if this document matches our ID (simplified)
-            potential_id = self._get_document_source_id(document)
+            potential_id = document.get("document_id")
             if potential_id == doc_id:
-                return document.get("title", "Unknown Document")
+                return document.get("document_title", "Unknown Document")
 
         return "Unknown Document"
 
@@ -461,26 +454,3 @@ class AIResponseService:
                     "error": str(e),
                 },
             }
-
-    def get_attribution_for_response(
-        self, response_id: UUID
-    ) -> Optional[ResponseAttribution]:
-        """
-        Get attribution data for a specific response.
-
-        Args:
-            response_id: Response UUID
-
-        Returns:
-            ResponseAttribution if found
-        """
-        return self.attribution_service.get_attribution_for_response(response_id)
-
-    def get_performance_metrics(self) -> Dict[str, float]:
-        """
-        Get attribution performance metrics.
-
-        Returns:
-            Performance metrics
-        """
-        return self.attribution_service.get_performance_metrics()

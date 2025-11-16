@@ -33,7 +33,6 @@ Phase 3: User Story 1 (P1)
 ├── T031-T033: Test creation (TDD)
 ├── T034-T036: Service data
 ├── T037-T040: Conversation flow
-├── T041-T043: Navigation system
 └── T044-T047: Integration
 
 Phase 4: User Story 2 (P2)
@@ -44,7 +43,6 @@ Phase 4: User Story 2 (P2)
 
 Phase 5: User Story 3 (P3)
 ├── T059-T061: Test creation (TDD)
-├── T062-T064: Dynamic navigation
 ├── T065-T067: Context management
 └── T068-T069: Related services
 
@@ -59,7 +57,6 @@ Phase 6: Polish
 
 **After Phase 2 completion**:
 - User Story 1 (T031-T047) and User Story 2 (T048-T058) can be developed in parallel
-- User Story 3 (T059-T069) can start once User Story 1 navigation patterns are established
 
 **Within each story**:
 - Test creation (T031-T033, T048-T050, T059-T061) can run in parallel
@@ -99,7 +96,6 @@ Phase 6: Polish
 
 - [X] T013 Create ServiceCategory model with validation rules in src/models/services.py
 - [X] T014 Create ConversationContext model with state transitions in src/models/conversation_model.py
-- [X] T015 Create NavigationOption model with action types in src/models/services.py
 - [X] T016 Create OfficialInformationSource model in src/models/official_sources.py
 - [X] T017 Create DocumentEmbedding model in src/models/document_embeddings.py
 - [X] T018 Create SearchQuery model in src/models/search_queries.py
@@ -108,7 +104,6 @@ Phase 6: Polish
 
 - [X] T019 Implement ServiceCategory database service with CRUD operations in src/services/data_service.py
 - [X] T020 Implement ConversationContext database service with session management in src/services/data_service.py
-- [X] T021 Implement NavigationOption database service with priority ordering in src/services/data_service.py
 
 ### Vector Database Setup
 
@@ -133,7 +128,7 @@ Phase 6: Polish
 
 ## Phase 3: User Story 1 - Get Hong Kong/Macau Passport Guidance (P1)
 
-**Independent Test Criteria**: Can simulate conversation about Hong Kong/Macau passport requirements and verify system provides accurate step-by-step guidance with contextual navigation options
+**Independent Test Criteria**: Can simulate conversation about Hong Kong/Macau passport requirements and verify system provides accurate step-by-step guidance
 
 ### Test Creation (TDD)
 
@@ -144,7 +139,6 @@ Phase 6: Polish
 ### Service Data Setup
 
 - [X] T034 [P] [US1] Create Hong Kong/Macau passport service category with official sources in scripts/load_initial_data.py
-- [X] T035 [P] [US1] Implement passport service navigation options (requirements, appointment, materials) in scripts/load_initial_data.py
 - [X] T036 [P] [US1] Create sample passport document embeddings for search in scripts/generate_embeddings.py
 
 ### Conversation Flow
@@ -153,12 +147,6 @@ Phase 6: Polish
 - [X] T038 [US1] Implement conversation start endpoint with service context in src/api/conversations.py
 - [X] T039 [US1] Create message processing with Deepseek API integration in src/services/ai_service.py
 - [X] T040 [US1] Implement conversation history management in src/services/conversation_service.py
-
-### Navigation System
-
-- [X] T041 [US1] Create dynamic navigation option generation based on conversation context in src/services/navigation_generator.py
-- [X] T042 [US1] Implement navigation option filtering by service category in src/services/navigation_service.py
-- [X] T043 [US1] Add external URL handling for appointment systems in src/utils/validation.py
 
 ### Integration
 
@@ -198,23 +186,9 @@ Phase 6: Polish
 ### Location Services
 
 - [X] T057 [US2] Implement location-based service filtering in src/services/search_service.py
-- [X] T058 [US2] Add map integration for service locations in src/chainlit/components/service_navigation.py
-
-## Phase 5: User Story 3 - Dynamic Contextual Navigation (P3)
-
-**Independent Test Criteria**: Can navigate through different service categories and verify navigation options adapt contextually to current conversation
 
 ### Test Creation (TDD)
-
-- [X] T059 [US3] Create acceptance tests for dynamic navigation scenarios in tests/integration/test_dynamic_navigation.py
-- [X] T060 [US3] Create unit tests for context-aware navigation generation in tests/unit/test_search_service.py
 - [X] T061 [US3] Create integration tests for service relationship mapping in tests/integration/test_service_relationships.py
-
-### Dynamic Navigation
-
-- [X] T062 [P] [US3] Implement context-aware navigation option generation in src/services/search_service.py
-- [X] T063 [P] [US3] Create navigation option prioritization based on conversation history in src/services/data_service.py
-- [X] T064 [P] [US3] Add main menu navigation with service categories in src/chainlit/components/service_navigation.py
 
 ### Context Management
 
@@ -225,7 +199,6 @@ Phase 6: Polish
 ### Related Services
 
 - [X] T068 [US3] Create service relationship mapping in scripts/data_ingestion.py
-- [X] T069 [US3] Implement cross-service navigation flow in src/chainlit/components/service_navigation.py
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
@@ -234,7 +207,6 @@ Phase 6: Polish
 - [ ] T070 Implement user journey timing analytics for SC-001 (3-minute completion) in src/services/analytics_service.py
 - [ ] T071 Create accuracy verification system for SC-002 (99% accuracy) in src/utils/validation.py
 - [ ] T072 Add user success rate tracking for SC-003 (90% first-attempt success) in src/services/data_service.py
-- [ ] T073 Implement navigation option analytics for SC-004 (70% click rate) in src/chainlit/components/service_navigation.py
 - [ ] T074 Create user satisfaction collection system for SC-005 (4.5/5.0 rating) in src/chainlit/app.py
 - [ ] T075 Add support request reduction tracking for SC-006 (40% reduction) in src/services/analytics_service.py
 - [ ] T076 Implement task completion tracking for SC-007 (85% completion) in src/services/data_service.py
@@ -292,5 +264,4 @@ Phase 6: Polish
 ### Testing Approach
 - Focus on integration testing for conversational flows
 - Test search accuracy with government service queries
-- Validate navigation system with real user scenarios
 - Monitor performance metrics for optimization

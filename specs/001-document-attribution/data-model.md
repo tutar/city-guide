@@ -27,7 +27,7 @@ Maps sentences in AI responses to source documents
 - `id`: UUID (primary key)
 - `response_id`: UUID - Reference to AI response
 - `sentence_index`: Integer - Position of sentence in response
-- `document_source_id`: UUID - Reference to source document
+- `document_id`: UUID - Reference to source document
 - `confidence_score`: Float - AI confidence in attribution (0.0-1.0)
 - `created_at`: DateTime - When attribution was created
 
@@ -58,7 +58,7 @@ Complete collection of documents referenced in an AI response
 ### ResponseAttribution
 - `sentence_index` must be non-negative
 - `confidence_score` must be between 0.0 and 1.0
-- `response_id` and `document_source_id` must reference valid entities
+- `response_id` and `document_id` must reference valid entities
 
 ### CitationList
 - `document_sources` must contain valid UUIDs

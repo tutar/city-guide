@@ -69,7 +69,7 @@ class TestAttributionIntegration:
         if sentence_attributions:
             for attribution in sentence_attributions:
                 assert "sentence_index" in attribution
-                assert "document_source_id" in attribution
+                assert "document_id" in attribution
                 assert "confidence_score" in attribution
                 assert 0.0 <= attribution["confidence_score"] <= 1.0
 
@@ -129,106 +129,6 @@ class TestAttributionIntegration:
         assert "sentence_attributions" in attribution_data
         assert "citation_list" in attribution_data
 
-    def test_attribution_performance_metrics(self):
-        """Test attribution performance metrics collection."""
-        user_query = "Performance test query"
-        context_documents = [
-            {
-                "document_title": "Test Document",
-                "document_content": "This is a test document for performance testing.",
-                "document_type": "test",
-            }
-        ]
-
-        # Generate multiple responses to accumulate metrics
-        for _ in range(3):
-            self.ai_response_service.generate_response_with_attribution(
-                user_query=user_query, context_documents=context_documents
-            )
-
-        # Get performance metrics
-        metrics = self.ai_response_service.get_performance_metrics()
-
-        # Verify metrics structure
-        assert isinstance(metrics, dict)
-        assert "avg_performance_impact_ms" in metrics
-        assert "tracking_count" in metrics
-        assert "attribution_coverage_rate" in metrics
-
-        # Metrics should reflect the test runs
-        assert metrics["tracking_count"] >= 3
-
-    def test_attribution_consistency_validation(self):
-        """Test attribution consistency validation."""
-        user_query = "Consistency test query"
-        context_documents = [
-            {
-                "document_title": "Consistency Test Document",
-                "document_content": "This document tests attribution consistency.",
-                "document_type": "test",
-            }
-        ]
-
-        response = self.ai_response_service.generate_response_with_attribution(
-            user_query=user_query, context_documents=context_documents
-        )
-
-        # Extract response ID from attribution data
-        attribution_data = response["attribution"]
-        sentence_attributions = attribution_data["sentence_attributions"]
-
-        if sentence_attributions:
-            # Get the attribution from the service to verify consistency
-            response_id = sentence_attributions[0].get("response_id")
-            if response_id:
-                stored_attribution = (
-                    self.attribution_service.get_attribution_for_response(response_id)
-                )
-
-                if stored_attribution:
-                    # Validate consistency
-                    is_consistent = (
-                        self.attribution_service.validate_attribution_consistency(
-                            stored_attribution
-                        )
-                    )
-                    assert is_consistent is True
-
-    def test_document_service_integration(self):
-        """Test integration between attribution service and document service."""
-        # Create test document sources
-        doc1_data = {
-            "document_embedding_id": uuid4(),
-            "title": "Integration Test Document 1",
-            "location": "/documents/test1.pdf",
-            "access_info": {"permission": "public"},
-            "attribution_metadata": {"test": "integration"},
-        }
-
-        doc2_data = {
-            "document_embedding_id": uuid4(),
-            "title": "Integration Test Document 2",
-            "location": "/documents/test2.pdf",
-            "access_info": {"permission": "public"},
-            "attribution_metadata": {"test": "integration"},
-        }
-
-        # Create document sources
-        doc1 = self.document_service.create_document_source(doc1_data)
-        doc2 = self.document_service.create_document_source(doc2_data)
-
-        # Verify document access
-        access_info1 = self.document_service.verify_document_access(doc1.id)
-        access_info2 = self.document_service.verify_document_access(doc2.id)
-
-        assert access_info1["accessible"] is True
-        assert access_info2["accessible"] is True
-
-        # Test bulk access verification
-        bulk_results = self.document_service.bulk_verify_access([doc1.id, doc2.id])
-        assert len(bulk_results) == 2
-        assert all(result["accessible"] for result in bulk_results.values())
-
     def test_error_handling_in_attribution_flow(self):
         """Test error handling in attribution flow."""
         # Test with invalid data that should trigger fallback
@@ -247,42 +147,6 @@ class TestAttributionIntegration:
         # Attribution should indicate fallback mode
         attribution_data = response["attribution"]
         assert attribution_data.get("fallback_mode", False) is True
-
-    def test_attribution_cache_functionality(self):
-        """Test attribution caching functionality."""
-        user_query = "Cache test query"
-        context_documents = [
-            {
-                "document_title": "Cache Test Document",
-                "document_content": "This document tests attribution caching.",
-                "document_type": "test",
-            }
-        ]
-
-        # Generate response
-        response1 = self.ai_response_service.generate_response_with_attribution(
-            user_query=user_query, context_documents=context_documents
-        )
-
-        # Extract response ID
-        attribution_data = response1["attribution"]
-        sentence_attributions = attribution_data["sentence_attributions"]
-
-        if sentence_attributions:
-            response_id = sentence_attributions[0].get("response_id")
-            if response_id:
-                # Should be retrievable from cache
-                cached_attribution = (
-                    self.attribution_service.get_attribution_for_response(response_id)
-                )
-                assert cached_attribution is not None
-
-                # Clear cache and verify it's gone
-                self.attribution_service.clear_cache()
-                cleared_attribution = (
-                    self.attribution_service.get_attribution_for_response(response_id)
-                )
-                assert cleared_attribution is None
 
     def test_attribution_summary_statistics(self):
         """Test attribution summary statistics generation."""
@@ -307,7 +171,7 @@ class TestAttributionIntegration:
 
         total_sentences = len(sentence_attributions)
         attributed_sentences = len(
-            [a for a in sentence_attributions if a.get("document_source_id")]
+            [a for a in sentence_attributions if a.get("document_id")]
         )
         unique_documents = len(citation_list.get("document_sources", []))
 
@@ -326,13 +190,12 @@ class TestAttributionIntegration:
         # Simulate API response with attribution
         mock_api_response = {
             "response": "To apply for a passport, you need valid ID and proof of citizenship.",
-            "navigation_options": [],
             "conversation_history": [],
             "attribution": {
                 "sentence_attributions": [
                     {
                         "sentence_index": 0,
-                        "document_source_id": str(uuid4()),
+                        "document_id": str(uuid4()),
                         "confidence_score": 0.85,
                     }
                 ],

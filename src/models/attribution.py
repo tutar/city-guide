@@ -50,7 +50,11 @@ class SentenceAttribution(BaseModel):
     sentence_index: int = Field(
         ..., ge=0, description="Position of sentence in response"
     )
-    document_source_id: UUID = Field(..., description="Reference to source document")
+    document_id: UUID = Field(..., description="Reference to source document")
+    title: str = Field(..., min_length=1, description="Document title for display")
+    document: Dict[str, Any] = Field(
+        ..., description="Source document metadata and content"
+    )
     confidence_score: float = Field(
         ..., ge=0.0, le=1.0, description="AI confidence in attribution (0.0-1.0)"
     )
@@ -95,11 +99,8 @@ class ResponseAttribution(BaseModel):
 class AttributionMetadata(BaseModel):
     """Metadata for attribution tracking and performance monitoring."""
 
-    tracking_start_time: datetime = Field(default_factory=datetime.now)
-    tracking_end_time: Optional[datetime] = None
     total_sentences: int = Field(default=0)
     attributed_sentences: int = Field(default=0)
-    performance_impact_ms: Optional[float] = None
 
 
 # State enums for document access and attribution tracking

@@ -64,9 +64,6 @@ class AISettings(BaseSettings):
     embedding_dimension: int = Field(default=1024, alias="EMBEDDING_DIMENSION")
     embedding_device: str = Field(default="cpu", alias="EMBEDDING_DEVICE")
 
-    # Mock service configuration
-    use_mock_service: bool = Field(default=False, alias="USE_MOCK_AI_SERVICE")
-
 
 class ChainlitSettings(BaseSettings):
     """Chainlit frontend configuration"""
@@ -123,6 +120,9 @@ class Settings(BaseSettings):
     )
     hybrid_search_weight_keyword: float = Field(
         default=0.3, alias="HYBRID_SEARCH_WEIGHT_KEYWORD"
+    )
+    relevant_minimum_similarity_threshold: float = Field(
+        default=0.3, alias="RELEVANT_MINIMUM_SIMILARITY_THRESHOLD"
     )
 
     # External API configuration

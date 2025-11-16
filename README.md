@@ -26,3 +26,4 @@ The City Guide Smart Assistant provides natural language guidance for navigating
 ## Development
 
 See the development documentation in the `specs/` directory for detailed implementation plans and tasks.
+![Data Flow](./data-flow.svg)
